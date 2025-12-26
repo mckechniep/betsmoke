@@ -1,0 +1,68 @@
+// This tells Prisma which database type to use
+datasource db {
+  provider = "postgresql"
+  // Note: URL is now configured in prisma.config.ts
+}
+
+// This tells Prisma to generate a JavaScript/TypeScript client
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+// ============================================
+// ENUMS
+// ============================================
+
+// Defines the allowed context types for notes
+enum ContextType {
+  team
+  fixture
+  general
+}
+
+// ============================================
+// MODELS
+// ============================================
+
+// Our User table
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relationship: A user can have many notes
+  notes Note[]
+}
+
+// Our Note table
+model Note {
+  id        String   @id @default(uuid())
+  title     String
+  content   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relationship: Each note belongs to one user
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+
+  // Relationship: A note can have many context links
+  links NoteLink[]
+}
+
+// Junction table: Links notes to multiple contexts (teams, fixtures, etc.)
+model NoteLink {
+  id          String      @id @default(uuid())
+  noteId      String
+  note        Note        @relation(fields: [noteId], references: [id], onDelete: Cascade)
+  contextType ContextType
+  contextId   String // SportsMonks ID (empty string for general)
+  isPrimary   Boolean     @default(false)
+  createdAt   DateTime    @default(now())
+
+  // Ensure a note doesn't link to the same context twice
+  @@unique([noteId, contextType, contextId])
+}
