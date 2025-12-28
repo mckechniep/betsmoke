@@ -1005,6 +1005,48 @@ async function getFixturePredictions(fixtureId) {
 }
 
 // ============================================
+// STAGES / SCHEDULE FUNCTIONS (Cup Competitions)
+// ============================================
+
+/**
+ * Get all stages for a season with their fixtures
+ * This is ideal for cup competitions (FA Cup, Carabao Cup) to show fixtures by stage/round
+ * 
+ * @param {number|string} seasonId - The SportsMonks season ID
+ * @returns {Promise<object>} - Stages with fixtures for the season
+ * 
+ * The response includes:
+ * - data: Array of stages (e.g., "First Round", "Quarter-Finals", "Final")
+ *   - Each stage has: id, name, sort_order, finished, is_current, starting_at, ending_at
+ *   - fixtures[]: Array of matches in that stage
+ * 
+ * For cup competitions like FA Cup (24) and Carabao Cup (27):
+ * - Each stage represents a round of the cup (First Round, Second Round, etc.)
+ * - Fixtures include team names, scores, and match status
+ * 
+ * Example: getStagesBySeason(23768) // FA Cup 2024/25
+ */
+async function getStagesBySeason(seasonId) {
+  // API: GET /stages/seasons/{season_id}
+  // This is the correct endpoint for cup competitions
+  // Stages represent rounds like "1st Round", "Quarter-Finals", "Final"
+  const endpoint = `/stages/seasons/${seasonId}`;
+  
+  // Include fixtures with useful data:
+  // - fixtures: The matches in each stage
+  // - fixtures.participants: Team names and logos
+  // - fixtures.scores: Match results
+  // - fixtures.venue: Stadium info
+  // - fixtures.state: Match state (scheduled, finished, etc.)
+  return makeRequest(endpoint, [
+    'fixtures.participants',
+    'fixtures.scores',
+    'fixtures.venue',
+    'fixtures.state'
+  ]);
+}
+
+// ============================================
 // EXPORT ALL FUNCTIONS
 // ============================================
 
@@ -1076,5 +1118,8 @@ export {
   getTeamSquadWithStats,
 
   // Predictions functions
-  getFixturePredictions
+  getFixturePredictions,
+
+  // Stages / Schedule functions (for cup competitions)
+  getStagesBySeason
 };

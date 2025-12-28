@@ -366,6 +366,200 @@ router.get('/:id/squad/seasons/:seasonId', async (req, res) => {
 });
 
 // ============================================
+// GET FULL SQUAD WITH STATISTICS FOR SEASON
+// GET /teams/:id/fullsquad/seasons/:seasonId
+// Example: GET /teams/62/fullsquad/seasons/23614
+// ============================================
+// Returns ALL players in the squad with their full statistics
+// for the specified season. Used for the team roster table.
+//
+// Statistics Type IDs:
+// - 52: Goals
+// - 79: Assists
+// - 83: Red Cards
+// - 84: Yellow Cards
+// - 85: Yellow-Red Cards
+// - 88: Goals Conceded (GK)
+// - 119: Minutes Played
+// - 194: Clean Sheets (GK)
+// - 214: Team Wins
+// - 215: Team Draws
+// - 216: Team Losses
+// - 321: Appearances
+// - 322: Lineups
+// - 324: Own Goals
+
+router.get('/:id/fullsquad/seasons/:seasonId', async (req, res) => {
+  try {
+    const { id: teamId, seasonId } = req.params;
+    
+    // Validate IDs
+    if (isNaN(teamId)) {
+      return res.status(400).json({
+        error: 'Team ID must be a number'
+      });
+    }
+    
+    if (isNaN(seasonId)) {
+      return res.status(400).json({
+        error: 'Season ID must be a number'
+      });
+    }
+    
+    // Fetch squad with player statistics
+    const result = await getTeamSquadWithStats(seasonId, teamId);
+    const squadMembers = result.data || [];
+    
+    // Type IDs for all stats we want to extract
+    const STAT_TYPE_IDS = {
+      GOALS: 52,
+      ASSISTS: 79,
+      RED_CARDS: 83,
+      YELLOW_CARDS: 84,
+      YELLOW_RED_CARDS: 85,
+      GOALS_CONCEDED: 88,
+      MINUTES_PLAYED: 119,
+      CLEAN_SHEETS: 194,
+      TEAM_WINS: 214,
+      TEAM_DRAWS: 215,
+      TEAM_LOSSES: 216,
+      APPEARANCES: 321,
+      LINEUPS: 322,
+      OWN_GOALS: 324
+    };
+    
+    // Process each player to extract all stats
+    const playersWithStats = squadMembers.map(member => {
+      const player = member.player || {};
+      const statistics = player.statistics || [];
+      
+      // Initialize all stats to 0
+      const stats = {
+        goals: 0,
+        assists: 0,
+        redCards: 0,
+        yellowCards: 0,
+        yellowRedCards: 0,
+        goalsConceded: 0,
+        minutesPlayed: 0,
+        cleanSheets: 0,
+        teamWins: 0,
+        teamDraws: 0,
+        teamLosses: 0,
+        appearances: 0,
+        lineups: 0,
+        ownGoals: 0
+      };
+      
+      // Extract stats from the statistics array
+      // Each statGroup has a details array with type_id and value
+      statistics.forEach(statGroup => {
+        const details = statGroup.details || [];
+        details.forEach(detail => {
+          // Helper to safely extract value (could be number or object with total)
+          const getValue = (val) => {
+            if (typeof val === 'number') return val;
+            if (val && typeof val === 'object') return val.total || val.count || 0;
+            return 0;
+          };
+          
+          switch (detail.type_id) {
+            case STAT_TYPE_IDS.GOALS:
+              stats.goals = getValue(detail.value);
+              break;
+            case STAT_TYPE_IDS.ASSISTS:
+              stats.assists = getValue(detail.value);
+              break;
+            case STAT_TYPE_IDS.RED_CARDS:
+              stats.redCards = getValue(detail.value);
+              break;
+            case STAT_TYPE_IDS.YELLOW_CARDS:
+              stats.yellowCards = getValue(detail.value);
+              break;
+            case STAT_TYPE_IDS.YELLOW_RED_CARDS:
+              stats.yellowRedCards = getValue(detail.value);
+              break;
+            case STAT_TYPE_IDS.GOALS_CONCEDED:
+              stats.goalsConceded = getValue(detail.value);
+              break;
+            case STAT_TYPE_IDS.MINUTES_PLAYED:
+              stats.minutesPlayed = getValue(detail.value);
+              break;
+            case STAT_TYPE_IDS.CLEAN_SHEETS:
+              stats.cleanSheets = getValue(detail.value);
+              break;
+            case STAT_TYPE_IDS.TEAM_WINS:
+              stats.teamWins = getValue(detail.value);
+              break;
+            case STAT_TYPE_IDS.TEAM_DRAWS:
+              stats.teamDraws = getValue(detail.value);
+              break;
+            case STAT_TYPE_IDS.TEAM_LOSSES:
+              stats.teamLosses = getValue(detail.value);
+              break;
+            case STAT_TYPE_IDS.APPEARANCES:
+              stats.appearances = getValue(detail.value);
+              break;
+            case STAT_TYPE_IDS.LINEUPS:
+              stats.lineups = getValue(detail.value);
+              break;
+            case STAT_TYPE_IDS.OWN_GOALS:
+              stats.ownGoals = getValue(detail.value);
+              break;
+          }
+        });
+      });
+      
+      // Return player object with all their stats
+      return {
+        playerId: player.id,
+        name: player.display_name || player.common_name || player.name || 'Unknown',
+        firstName: player.firstname,
+        lastName: player.lastname,
+        image: player.image_path,
+        positionId: member.position_id,
+        jerseyNumber: member.jersey_number,
+        dateOfBirth: player.date_of_birth,
+        nationality: player.nationality?.name,
+        height: player.height,
+        weight: player.weight,
+        ...stats
+      };
+    });
+    
+    // Sort players by position, then by appearances/goals
+    // Position order: GK (1), DEF (2), MID (3), FWD (4)
+    playersWithStats.sort((a, b) => {
+      // First sort by position
+      if (a.positionId !== b.positionId) {
+        return (a.positionId || 999) - (b.positionId || 999);
+      }
+      // Then by appearances (descending)
+      if (b.appearances !== a.appearances) {
+        return b.appearances - a.appearances;
+      }
+      // Then by goals (descending)
+      return b.goals - a.goals;
+    });
+    
+    // Return the processed data
+    res.json({
+      teamId: parseInt(teamId),
+      seasonId: parseInt(seasonId),
+      totalPlayers: playersWithStats.length,
+      players: playersWithStats
+    });
+    
+  } catch (error) {
+    console.error('Get team full squad error:', error);
+    res.status(500).json({ 
+      error: 'Failed to get team squad with statistics',
+      details: error.message 
+    });
+  }
+});
+
+// ============================================
 // GET TEAM TOP SCORERS & ASSISTS FOR SEASON
 // GET /teams/:id/topstats/seasons/:seasonId
 // Example: GET /teams/62/topstats/seasons/23614

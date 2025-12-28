@@ -16,6 +16,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { dataApi } from '../api/client';
+import SquadRoster from '../components/SquadRoster';
 
 // ============================================
 // TYPE IDS FROM SPORTSMONKS
@@ -1962,31 +1963,8 @@ const TeamDetail = () => {
       {/* Corners Section */}
       <CornersSection teamId={id} />
 
-      {/* Squad Section */}
-      {team.players && team.players.length > 0 && (
-        <div className="bg-white rounded-lg shadow-md p-6">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">👥 Squad</h2>
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {team.players.map((player) => (
-              <div key={player.player_id} className="flex items-center space-x-3 p-2 bg-gray-50 rounded">
-                {player.player?.image_path && (
-                  <img
-                    src={player.player.image_path}
-                    alt={player.player.common_name}
-                    className="w-10 h-10 rounded-full object-cover"
-                  />
-                )}
-                <div>
-                  <p className="font-medium text-sm">{player.player?.common_name}</p>
-                  <p className="text-xs text-gray-500">
-                    #{player.jersey_number} - {player.position?.name}
-                  </p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
+      {/* Squad Roster Section - Full stats table with sorting */}
+      <SquadRoster teamId={id} />
     </div>
   );
 };

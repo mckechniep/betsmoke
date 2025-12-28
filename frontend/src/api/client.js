@@ -142,6 +142,9 @@ export const dataApi = {
 
   // Team top scorers & assists (for fixture details)
   getTeamTopStats: (teamId, seasonId) => api.get(`/teams/${teamId}/topstats/seasons/${seasonId}`),
+  
+  // Full squad with all player statistics (for team roster table)
+  getTeamFullSquad: (teamId, seasonId) => api.get(`/teams/${teamId}/fullsquad/seasons/${seasonId}`),
 
   // Team stats (for scoring patterns, etc.)
   getTeamStats: (teamId) => api.get(`/teams/${teamId}/stats`),
@@ -149,6 +152,9 @@ export const dataApi = {
 
   // Predictions
   getPredictions: (fixtureId) => api.get(`/fixtures/${fixtureId}/predictions`),
+
+  // Stages (for cup competitions - fixtures organized by stage/round)
+  getStagesBySeason: (seasonId) => api.get(`/fixtures/seasons/${seasonId}`),
 };
 
 export default api;

@@ -22,7 +22,8 @@ import {
   getFixturesByDateRange,
   getTeamFixturesByDateRange,
   searchFixtures,
-  getFixturePredictions
+  getFixturePredictions,
+  getStagesBySeason
 } from '../services/sportsmonks.js';
 
 // Create a router
@@ -326,6 +327,57 @@ router.get('/search/:query', async (req, res) => {
     console.error('Fixture search error:', error);
     res.status(500).json({ 
       error: 'Failed to search fixtures',
+      details: error.message 
+    });
+  }
+});
+
+// ============================================
+// GET STAGES WITH FIXTURES FOR A SEASON
+// GET /fixtures/seasons/:seasonId
+// Example: GET /fixtures/seasons/23768 (FA Cup 2024/25)
+// ============================================
+// Returns all stages for a season with their fixtures
+// Ideal for cup competitions (FA Cup, Carabao Cup)
+// Each stage contains its fixtures with teams, scores, and venues
+
+router.get('/seasons/:seasonId', async (req, res) => {
+  try {
+    const { seasonId } = req.params;
+    
+    // Validate: seasonId must be a number
+    if (isNaN(seasonId)) {
+      return res.status(400).json({
+        error: 'Season ID must be a number'
+      });
+    }
+    
+    // Call the SportsMonks service
+    // This uses /stages/seasons/{seasonId} with fixtures include
+    const result = await getStagesBySeason(seasonId);
+    
+    // The response.data is an array of stages
+    // Each stage has: id, name, sort_order, finished, is_current, starting_at, ending_at, fixtures[]
+    const stages = result.data || [];
+    
+    // Count total fixtures across all stages
+    const totalFixtures = stages.reduce((total, stage) => {
+      return total + (stage.fixtures?.length || 0);
+    }, 0);
+    
+    // Return the stages with fixtures
+    // NOTE: Frontend expects "rounds" key for backward compatibility
+    res.json({
+      seasonId: parseInt(seasonId),
+      totalStages: stages.length,
+      totalFixtures: totalFixtures,
+      stages: stages
+    });
+    
+  } catch (error) {
+    console.error('Get stages error:', error);
+    res.status(500).json({ 
+      error: 'Failed to get stages',
       details: error.message 
     });
   }
