@@ -13,13 +13,17 @@ import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { dataApi, notesApi } from '../api/client';
 import { useAuth } from '../context/AuthContext';
+import MatchPredictions from '../components/MatchPredictions';
 
 // ============================================
 // DEFAULT BOOKMAKERS (prepopulated)
 // ============================================
-// These are common US-friendly bookmakers
-// IDs from SportsMonks - we'll verify these exist
-const DEFAULT_BOOKMAKER_IDS = [2, 9]; // bet365, Unibet (will be filtered if not available)
+// These are common bookmakers with good coverage
+// IDs from SportsMonks:
+//   - Betfair = 4
+//   - Unibet = 9
+// Note: Defaults are filtered to only show bookmakers that have odds for the fixture
+const DEFAULT_BOOKMAKER_IDS = [4, 9]; // Betfair, Unibet
 
 // ============================================
 // HELPER: Format American Odds for Display
@@ -282,22 +286,59 @@ function SidelinedPlayersSection({ sidelined, homeTeam, awayTeam }) {
   const homeSidelined = sidelined.filter(s => s.participant_id === homeTeam?.id);
   const awaySidelined = sidelined.filter(s => s.participant_id === awayTeam?.id);
 
-  // Helper to get injury/suspension icon
-  const getStatusIcon = (category) => {
-    if (!category) return '❓';
-    const cat = category.toLowerCase();
-    if (cat.includes('injury') || cat.includes('injured')) return '🏥';
-    if (cat.includes('suspension') || cat.includes('suspended')) return '🟥';
-    if (cat.includes('illness') || cat.includes('sick')) return '🤒';
+  // Helper to get injury/suspension icon based on type info
+  // SportsMonks provides a `type` object with specific reason (e.g., "Red Card", "Hamstring Injury")
+  const getStatusIcon = (sidelinedEntry) => {
+    // First check the specific type name (most accurate)
+    const typeName = sidelinedEntry.type?.name?.toLowerCase() || '';
+    const typeCode = sidelinedEntry.type?.code?.toLowerCase() || '';
+    
+    // Check for red card specifically
+    if (typeName.includes('red card') || typeCode.includes('red-card')) {
+      return '🟥'; // Actual red card
+    }
+    
+    // Check for illness
+    if (typeName.includes('illness') || typeCode.includes('illness') ||
+        typeName.includes('sick') || typeCode.includes('sick')) {
+      return '🤒';
+    }
+    
+    // Check for injury (most injury types contain "injury" or specific body parts)
+    if (typeName.includes('injury') || typeCode.includes('injury') ||
+        typeName.includes('hamstring') || typeName.includes('knee') ||
+        typeName.includes('ankle') || typeName.includes('groin') ||
+        typeName.includes('muscle') || typeName.includes('fracture') ||
+        typeName.includes('ligament') || typeName.includes('acl') ||
+        typeName.includes('mcl') || typeName.includes('calf') ||
+        typeName.includes('thigh') || typeName.includes('back') ||
+        typeName.includes('shoulder') || typeName.includes('concussion')) {
+      return '🏥'; // Injury
+    }
+    
+    // Fall back to category if type isn't available
+    const category = sidelinedEntry.sideline?.category?.toLowerCase() || '';
+    if (category.includes('injury')) return '🏥';
+    if (category.includes('illness')) return '🤒';
+    
+    // Everything else (suspension without red card, not registered, other)
     return '⚠️';
   };
 
-  // Helper to format the reason
+  // Helper to format the reason - use the specific type name when available
   const formatReason = (player) => {
-    // Try to get reason from sideline include or category
-    if (player.sideline?.category) return player.sideline.category;
+    // First priority: use the specific type name (e.g., "Hamstring Injury", "Red Card")
+    if (player.type?.name) {
+      return player.type.name;
+    }
+    
+    // Second priority: use category from sideline data
+    if (player.sideline?.category) {
+      return player.sideline.category;
+    }
+    
+    // Fallback
     if (player.category) return player.category;
-    if (player.type?.name) return player.type.name;
     return 'Unavailable';
   };
 
@@ -350,7 +391,7 @@ function SidelinedPlayersSection({ sidelined, homeTeam, awayTeam }) {
             >
               <div className="flex items-start justify-between">
                 <div className="flex items-center space-x-2">
-                  <span>{getStatusIcon(player.sideline?.category)}</span>
+                  <span>{getStatusIcon(player)}</span>
                   <span className="font-medium">{getPlayerName(player)}</span>
                 </div>
                 {player.sideline?.games_missed > 0 && (
@@ -1114,6 +1155,270 @@ function RecentFormSection({ homeForm, awayForm, homeTeam, awayTeam, loading }) 
 }
 
 // ============================================
+// CORNERS BREAKDOWN SECTION COMPONENT
+// ============================================
+// Shows each team's corner kick statistics for the season
+// Uses HOME/AWAY splits for contextually relevant data:
+// - Home team: shows their corners when playing AT HOME
+// - Away team: shows their corners when playing AWAY
+// Type ID: 34 = CORNERS (from SportsMonks team statistics)
+function CornersBreakdownSection({ homeStats, awayStats, homeTeam, awayTeam, loading }) {
+  // ============================================
+  // HELPER: Extract full corners object from team statistics
+  // ============================================
+  // SportsMonks returns corners with home/away breakdown:
+  // { all: {count, percentage}, home: {count, percentage}, away: {count, percentage} }
+  const extractCornersData = (stats) => {
+    if (!stats?.statistics) return null;
+    
+    for (const statGroup of stats.statistics) {
+      if (!statGroup.details) continue;
+      
+      for (const detail of statGroup.details) {
+        // Type ID 34 = CORNERS
+        if (detail.type_id === 34) {
+          const value = detail.value;
+          
+          // Return the full object if it has home/away breakdown
+          if (value && typeof value === 'object') {
+            return {
+              all: value.all?.count ?? value.count ?? null,
+              home: value.home?.count ?? null,
+              away: value.away?.count ?? null
+            };
+          }
+          
+          // Simple number value (no breakdown)
+          if (typeof value === 'number') {
+            return { all: value, home: null, away: null };
+          }
+          
+          return null;
+        }
+      }
+    }
+    return null;
+  };
+
+  // ============================================
+  // HELPER: Extract games played with home/away split
+  // ============================================
+  // Type IDs: 214=wins, 215=draws, 216=losses
+  // Each has {all, home, away} breakdown
+  const getGamesBreakdown = (stats) => {
+    if (!stats?.statistics) return { all: 0, home: 0, away: 0 };
+    
+    let wins = { all: 0, home: 0, away: 0 };
+    let draws = { all: 0, home: 0, away: 0 };
+    let losses = { all: 0, home: 0, away: 0 };
+    
+    for (const statGroup of stats.statistics) {
+      if (!statGroup.details) continue;
+      
+      for (const detail of statGroup.details) {
+        const value = detail.value;
+        if (!value || typeof value !== 'object') continue;
+        
+        const extractCount = (obj) => ({
+          all: obj?.all?.count ?? obj?.count ?? 0,
+          home: obj?.home?.count ?? 0,
+          away: obj?.away?.count ?? 0
+        });
+        
+        if (detail.type_id === 214) wins = extractCount(value);      // Wins
+        if (detail.type_id === 215) draws = extractCount(value);     // Draws
+        if (detail.type_id === 216) losses = extractCount(value);    // Losses
+      }
+    }
+    
+    return {
+      all: wins.all + draws.all + losses.all,
+      home: wins.home + draws.home + losses.home,
+      away: wins.away + draws.away + losses.away
+    };
+  };
+
+  // ============================================
+  // LOADING STATE
+  // ============================================
+  if (loading) {
+    return (
+      <div className="bg-white rounded-lg shadow-md p-4">
+        <h2 className="text-lg font-semibold text-gray-900 mb-4">🚩 Corner Kicks</h2>
+        <div className="text-center py-4 text-gray-500">Loading corners data...</div>
+      </div>
+    );
+  }
+
+  // ============================================
+  // EXTRACT CORNERS DATA (type_id = 34)
+  // ============================================
+  const homeTeamCorners = extractCornersData(homeStats);
+  const awayTeamCorners = extractCornersData(awayStats);
+  const homeTeamGames = getGamesBreakdown(homeStats);
+  const awayTeamGames = getGamesBreakdown(awayStats);
+
+  // Don't render if no corners data available
+  if (!homeTeamCorners && !awayTeamCorners) {
+    return null;
+  }
+
+  // ============================================
+  // CALCULATE CONTEXTUAL AVERAGES
+  // ============================================
+  // Home team: their corners when playing AT HOME
+  // Away team: their corners when playing AWAY
+  const homeTeamHomeCorners = homeTeamCorners?.home ?? null;
+  const homeTeamHomeGames = homeTeamGames.home;
+  const homeTeamHomeAvg = homeTeamHomeGames > 0 && homeTeamHomeCorners !== null
+    ? (homeTeamHomeCorners / homeTeamHomeGames).toFixed(1)
+    : null;
+
+  const awayTeamAwayCorners = awayTeamCorners?.away ?? null;
+  const awayTeamAwayGames = awayTeamGames.away;
+  const awayTeamAwayAvg = awayTeamAwayGames > 0 && awayTeamAwayCorners !== null
+    ? (awayTeamAwayCorners / awayTeamAwayGames).toFixed(1)
+    : null;
+
+  // Combined expected corners for this fixture
+  const combinedExpected = homeTeamHomeAvg && awayTeamAwayAvg
+    ? (parseFloat(homeTeamHomeAvg) + parseFloat(awayTeamAwayAvg)).toFixed(1)
+    : null;
+
+  // ============================================
+  // RENDER
+  // ============================================
+  return (
+    <div className="bg-white rounded-lg shadow-md p-4">
+      <h2 className="text-lg font-semibold text-gray-900 mb-1">
+        🚩 Corner Kicks Breakdown
+      </h2>
+      <p className="text-sm text-gray-500 mb-4">
+        Contextual stats: Home team at home, Away team on the road
+      </p>
+
+      {/* Two-column layout for team comparison */}
+      <div className="flex flex-col md:flex-row gap-6">
+        
+        {/* Home Team - Their HOME corners */}
+        <div className="flex-1 bg-blue-50 rounded-lg p-4 border border-blue-100">
+          <div className="flex items-center space-x-2 mb-3">
+            {homeTeam?.image_path && (
+              <img 
+                src={homeTeam.image_path} 
+                alt={homeTeam.name} 
+                className="w-8 h-8 object-contain" 
+              />
+            )}
+            <div>
+              <h3 className="font-medium text-gray-800">{homeTeam?.name || 'Home'}</h3>
+              <span className="text-xs text-blue-600 font-medium">🏠 Playing at Home</span>
+            </div>
+          </div>
+          
+          <div className="grid grid-cols-2 gap-3">
+            {/* Corners at Home */}
+            <div className="bg-white rounded-lg p-3 text-center shadow-sm">
+              <div className="text-2xl font-bold text-blue-600">
+                {homeTeamHomeCorners !== null ? homeTeamHomeCorners : '-'}
+              </div>
+              <div className="text-xs text-gray-500 mt-1">Corners at Home</div>
+            </div>
+            
+            {/* Average Per Home Game */}
+            <div className="bg-white rounded-lg p-3 text-center shadow-sm">
+              <div className="text-2xl font-bold text-blue-600">
+                {homeTeamHomeAvg ?? '-'}
+              </div>
+              <div className="text-xs text-gray-500 mt-1">Per Home Game</div>
+            </div>
+          </div>
+          
+          <div className="text-xs text-gray-400 mt-2 text-center">
+            ({homeTeamHomeGames} home games)
+          </div>
+        </div>
+
+        {/* Divider */}
+        <div className="hidden md:block w-px bg-gray-200" />
+        <div className="md:hidden h-px bg-gray-200" />
+
+        {/* Away Team - Their AWAY corners */}
+        <div className="flex-1 bg-red-50 rounded-lg p-4 border border-red-100">
+          <div className="flex items-center space-x-2 mb-3">
+            {awayTeam?.image_path && (
+              <img 
+                src={awayTeam.image_path} 
+                alt={awayTeam.name} 
+                className="w-8 h-8 object-contain" 
+              />
+            )}
+            <div>
+              <h3 className="font-medium text-gray-800">{awayTeam?.name || 'Away'}</h3>
+              <span className="text-xs text-red-600 font-medium">✈️ Playing Away</span>
+            </div>
+          </div>
+          
+          <div className="grid grid-cols-2 gap-3">
+            {/* Corners Away */}
+            <div className="bg-white rounded-lg p-3 text-center shadow-sm">
+              <div className="text-2xl font-bold text-red-600">
+                {awayTeamAwayCorners !== null ? awayTeamAwayCorners : '-'}
+              </div>
+              <div className="text-xs text-gray-500 mt-1">Corners Away</div>
+            </div>
+            
+            {/* Average Per Away Game */}
+            <div className="bg-white rounded-lg p-3 text-center shadow-sm">
+              <div className="text-2xl font-bold text-red-600">
+                {awayTeamAwayAvg ?? '-'}
+              </div>
+              <div className="text-xs text-gray-500 mt-1">Per Away Game</div>
+            </div>
+          </div>
+          
+          <div className="text-xs text-gray-400 mt-2 text-center">
+            ({awayTeamAwayGames} away games)
+          </div>
+        </div>
+      </div>
+
+      {/* Combined Expected Corners */}
+      {combinedExpected && (
+        <div className="mt-4 p-4 bg-gradient-to-r from-blue-50 to-red-50 rounded-lg border border-gray-200">
+          <div className="flex items-center justify-center space-x-4">
+            <div className="text-center">
+              <div className="text-3xl font-bold text-gray-800">{combinedExpected}</div>
+              <div className="text-sm text-gray-600">Expected Total Corners</div>
+            </div>
+          </div>
+          <div className="text-xs text-gray-500 text-center mt-2">
+            Based on {homeTeam?.name}'s home avg ({homeTeamHomeAvg}) + {awayTeam?.name}'s away avg ({awayTeamAwayAvg})
+          </div>
+        </div>
+      )}
+
+      {/* Betting Insight Box */}
+      <div className="mt-4 p-3 bg-orange-50 rounded-lg text-sm text-orange-800">
+        <strong>💡 Corners Insight:</strong>
+        {combinedExpected ? (
+          <span>
+            {' '}Expected <strong>{combinedExpected}</strong> total corners. 
+            {parseFloat(combinedExpected) >= 11 
+              ? 'High corner activity expected - consider over 10.5.' 
+              : parseFloat(combinedExpected) >= 9 
+                ? 'Moderate activity - 9-10 range common for this matchup.' 
+                : 'Lower corner activity - under markets may have value.'}
+          </span>
+        ) : (
+          <span> Home/away splits not available - check overall averages.</span>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ============================================
 // TEAM STATS COMPARISON SECTION COMPONENT
 // ============================================
 // Side-by-side comparison of key betting stats
@@ -1574,31 +1879,74 @@ const FixtureDetail = () => {
   }, [id]);
 
   // ============================================
-  // FETCH BOOKMAKERS ON MOUNT
+  // BUILD BOOKMAKERS LIST FROM ODDS DATA
   // ============================================
+  // The odds data now includes bookmaker names directly (via odds.bookmaker include)
+  // This ensures:
+  // 1. Only bookmakers with odds for THIS fixture appear in the dropdown
+  // 2. The filter actually works (IDs match between dropdown and odds)
+  // 3. Bookmaker names come directly from the odds data - no separate API call needed
   useEffect(() => {
-    const fetchBookmakers = async () => {
-      try {
-        const data = await dataApi.getBookmakers();
-        setBookmakers(data.bookmakers || []);
-
-        // Filter default bookmakers to only those that exist
-        const availableIds = (data.bookmakers || []).map(b => b.id);
-        const filteredDefaults = DEFAULT_BOOKMAKER_IDS.filter(id => availableIds.includes(id));
-        
-        // If none of our defaults exist, just use first 2 available
-        if (filteredDefaults.length === 0 && data.bookmakers?.length >= 2) {
-          setSelectedBookmakerIds([data.bookmakers[0].id, data.bookmakers[1].id]);
-        } else if (filteredDefaults.length > 0) {
-          setSelectedBookmakerIds(filteredDefaults);
-        }
-      } catch (err) {
-        console.error('Failed to fetch bookmakers:', err);
+    if (!odds || odds.length === 0) return;
+    
+    // For 1X2 market (market_id = 1), find which bookmakers have valid odds
+    const market1Odds = odds.filter(o => o.market_id === 1);
+    
+    // Build a map of bookmaker ID -> name from the odds data
+    // Each odd object now has a 'bookmaker' property with { id, name, ... }
+    const bookmakerMap = {};
+    odds.forEach(odd => {
+      if (odd.bookmaker_id && !bookmakerMap[odd.bookmaker_id]) {
+        // Get name from embedded bookmaker object, or use ID as fallback
+        const name = odd.bookmaker?.name || `Bookmaker ${odd.bookmaker_id}`;
+        bookmakerMap[odd.bookmaker_id] = name;
       }
-    };
-
-    fetchBookmakers();
-  }, []);
+    });
+    
+    // Build bookmaker list - only include those with valid 1X2 odds
+    const bookmakersWithValid1X2 = Object.keys(bookmakerMap)
+      .map(bmId => {
+        const id = parseInt(bmId);
+        // Check if this bookmaker has valid 1X2 odds
+        const bmOdds = market1Odds.filter(o => o.bookmaker_id === id);
+        const homeOdd = bmOdds.find(o => o.label === '1' || o.name?.toLowerCase().includes('home'));
+        const drawOdd = bmOdds.find(o => o.label === 'X' || o.name?.toLowerCase().includes('draw'));
+        const awayOdd = bmOdds.find(o => o.label === '2' || o.name?.toLowerCase().includes('away'));
+        
+        const hasValid1X2 = (
+          (homeOdd?.american !== null && homeOdd?.american !== undefined) ||
+          (drawOdd?.american !== null && drawOdd?.american !== undefined) ||
+          (awayOdd?.american !== null && awayOdd?.american !== undefined)
+        );
+        
+        return {
+          id,
+          name: bookmakerMap[bmId],
+          hasValid1X2
+        };
+      })
+      .filter(bm => bm.hasValid1X2) // Only show bookmakers with valid 1X2 odds
+      .sort((a, b) => a.name.localeCompare(b.name)); // Sort alphabetically
+    
+    console.log('[DEBUG Odds] Bookmakers with valid 1X2 odds:', bookmakersWithValid1X2.map(b => b.name));
+    
+    setBookmakers(bookmakersWithValid1X2);
+    
+    // Set default selection: prefer Betfair (4) and Unibet (9) if available
+    const availableIds = bookmakersWithValid1X2.map(b => b.id);
+    const defaultsAvailable = DEFAULT_BOOKMAKER_IDS.filter(id => availableIds.includes(id));
+    
+    if (defaultsAvailable.length >= 2) {
+      setSelectedBookmakerIds(defaultsAvailable);
+    } else if (defaultsAvailable.length === 1) {
+      // Add one more bookmaker to the defaults
+      const others = availableIds.filter(id => !defaultsAvailable.includes(id));
+      setSelectedBookmakerIds([...defaultsAvailable, ...(others.slice(0, 1))]);
+    } else {
+      // Use first 2 available bookmakers
+      setSelectedBookmakerIds(availableIds.slice(0, 2));
+    }
+  }, [odds]);
 
   // ============================================
   // FETCH H2H WHEN FIXTURE LOADS
@@ -1984,13 +2332,25 @@ const FixtureDetail = () => {
       </div>
 
       {/* ============================================ */}
+      {/* AI PREDICTIONS SECTION - UPCOMING ONLY */}
+      {/* ============================================ */}
+      {/* Most important section for betting research - placed right after match header */}
+      {isUpcoming && (
+        <MatchPredictions 
+          fixtureId={id}
+          homeTeam={homeTeam}
+          awayTeam={awayTeam}
+        />
+      )}
+
+      {/* ============================================ */}
       {/* ODDS SECTION - UPCOMING ONLY */}
       {/* ============================================ */}
       {/* Only show odds for upcoming fixtures - no point after match is finished */}
       {isUpcoming && (
       <div className="bg-white rounded-lg shadow-md p-4">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold text-gray-900">💰 Odds (American)</h2>
+          <h2 className="text-lg font-semibold text-gray-900">💰 Odds</h2>
           
           {/* Bookmaker filter */}
           <div className="relative group">
@@ -2039,8 +2399,22 @@ const FixtureDetail = () => {
               <div>
                 <h3 className="text-sm font-medium text-gray-600 mb-2">Match Result (1X2)</h3>
                 <div className="space-y-2">
-                  {/* Group by bookmaker */}
-                  {Array.from(new Set(oddsByMarket[1].map(o => o.bookmaker_id))).map(bmId => {
+                  {/* Group by bookmaker - filter out bookmakers with no valid odds */}
+                  {Array.from(new Set(oddsByMarket[1].map(o => o.bookmaker_id)))
+                    .filter(bmId => {
+                      // Only include bookmakers that have at least one valid odd value
+                      const bmOdds = oddsByMarket[1].filter(o => o.bookmaker_id === bmId);
+                      const homeOdd = bmOdds.find(o => o.label === '1' || o.name?.toLowerCase().includes('home'));
+                      const drawOdd = bmOdds.find(o => o.label === 'X' || o.name?.toLowerCase().includes('draw'));
+                      const awayOdd = bmOdds.find(o => o.label === '2' || o.name?.toLowerCase().includes('away'));
+                      
+                      return (
+                        (homeOdd?.american !== null && homeOdd?.american !== undefined) ||
+                        (drawOdd?.american !== null && drawOdd?.american !== undefined) ||
+                        (awayOdd?.american !== null && awayOdd?.american !== undefined)
+                      );
+                    })
+                    .map(bmId => {
                     const bmOdds = oddsByMarket[1].filter(o => o.bookmaker_id === bmId);
                     const bm = bookmakers.find(b => b.id === bmId);
                     
@@ -2155,6 +2529,20 @@ const FixtureDetail = () => {
       {/* Only show for upcoming - season stats comparison for betting research */}
       {isUpcoming && (
         <TeamStatsComparisonSection
+          homeStats={homeTeamStats}
+          awayStats={awayTeamStats}
+          homeTeam={homeTeam}
+          awayTeam={awayTeam}
+          loading={teamStatsLoading}
+        />
+      )}
+
+      {/* ============================================ */}
+      {/* CORNERS BREAKDOWN SECTION - UPCOMING ONLY */}
+      {/* ============================================ */}
+      {/* Shows each team's season corner stats for corners betting */}
+      {isUpcoming && (
+        <CornersBreakdownSection
           homeStats={homeTeamStats}
           awayStats={awayTeamStats}
           homeTeam={homeTeam}

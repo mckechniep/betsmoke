@@ -146,6 +146,9 @@ export const dataApi = {
   // Team stats (for scoring patterns, etc.)
   getTeamStats: (teamId) => api.get(`/teams/${teamId}/stats`),
   getTeamStatsBySeason: (teamId, seasonId) => api.get(`/teams/${teamId}/stats/seasons/${seasonId}`),
+
+  // Predictions
+  getPredictions: (fixtureId) => api.get(`/fixtures/${fixtureId}/predictions`),
 };
 
 export default api;

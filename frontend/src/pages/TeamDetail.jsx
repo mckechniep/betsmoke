@@ -3,9 +3,13 @@
 // ============================================
 // Shows team information including:
 // - Basic team info (name, logo, venue)
-// - Coach information
-// - Home/Away Performance breakdown
-// - Scoring Pattern by minute range (with season selector)
+// - Coach/Manager information
+// - Home/Away Performance breakdown (all competitions)
+// - Win/Draw/Loss Distribution bars (Premier League only)
+// - Half & Timing Analysis (goals by half, comebacks, injury time)
+// - Over/Under Goals Analysis (for betting research)
+// - Scoring Pattern by minute range
+// - Corners Statistics (all competitions)
 // - Squad list
 // ============================================
 
@@ -33,6 +37,18 @@ const STAT_TYPE_IDS = {
   // Scoring minutes
   SCORING_MINUTES: 196,
   CONCEDED_SCORING_MINUTES: 213,
+  
+  // Half & Timing Analysis
+  MOST_SCORED_HALF: 27250,    // value: { most_scored_half, details: { "1st-half": { total }, "2nd-half": { total } } }
+  HALF_RESULTS: 27256,        // value: { won_both_halves, scored_both_halves, comebacks }
+  INJURY_TIME_GOALS: 27260,   // value: { total, average }
+  
+  // Over/Under Goals
+  OVER_GOALS: 191,            // value: { over_0_5, over_1_5, etc. with matches & team }
+  
+  // Set Pieces
+  CORNERS: 34,                // value: { count, average }
+  // Note: PENALTIES (47) is NOT available at team level - only fixture/player level
 };
 
 // ============================================
@@ -56,6 +72,7 @@ const MINUTE_RANGES = [
 function HomeAwayPerformanceSection({ teamId }) {
   const [seasons, setSeasons] = useState([]);
   const [selectedSeasonId, setSelectedSeasonId] = useState(null);
+  const [selectedSeasonLeagueId, setSelectedSeasonLeagueId] = useState(null); // Track league for PL-only features
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -89,6 +106,7 @@ function HomeAwayPerformanceSection({ teamId }) {
           const firstPL = sorted.find(s => s.league_id === 8 || s.league?.id === 8);
           const selected = currentPL || anyCurrent || firstPL || sorted[0];
           setSelectedSeasonId(selected.id);
+          setSelectedSeasonLeagueId(selected.league_id || selected.league?.id);
         }
       } catch (err) {
         console.error('Failed to fetch seasons:', err);
@@ -143,6 +161,7 @@ function HomeAwayPerformanceSection({ teamId }) {
     const conceded = getStat(STAT_TYPE_IDS.GOALS_CONCEDED)?.value;
     const gamesPlayed = getStat(STAT_TYPE_IDS.GAMES_PLAYED)?.value;
     const cleansheets = getStat(STAT_TYPE_IDS.CLEANSHEET)?.value;
+    const failedToScore = getStat(STAT_TYPE_IDS.FAILED_TO_SCORE)?.value;
 
     // Calculate points (W*3 + D*1)
     const calculatePoints = (w, d) => (w * 3) + d;
@@ -156,13 +175,24 @@ function HomeAwayPerformanceSection({ teamId }) {
       goalsFor: goals?.home?.count ?? '-',
       goalsAgainst: conceded?.home?.count ?? '-',
       cleansheets: cleansheets?.home?.count ?? '-',
+      failedToScore: failedToScore?.home?.count ?? '-',
       points: (wins?.home?.count !== undefined && draws?.home?.count !== undefined)
         ? calculatePoints(wins.home.count, draws.home.count)
-        : '-'
+        : '-',
+      // Percentages for bar graph (calculate from counts)
+      winPct: 0,
+      drawPct: 0,
+      lossPct: 0
     };
     homeData.goalDiff = (homeData.goalsFor !== '-' && homeData.goalsAgainst !== '-')
       ? homeData.goalsFor - homeData.goalsAgainst
       : '-';
+    // Calculate percentages for home
+    if (homeData.played !== '-' && homeData.played > 0) {
+      homeData.winPct = Math.round((homeData.won / homeData.played) * 100);
+      homeData.drawPct = Math.round((homeData.drawn / homeData.played) * 100);
+      homeData.lossPct = Math.round((homeData.lost / homeData.played) * 100);
+    }
 
     // Away stats
     const awayData = {
@@ -173,13 +203,24 @@ function HomeAwayPerformanceSection({ teamId }) {
       goalsFor: goals?.away?.count ?? '-',
       goalsAgainst: conceded?.away?.count ?? '-',
       cleansheets: cleansheets?.away?.count ?? '-',
+      failedToScore: failedToScore?.away?.count ?? '-',
       points: (wins?.away?.count !== undefined && draws?.away?.count !== undefined)
         ? calculatePoints(wins.away.count, draws.away.count)
-        : '-'
+        : '-',
+      // Percentages for bar graph
+      winPct: 0,
+      drawPct: 0,
+      lossPct: 0
     };
     awayData.goalDiff = (awayData.goalsFor !== '-' && awayData.goalsAgainst !== '-')
       ? awayData.goalsFor - awayData.goalsAgainst
       : '-';
+    // Calculate percentages for away
+    if (awayData.played !== '-' && awayData.played > 0) {
+      awayData.winPct = Math.round((awayData.won / awayData.played) * 100);
+      awayData.drawPct = Math.round((awayData.drawn / awayData.played) * 100);
+      awayData.lossPct = Math.round((awayData.lost / awayData.played) * 100);
+    }
 
     // Overall stats for comparison
     const overallData = {
@@ -224,7 +265,13 @@ function HomeAwayPerformanceSection({ teamId }) {
           <label className="text-sm text-gray-600">Season:</label>
           <select
             value={selectedSeasonId || ''}
-            onChange={(e) => setSelectedSeasonId(parseInt(e.target.value))}
+            onChange={(e) => {
+              const newSeasonId = parseInt(e.target.value);
+              setSelectedSeasonId(newSeasonId);
+              // Update league ID when season changes
+              const selectedSeason = seasons.find(s => s.id === newSeasonId);
+              setSelectedSeasonLeagueId(selectedSeason?.league_id || selectedSeason?.league?.id);
+            }}
             className="border border-gray-300 rounded-md px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
             disabled={seasons.length === 0}
           >
@@ -293,6 +340,7 @@ function HomeAwayPerformanceSection({ teamId }) {
             <StatRow label="Goals Conceded" home={homeData.goalsAgainst} away={awayData.goalsAgainst} />
             <StatRow label="Goal Difference" home={homeData.goalDiff > 0 ? `+${homeData.goalDiff}` : homeData.goalDiff} away={awayData.goalDiff > 0 ? `+${awayData.goalDiff}` : awayData.goalDiff} />
             <StatRow label="Clean Sheets" home={homeData.cleansheets} away={awayData.cleansheets} />
+            <StatRow label="Failed to Score" home={homeData.failedToScore} away={awayData.failedToScore} />
             <StatRow label="Points" home={homeData.points} away={awayData.points} highlight={true} />
           </div>
 
@@ -318,14 +366,984 @@ function HomeAwayPerformanceSection({ teamId }) {
           )}
         </div>
       )}
+    </div>
+  );
+}
 
-      {/* Insight Note */}
-      {!loading && !error && homeData.played !== '-' && (
-        <div className="mt-6 pt-4 border-t border-gray-100">
-          <p className="text-xs text-gray-500">
-            📊 <strong>Betting Insight:</strong> Compare home and away records to identify if a team
-            has strong home advantage or travels well. Useful for 1X2, Over/Under, and handicap markets.
-          </p>
+// ============================================
+// WIN/DRAW/LOSS DISTRIBUTION COMPONENT
+// ============================================
+// Displays horizontal stacked bar graphs showing W/D/L percentages
+// for home and away matches - PREMIER LEAGUE ONLY
+
+function WinDrawLossDistributionSection({ teamId }) {
+  const [seasons, setSeasons] = useState([]);
+  const [selectedSeasonId, setSelectedSeasonId] = useState(null);
+  const [selectedSeasonLeagueId, setSelectedSeasonLeagueId] = useState(null);
+  const [stats, setStats] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  // ============================================
+  // FETCH AVAILABLE SEASONS (Premier League only)
+  // ============================================
+  useEffect(() => {
+    const fetchSeasons = async () => {
+      try {
+        const data = await dataApi.getTeamSeasons(teamId);
+        const teamSeasons = data.seasons || [];
+        
+        // Filter to Premier League seasons only (league_id: 8)
+        const plSeasons = teamSeasons.filter(s => 
+          s.league_id === 8 || s.league?.id === 8
+        );
+        
+        // Sort by year descending
+        const sorted = plSeasons.sort((a, b) => {
+          const aYear = parseInt(a.name?.split('/')[0] || a.name || '0');
+          const bYear = parseInt(b.name?.split('/')[0] || b.name || '0');
+          return bYear - aYear;
+        });
+        
+        setSeasons(sorted);
+        
+        // Auto-select the current Premier League season
+        if (sorted.length > 0) {
+          const currentPL = sorted.find(s => s.is_current);
+          const selected = currentPL || sorted[0];
+          setSelectedSeasonId(selected.id);
+          setSelectedSeasonLeagueId(selected.league_id || selected.league?.id);
+        }
+      } catch (err) {
+        console.error('Failed to fetch seasons:', err);
+        setError('Failed to load seasons');
+      }
+    };
+
+    fetchSeasons();
+  }, [teamId]);
+
+  // ============================================
+  // FETCH STATS WHEN SEASON CHANGES
+  // ============================================
+  useEffect(() => {
+    if (!selectedSeasonId) return;
+
+    const fetchStats = async () => {
+      setLoading(true);
+      setError('');
+
+      try {
+        const data = await dataApi.getTeamStatsBySeason(teamId, selectedSeasonId);
+        setStats(data.team);
+      } catch (err) {
+        console.error('Failed to fetch stats:', err);
+        setError('Failed to load statistics');
+        setStats(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchStats();
+  }, [teamId, selectedSeasonId]);
+
+  // ============================================
+  // HELPER: Get stat by type_id
+  // ============================================
+  const getStat = (typeId) => {
+    if (!stats?.statistics?.[0]?.details) return null;
+    return stats.statistics[0].details.find(d => d.type_id === typeId);
+  };
+
+  // ============================================
+  // EXTRACT W/D/L DATA
+  // ============================================
+  const getWDLData = () => {
+    const wins = getStat(STAT_TYPE_IDS.WIN)?.value;
+    const draws = getStat(STAT_TYPE_IDS.DRAW)?.value;
+    const losses = getStat(STAT_TYPE_IDS.LOST)?.value;
+    const gamesPlayed = getStat(STAT_TYPE_IDS.GAMES_PLAYED)?.value;
+
+    // Home stats
+    const homeData = {
+      played: gamesPlayed?.home ?? 0,
+      won: wins?.home?.count ?? 0,
+      drawn: draws?.home?.count ?? 0,
+      lost: losses?.home?.count ?? 0,
+      winPct: 0,
+      drawPct: 0,
+      lossPct: 0
+    };
+    if (homeData.played > 0) {
+      homeData.winPct = Math.round((homeData.won / homeData.played) * 100);
+      homeData.drawPct = Math.round((homeData.drawn / homeData.played) * 100);
+      homeData.lossPct = Math.round((homeData.lost / homeData.played) * 100);
+    }
+
+    // Away stats
+    const awayData = {
+      played: gamesPlayed?.away ?? 0,
+      won: wins?.away?.count ?? 0,
+      drawn: draws?.away?.count ?? 0,
+      lost: losses?.away?.count ?? 0,
+      winPct: 0,
+      drawPct: 0,
+      lossPct: 0
+    };
+    if (awayData.played > 0) {
+      awayData.winPct = Math.round((awayData.won / awayData.played) * 100);
+      awayData.drawPct = Math.round((awayData.drawn / awayData.played) * 100);
+      awayData.lossPct = Math.round((awayData.lost / awayData.played) * 100);
+    }
+
+    return { homeData, awayData };
+  };
+
+  // If no Premier League seasons found, don't render anything
+  if (seasons.length === 0 && !loading) {
+    return null;
+  }
+
+  const { homeData, awayData } = getWDLData();
+
+  // ============================================
+  // RENDER
+  // ============================================
+  return (
+    <div className="bg-white rounded-lg shadow-md p-6">
+      {/* Header with Season Selector */}
+      <div className="flex items-center justify-between mb-6">
+        <h2 className="text-xl font-semibold text-gray-900">
+          📊 Win / Draw / Loss Distribution
+        </h2>
+        
+        {/* Season Selector - Premier League seasons only */}
+        <div className="flex items-center space-x-2">
+          <label className="text-sm text-gray-600">Season:</label>
+          <select
+            value={selectedSeasonId || ''}
+            onChange={(e) => {
+              const newSeasonId = parseInt(e.target.value);
+              setSelectedSeasonId(newSeasonId);
+              const selectedSeason = seasons.find(s => s.id === newSeasonId);
+              setSelectedSeasonLeagueId(selectedSeason?.league_id || selectedSeason?.league?.id);
+            }}
+            className="border border-gray-300 rounded-md px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+            disabled={seasons.length === 0}
+          >
+            {seasons.length === 0 ? (
+              <option value="">Loading...</option>
+            ) : (
+              seasons.map((season) => (
+                <option key={season.id} value={season.id}>
+                  {season.name} - Premier League {season.is_current ? '✓' : ''}
+                </option>
+              ))
+            )}
+          </select>
+        </div>
+      </div>
+
+      {/* Loading State */}
+      {loading && (
+        <div className="text-center py-8 text-gray-500">
+          <div className="animate-pulse">Loading statistics...</div>
+        </div>
+      )}
+
+      {/* Error State */}
+      {error && (
+        <div className="bg-red-50 text-red-600 p-3 rounded-md text-sm">
+          {error}
+        </div>
+      )}
+
+      {/* W/D/L Bar Graphs */}
+      {!loading && !error && homeData.played > 0 && (
+        <div>
+          {/* Home W/D/L Bar */}
+          <div className="mb-4">
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-xs font-semibold text-green-700">🏠 Home</span>
+              <span className="text-xs text-gray-500">{homeData.played} games</span>
+            </div>
+            <div className="h-8 rounded-full overflow-hidden flex bg-gray-100">
+              {/* Win segment */}
+              {homeData.winPct > 0 && (
+                <div 
+                  className="h-full bg-green-500 flex items-center justify-center transition-all duration-300"
+                  style={{ width: `${homeData.winPct}%` }}
+                >
+                  {homeData.winPct >= 12 && (
+                    <span className="text-xs font-bold text-white">W {homeData.winPct}%</span>
+                  )}
+                </div>
+              )}
+              {/* Draw segment */}
+              {homeData.drawPct > 0 && (
+                <div 
+                  className="h-full bg-gray-400 flex items-center justify-center transition-all duration-300"
+                  style={{ width: `${homeData.drawPct}%` }}
+                >
+                  {homeData.drawPct >= 12 && (
+                    <span className="text-xs font-bold text-white">D {homeData.drawPct}%</span>
+                  )}
+                </div>
+              )}
+              {/* Loss segment */}
+              {homeData.lossPct > 0 && (
+                <div 
+                  className="h-full bg-red-500 flex items-center justify-center transition-all duration-300"
+                  style={{ width: `${homeData.lossPct}%` }}
+                >
+                  {homeData.lossPct >= 12 && (
+                    <span className="text-xs font-bold text-white">L {homeData.lossPct}%</span>
+                  )}
+                </div>
+              )}
+            </div>
+            {/* Home W-D-L counts */}
+            <div className="flex justify-between mt-1 text-xs text-gray-500">
+              <span>{homeData.won}W - {homeData.drawn}D - {homeData.lost}L</span>
+            </div>
+          </div>
+
+          {/* Away W/D/L Bar */}
+          <div className="mb-4">
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-xs font-semibold text-blue-700">✈️ Away</span>
+              <span className="text-xs text-gray-500">{awayData.played} games</span>
+            </div>
+            <div className="h-8 rounded-full overflow-hidden flex bg-gray-100">
+              {/* Win segment */}
+              {awayData.winPct > 0 && (
+                <div 
+                  className="h-full bg-green-500 flex items-center justify-center transition-all duration-300"
+                  style={{ width: `${awayData.winPct}%` }}
+                >
+                  {awayData.winPct >= 12 && (
+                    <span className="text-xs font-bold text-white">W {awayData.winPct}%</span>
+                  )}
+                </div>
+              )}
+              {/* Draw segment */}
+              {awayData.drawPct > 0 && (
+                <div 
+                  className="h-full bg-gray-400 flex items-center justify-center transition-all duration-300"
+                  style={{ width: `${awayData.drawPct}%` }}
+                >
+                  {awayData.drawPct >= 12 && (
+                    <span className="text-xs font-bold text-white">D {awayData.drawPct}%</span>
+                  )}
+                </div>
+              )}
+              {/* Loss segment */}
+              {awayData.lossPct > 0 && (
+                <div 
+                  className="h-full bg-red-500 flex items-center justify-center transition-all duration-300"
+                  style={{ width: `${awayData.lossPct}%` }}
+                >
+                  {awayData.lossPct >= 12 && (
+                    <span className="text-xs font-bold text-white">L {awayData.lossPct}%</span>
+                  )}
+                </div>
+              )}
+            </div>
+            {/* Away W-D-L counts */}
+            <div className="flex justify-between mt-1 text-xs text-gray-500">
+              <span>{awayData.won}W - {awayData.drawn}D - {awayData.lost}L</span>
+            </div>
+          </div>
+
+          {/* Legend */}
+          <div className="flex justify-center gap-6 mt-4 pt-4 border-t border-gray-100">
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 rounded bg-green-500"></div>
+              <span className="text-sm text-gray-600">Win</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 rounded bg-gray-400"></div>
+              <span className="text-sm text-gray-600">Draw</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 rounded bg-red-500"></div>
+              <span className="text-sm text-gray-600">Loss</span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* No data state */}
+      {!loading && !error && homeData.played === 0 && (
+        <div className="text-center py-8 text-gray-400">
+          No match data available for this season yet
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ============================================
+// HALF & TIMING ANALYSIS COMPONENT
+// ============================================
+// Displays half-related statistics including:
+// - Most Scored Half (1st vs 2nd half goals)
+// - Won Both Halves / Scored Both Halves / Comebacks
+// - Injury Time Goals (scored vs conceded)
+// All competitions, with season selector
+
+function HalfTimingAnalysisSection({ teamId }) {
+  const [seasons, setSeasons] = useState([]);
+  const [selectedSeasonId, setSelectedSeasonId] = useState(null);
+  const [stats, setStats] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  // ============================================
+  // FETCH AVAILABLE SEASONS (All competitions)
+  // ============================================
+  useEffect(() => {
+    const fetchSeasons = async () => {
+      try {
+        const data = await dataApi.getTeamSeasons(teamId);
+        const teamSeasons = data.seasons || [];
+        
+        // Sort by year descending, then by league ID (Premier League first)
+        const sorted = teamSeasons.sort((a, b) => {
+          const aYear = parseInt(a.name?.split('/')[0] || a.name || '0');
+          const bYear = parseInt(b.name?.split('/')[0] || b.name || '0');
+          if (bYear !== aYear) return bYear - aYear;
+          
+          const aLeagueId = a.league_id || a.league?.id || 999;
+          const bLeagueId = b.league_id || b.league?.id || 999;
+          return aLeagueId - bLeagueId;
+        });
+        
+        setSeasons(sorted);
+        
+        // Auto-select the current Premier League season first, else any current
+        if (sorted.length > 0) {
+          const currentPL = sorted.find(s => s.is_current && (s.league_id === 8 || s.league?.id === 8));
+          const anyCurrent = sorted.find(s => s.is_current);
+          const firstPL = sorted.find(s => s.league_id === 8 || s.league?.id === 8);
+          const selected = currentPL || anyCurrent || firstPL || sorted[0];
+          setSelectedSeasonId(selected.id);
+        }
+      } catch (err) {
+        console.error('Failed to fetch seasons:', err);
+        setError('Failed to load seasons');
+      }
+    };
+
+    fetchSeasons();
+  }, [teamId]);
+
+  // ============================================
+  // FETCH STATS WHEN SEASON CHANGES
+  // ============================================
+  useEffect(() => {
+    if (!selectedSeasonId) return;
+
+    const fetchStats = async () => {
+      setLoading(true);
+      setError('');
+
+      try {
+        const data = await dataApi.getTeamStatsBySeason(teamId, selectedSeasonId);
+        setStats(data.team);
+      } catch (err) {
+        console.error('Failed to fetch stats:', err);
+        setError('Failed to load statistics');
+        setStats(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchStats();
+  }, [teamId, selectedSeasonId]);
+
+  // ============================================
+  // HELPER: Get stat by type_id
+  // ============================================
+  const getStat = (typeId) => {
+    if (!stats?.statistics?.[0]?.details) return null;
+    return stats.statistics[0].details.find(d => d.type_id === typeId);
+  };
+
+  // ============================================
+  // EXTRACT HALF & TIMING DATA
+  // ============================================
+  const getHalfTimingData = () => {
+    // Get the raw stat objects
+    const mostScoredHalfStat = getStat(STAT_TYPE_IDS.MOST_SCORED_HALF);
+    const halfResultsStat = getStat(STAT_TYPE_IDS.HALF_RESULTS);
+    const injuryTimeGoalsStat = getStat(STAT_TYPE_IDS.INJURY_TIME_GOALS);
+
+    // ============================================
+    // MOST SCORED HALF (Type ID 27250)
+    // ============================================
+    // API Structure:
+    // value: {
+    //   most_scored_half: "2nd-half",
+    //   most_scored_half_goals: 27,
+    //   details: {
+    //     "1st-half": { period: "1st-half", total: 22 },
+    //     "2nd-half": { period: "2nd-half", total: 27 }
+    //   }
+    // }
+    const mostScoredHalfValue = mostScoredHalfStat?.value;
+    const halfDetails = mostScoredHalfValue?.details;
+    
+    // Extract goal counts from the details object
+    // Note: API uses "1st-half" (hyphen) not "1st_half" (underscore)
+    const firstHalfGoals = halfDetails?.['1st-half']?.total ?? 0;
+    const secondHalfGoals = halfDetails?.['2nd-half']?.total ?? 0;
+    
+    // Calculate percentages (API doesn't provide them)
+    const totalHalfGoals = firstHalfGoals + secondHalfGoals;
+    const firstHalfPct = totalHalfGoals > 0 
+      ? Math.round((firstHalfGoals / totalHalfGoals) * 100) 
+      : 0;
+    const secondHalfPct = totalHalfGoals > 0 
+      ? Math.round((secondHalfGoals / totalHalfGoals) * 100) 
+      : 0;
+
+    // ============================================
+    // HALF RESULTS (Type ID 27256)
+    // ============================================
+    // Expected structure may vary - check actual API response
+    const halfResults = halfResultsStat?.value;
+    
+    // ============================================
+    // INJURY TIME GOALS (Type ID 27260)
+    // ============================================
+    // API Structure:
+    // value: { total: 6, average: 0.35 }
+    // Note: API only provides total, not scored vs conceded breakdown
+    const injuryTimeGoals = injuryTimeGoalsStat?.value;
+
+    return {
+      // Most Scored Half - now correctly parsed
+      firstHalfGoals,
+      firstHalfPct,
+      secondHalfGoals,
+      secondHalfPct,
+      
+      // Half Results
+      wonBothHalves: halfResults?.won_both_halves ?? 0,
+      scoredBothHalves: halfResults?.scored_both_halves ?? 0,
+      comebacks: halfResults?.comebacks ?? 0,
+      
+      // Injury Time Goals - API only provides total, not scored/conceded split
+      injuryTimeTotal: injuryTimeGoals?.total ?? 0,
+      injuryTimeAverage: injuryTimeGoals?.average ?? 0,
+    };
+  };
+
+  const halfData = getHalfTimingData();
+  
+  // Calculate which half is stronger
+  const totalHalfGoals = halfData.firstHalfGoals + halfData.secondHalfGoals;
+  const strongerHalf = halfData.firstHalfGoals > halfData.secondHalfGoals ? '1st' : 
+                       halfData.secondHalfGoals > halfData.firstHalfGoals ? '2nd' : 'Equal';
+
+  // ============================================
+  // RENDER
+  // ============================================
+  return (
+    <div className="bg-white rounded-lg shadow-md p-6">
+      {/* Header with Season Selector */}
+      <div className="flex items-center justify-between mb-6">
+        <h2 className="text-xl font-semibold text-gray-900">
+          ⚽ Half & Timing Analysis
+        </h2>
+        
+        {/* Season Selector */}
+        <div className="flex items-center space-x-2">
+          <label className="text-sm text-gray-600">Season:</label>
+          <select
+            value={selectedSeasonId || ''}
+            onChange={(e) => setSelectedSeasonId(parseInt(e.target.value))}
+            className="border border-gray-300 rounded-md px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+            disabled={seasons.length === 0}
+          >
+            {seasons.length === 0 ? (
+              <option value="">Loading...</option>
+            ) : (
+              seasons.map((season) => {
+                const leagueName = season.league?.name || 
+                  (season.league_id === 8 ? 'Premier League' : 
+                   season.league_id === 24 ? 'FA Cup' : 
+                   season.league_id === 27 ? 'EFL Cup' : 
+                   `League ${season.league_id}`);
+                
+                return (
+                  <option key={season.id} value={season.id}>
+                    {season.name} - {leagueName} {season.is_current ? '✓' : ''}
+                  </option>
+                );
+              })
+            )}
+          </select>
+        </div>
+      </div>
+
+      {/* Loading State */}
+      {loading && (
+        <div className="text-center py-8 text-gray-500">
+          <div className="animate-pulse">Loading statistics...</div>
+        </div>
+      )}
+
+      {/* Error State */}
+      {error && (
+        <div className="bg-red-50 text-red-600 p-3 rounded-md text-sm">
+          {error}
+        </div>
+      )}
+
+      {/* Stats Display */}
+      {!loading && !error && (
+        <div className="space-y-6">
+          
+          {/* Most Scored Half - Visual Bar */}
+          <div>
+            <h3 className="text-sm font-semibold text-gray-700 mb-3">
+              📊 Goals by Half
+            </h3>
+            
+            {totalHalfGoals > 0 ? (
+              <div>
+                {/* Stacked Bar */}
+                <div className="h-10 rounded-full overflow-hidden flex bg-gray-100 mb-2">
+                  {/* 1st Half */}
+                  {halfData.firstHalfPct > 0 && (
+                    <div 
+                      className="h-full bg-blue-500 flex items-center justify-center transition-all duration-300"
+                      style={{ width: `${halfData.firstHalfPct}%` }}
+                    >
+                      {halfData.firstHalfPct >= 15 && (
+                        <span className="text-xs font-bold text-white">
+                          1H: {halfData.firstHalfGoals} ({Math.round(halfData.firstHalfPct)}%)
+                        </span>
+                      )}
+                    </div>
+                  )}
+                  {/* 2nd Half */}
+                  {halfData.secondHalfPct > 0 && (
+                    <div 
+                      className="h-full bg-purple-500 flex items-center justify-center transition-all duration-300"
+                      style={{ width: `${halfData.secondHalfPct}%` }}
+                    >
+                      {halfData.secondHalfPct >= 15 && (
+                        <span className="text-xs font-bold text-white">
+                          2H: {halfData.secondHalfGoals} ({Math.round(halfData.secondHalfPct)}%)
+                        </span>
+                      )}
+                    </div>
+                  )}
+                </div>
+                
+                {/* Legend */}
+                <div className="flex justify-center gap-6 text-xs text-gray-500">
+                  <span className="flex items-center gap-1">
+                    <span className="w-3 h-3 rounded bg-blue-500"></span>
+                    1st Half: {halfData.firstHalfGoals} goals
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <span className="w-3 h-3 rounded bg-purple-500"></span>
+                    2nd Half: {halfData.secondHalfGoals} goals
+                  </span>
+                </div>
+                
+                {/* Stronger Half Indicator */}
+                <div className="mt-2 text-center">
+                  <span className={`text-xs px-3 py-1 rounded-full ${
+                    strongerHalf === '1st' ? 'bg-blue-100 text-blue-700' :
+                    strongerHalf === '2nd' ? 'bg-purple-100 text-purple-700' :
+                    'bg-gray-100 text-gray-600'
+                  }`}>
+                    {strongerHalf === 'Equal' ? 'Even across both halves' : 
+                     `Stronger in ${strongerHalf} Half`}
+                  </span>
+                </div>
+              </div>
+            ) : (
+              <div className="text-center py-4 text-gray-400 text-sm bg-gray-50 rounded">
+                No half goal data available
+              </div>
+            )}
+          </div>
+
+          {/* Half Results Grid */}
+          <div>
+            <h3 className="text-sm font-semibold text-gray-700 mb-3">
+              🏆 Match Dominance
+            </h3>
+            <div className="grid grid-cols-3 gap-4">
+              {/* Won Both Halves */}
+              <div className="bg-green-50 rounded-lg p-4 border border-green-200 text-center">
+                <div className="text-2xl font-bold text-green-700">
+                  {halfData.wonBothHalves}
+                </div>
+                <div className="text-xs text-green-600 font-medium mt-1">
+                  Won Both Halves
+                </div>
+              </div>
+              
+              {/* Scored Both Halves */}
+              <div className="bg-blue-50 rounded-lg p-4 border border-blue-200 text-center">
+                <div className="text-2xl font-bold text-blue-700">
+                  {halfData.scoredBothHalves}
+                </div>
+                <div className="text-xs text-blue-600 font-medium mt-1">
+                  Scored Both Halves
+                </div>
+              </div>
+              
+              {/* Comebacks */}
+              <div className="bg-orange-50 rounded-lg p-4 border border-orange-200 text-center">
+                <div className="text-2xl font-bold text-orange-700">
+                  {halfData.comebacks}
+                </div>
+                <div className="text-xs text-orange-600 font-medium mt-1">
+                  Comebacks
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Injury Time Goals */}
+          <div>
+            <h3 className="text-sm font-semibold text-gray-700 mb-3">
+              ⏱️ Injury Time Goals
+            </h3>
+            <div className="grid grid-cols-2 gap-4">
+              {/* Total Injury Time Goals */}
+              <div className="bg-amber-50 rounded-lg p-4 border border-amber-200 text-center">
+                <div className="text-2xl font-bold text-amber-700">
+                  {halfData.injuryTimeTotal}
+                </div>
+                <div className="text-xs text-amber-600 font-medium mt-1">
+                  Total Goals
+                </div>
+              </div>
+              
+              {/* Average Per Game */}
+              <div className="bg-gray-50 rounded-lg p-4 border border-gray-200 text-center">
+                <div className="text-2xl font-bold text-gray-700">
+                  {halfData.injuryTimeAverage.toFixed(2)}
+                </div>
+                <div className="text-xs text-gray-600 font-medium mt-1">
+                  Per Game
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Betting Insight */}
+          <div className="pt-4 border-t border-gray-100">
+            <p className="text-xs text-gray-500">
+              📊 <strong>Betting Insight:</strong> 
+              {strongerHalf !== 'Equal' && ` This team scores more in the ${strongerHalf} half.`}
+              {halfData.comebacks > 0 && ` They've come from behind to win ${halfData.comebacks} time${halfData.comebacks !== 1 ? 's' : ''}.`}
+              {halfData.injuryTimeTotal > 0 && ` They've scored ${halfData.injuryTimeTotal} injury time goal${halfData.injuryTimeTotal !== 1 ? 's' : ''} (${halfData.injuryTimeAverage.toFixed(2)}/game).`}
+            </p>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ============================================
+// OVER/UNDER GOALS ANALYSIS COMPONENT
+// ============================================
+// Displays Over/Under goals statistics for betting research
+// Shows both match totals and team-only goals
+// All competitions, with season selector
+
+function OverUnderGoalsSection({ teamId }) {
+  const [seasons, setSeasons] = useState([]);
+  const [selectedSeasonId, setSelectedSeasonId] = useState(null);
+  const [stats, setStats] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  // ============================================
+  // FETCH AVAILABLE SEASONS (All competitions)
+  // ============================================
+  useEffect(() => {
+    const fetchSeasons = async () => {
+      try {
+        const data = await dataApi.getTeamSeasons(teamId);
+        const teamSeasons = data.seasons || [];
+        
+        // Sort by year descending, then by league ID (Premier League first)
+        const sorted = teamSeasons.sort((a, b) => {
+          const aYear = parseInt(a.name?.split('/')[0] || a.name || '0');
+          const bYear = parseInt(b.name?.split('/')[0] || b.name || '0');
+          if (bYear !== aYear) return bYear - aYear;
+          
+          const aLeagueId = a.league_id || a.league?.id || 999;
+          const bLeagueId = b.league_id || b.league?.id || 999;
+          return aLeagueId - bLeagueId;
+        });
+        
+        setSeasons(sorted);
+        
+        // Auto-select the current Premier League season first, else any current
+        if (sorted.length > 0) {
+          const currentPL = sorted.find(s => s.is_current && (s.league_id === 8 || s.league?.id === 8));
+          const anyCurrent = sorted.find(s => s.is_current);
+          const firstPL = sorted.find(s => s.league_id === 8 || s.league?.id === 8);
+          const selected = currentPL || anyCurrent || firstPL || sorted[0];
+          setSelectedSeasonId(selected.id);
+        }
+      } catch (err) {
+        console.error('Failed to fetch seasons:', err);
+        setError('Failed to load seasons');
+      }
+    };
+
+    fetchSeasons();
+  }, [teamId]);
+
+  // ============================================
+  // FETCH STATS WHEN SEASON CHANGES
+  // ============================================
+  useEffect(() => {
+    if (!selectedSeasonId) return;
+
+    const fetchStats = async () => {
+      setLoading(true);
+      setError('');
+
+      try {
+        const data = await dataApi.getTeamStatsBySeason(teamId, selectedSeasonId);
+        setStats(data.team);
+      } catch (err) {
+        console.error('Failed to fetch stats:', err);
+        setError('Failed to load statistics');
+        setStats(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchStats();
+  }, [teamId, selectedSeasonId]);
+
+  // ============================================
+  // HELPER: Get stat by type_id
+  // ============================================
+  const getStat = (typeId) => {
+    if (!stats?.statistics?.[0]?.details) return null;
+    return stats.statistics[0].details.find(d => d.type_id === typeId);
+  };
+
+  // ============================================
+  // EXTRACT OVER/UNDER DATA
+  // ============================================
+  const getOverUnderData = () => {
+    // Type ID 191 = Over Goals
+    // Structure: { over_0_5: { matches: { count, percentage }, team: { count, percentage } }, ... }
+    const overGoals = getStat(STAT_TYPE_IDS.OVER_GOALS)?.value;
+    
+    if (!overGoals) return null;
+
+    // Extract data for each threshold
+    const thresholds = ['over_0_5', 'over_1_5', 'over_2_5', 'over_3_5', 'over_4_5', 'over_5_5'];
+    const labels = ['0.5', '1.5', '2.5', '3.5', '4.5', '5.5'];
+    
+    return thresholds.map((key, index) => {
+      const data = overGoals[key];
+      return {
+        label: labels[index],
+        // Match totals (both teams combined)
+        matchCount: data?.matches?.count ?? 0,
+        matchPct: data?.matches?.percentage ?? 0,
+        // Team only goals
+        teamCount: data?.team?.count ?? 0,
+        teamPct: data?.team?.percentage ?? 0,
+      };
+    });
+  };
+
+  const overUnderData = getOverUnderData();
+  const hasData = overUnderData && overUnderData.some(d => d.matchCount > 0 || d.teamCount > 0);
+
+  // ============================================
+  // RENDER BAR
+  // ============================================
+  const renderBar = (percentage, color) => (
+    <div className="flex-1 h-6 bg-gray-100 rounded overflow-hidden">
+      <div 
+        className={`h-full ${color} transition-all duration-300`}
+        style={{ width: `${percentage}%` }}
+      />
+    </div>
+  );
+
+  // ============================================
+  // RENDER
+  // ============================================
+  return (
+    <div className="bg-white rounded-lg shadow-md p-6">
+      {/* Header with Season Selector */}
+      <div className="flex items-center justify-between mb-6">
+        <h2 className="text-xl font-semibold text-gray-900">
+          📈 Over/Under Goals Analysis
+        </h2>
+        
+        {/* Season Selector */}
+        <div className="flex items-center space-x-2">
+          <label className="text-sm text-gray-600">Season:</label>
+          <select
+            value={selectedSeasonId || ''}
+            onChange={(e) => setSelectedSeasonId(parseInt(e.target.value))}
+            className="border border-gray-300 rounded-md px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+            disabled={seasons.length === 0}
+          >
+            {seasons.length === 0 ? (
+              <option value="">Loading...</option>
+            ) : (
+              seasons.map((season) => {
+                const leagueName = season.league?.name || 
+                  (season.league_id === 8 ? 'Premier League' : 
+                   season.league_id === 24 ? 'FA Cup' : 
+                   season.league_id === 27 ? 'EFL Cup' : 
+                   `League ${season.league_id}`);
+                
+                return (
+                  <option key={season.id} value={season.id}>
+                    {season.name} - {leagueName} {season.is_current ? '✓' : ''}
+                  </option>
+                );
+              })
+            )}
+          </select>
+        </div>
+      </div>
+
+      {/* Loading State */}
+      {loading && (
+        <div className="text-center py-8 text-gray-500">
+          <div className="animate-pulse">Loading statistics...</div>
+        </div>
+      )}
+
+      {/* Error State */}
+      {error && (
+        <div className="bg-red-50 text-red-600 p-3 rounded-md text-sm">
+          {error}
+        </div>
+      )}
+
+      {/* Stats Display */}
+      {!loading && !error && hasData && (
+        <div>
+          {/* Two Column Layout */}
+          <div className="grid md:grid-cols-2 gap-8">
+            
+            {/* Match Totals (Both Teams) */}
+            <div>
+              <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center">
+                <span className="w-3 h-3 bg-blue-500 rounded-full mr-2"></span>
+                Match Totals (Both Teams)
+              </h3>
+              <div className="space-y-2">
+                {overUnderData.map((item) => (
+                  <div key={`match-${item.label}`} className="flex items-center gap-3">
+                    <div className="w-16 text-xs text-gray-600 font-medium text-right">
+                      Over {item.label}
+                    </div>
+                    {renderBar(item.matchPct, 'bg-blue-500')}
+                    <div className="w-12 text-xs text-gray-600 text-right">
+                      {Math.round(item.matchPct)}%
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Team Goals Only */}
+            <div>
+              <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center">
+                <span className="w-3 h-3 bg-green-500 rounded-full mr-2"></span>
+                Team Goals Only
+              </h3>
+              <div className="space-y-2">
+                {overUnderData.map((item) => (
+                  <div key={`team-${item.label}`} className="flex items-center gap-3">
+                    <div className="w-16 text-xs text-gray-600 font-medium text-right">
+                      Over {item.label}
+                    </div>
+                    {renderBar(item.teamPct, 'bg-green-500')}
+                    <div className="w-12 text-xs text-gray-600 text-right">
+                      {Math.round(item.teamPct)}%
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Key Stats Highlight */}
+          <div className="mt-6 pt-4 border-t border-gray-100">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {/* Over 1.5 Match */}
+              <div className="bg-blue-50 rounded-lg p-3 text-center border border-blue-200">
+                <div className="text-xl font-bold text-blue-700">
+                  {Math.round(overUnderData[1]?.matchPct || 0)}%
+                </div>
+                <div className="text-xs text-blue-600">Over 1.5 (Match)</div>
+              </div>
+              
+              {/* Over 2.5 Match - Most Popular */}
+              <div className="bg-blue-100 rounded-lg p-3 text-center border-2 border-blue-300">
+                <div className="text-xl font-bold text-blue-800">
+                  {Math.round(overUnderData[2]?.matchPct || 0)}%
+                </div>
+                <div className="text-xs text-blue-700 font-semibold">Over 2.5 (Match) ★</div>
+              </div>
+              
+              {/* Over 1.5 Team */}
+              <div className="bg-green-50 rounded-lg p-3 text-center border border-green-200">
+                <div className="text-xl font-bold text-green-700">
+                  {Math.round(overUnderData[1]?.teamPct || 0)}%
+                </div>
+                <div className="text-xs text-green-600">Over 1.5 (Team)</div>
+              </div>
+              
+              {/* Over 2.5 Team */}
+              <div className="bg-green-50 rounded-lg p-3 text-center border border-green-200">
+                <div className="text-xl font-bold text-green-700">
+                  {Math.round(overUnderData[2]?.teamPct || 0)}%
+                </div>
+                <div className="text-xs text-green-600">Over 2.5 (Team)</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Betting Insight */}
+          <div className="mt-4 pt-4 border-t border-gray-100">
+            <p className="text-xs text-gray-500">
+              📊 <strong>Betting Insight:</strong> 
+              {overUnderData[2]?.matchPct >= 50 && ` ${Math.round(overUnderData[2].matchPct)}% of this team's matches go Over 2.5 goals.`}
+              {overUnderData[2]?.matchPct < 50 && ` Only ${Math.round(overUnderData[2]?.matchPct || 0)}% of matches go Over 2.5 - consider Under bets.`}
+              {overUnderData[1]?.teamPct >= 70 && ' This team regularly scores 2+ goals.'}
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* No Data State */}
+      {!loading && !error && !hasData && (
+        <div className="text-center py-8 text-gray-400">
+          No Over/Under goals data available for this season
         </div>
       )}
     </div>
@@ -600,6 +1618,234 @@ function ScoringPatternSection({ teamId }) {
 }
 
 // ============================================
+// CORNERS SECTION
+// ============================================
+// Displays corner kick statistics
+// Type ID: 34 = CORNERS
+// All competitions, with season selector
+
+function CornersSection({ teamId }) {
+  const [seasons, setSeasons] = useState([]);
+  const [selectedSeasonId, setSelectedSeasonId] = useState(null);
+  const [stats, setStats] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  // ============================================
+  // FETCH AVAILABLE SEASONS (All competitions)
+  // ============================================
+  useEffect(() => {
+    const fetchSeasons = async () => {
+      try {
+        const data = await dataApi.getTeamSeasons(teamId);
+        const teamSeasons = data.seasons || [];
+        
+        // Sort by year descending, then by league ID (Premier League first)
+        const sorted = teamSeasons.sort((a, b) => {
+          const aYear = parseInt(a.name?.split('/')[0] || a.name || '0');
+          const bYear = parseInt(b.name?.split('/')[0] || b.name || '0');
+          if (bYear !== aYear) return bYear - aYear;
+          
+          const aLeagueId = a.league_id || a.league?.id || 999;
+          const bLeagueId = b.league_id || b.league?.id || 999;
+          return aLeagueId - bLeagueId;
+        });
+        
+        setSeasons(sorted);
+        
+        // Auto-select the current Premier League season first, else any current
+        if (sorted.length > 0) {
+          const currentPL = sorted.find(s => s.is_current && (s.league_id === 8 || s.league?.id === 8));
+          const anyCurrent = sorted.find(s => s.is_current);
+          const firstPL = sorted.find(s => s.league_id === 8 || s.league?.id === 8);
+          const selected = currentPL || anyCurrent || firstPL || sorted[0];
+          setSelectedSeasonId(selected.id);
+        }
+      } catch (err) {
+        console.error('Failed to fetch seasons:', err);
+        setError('Failed to load seasons');
+      }
+    };
+
+    fetchSeasons();
+  }, [teamId]);
+
+  // ============================================
+  // FETCH STATS WHEN SEASON CHANGES
+  // ============================================
+  useEffect(() => {
+    if (!selectedSeasonId) return;
+
+    const fetchStats = async () => {
+      setLoading(true);
+      setError('');
+
+      try {
+        const data = await dataApi.getTeamStatsBySeason(teamId, selectedSeasonId);
+        setStats(data.team);
+      } catch (err) {
+        console.error('Failed to fetch stats:', err);
+        setError('Failed to load statistics');
+        setStats(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchStats();
+  }, [teamId, selectedSeasonId]);
+
+  // ============================================
+  // HELPER: Get stat by type_id
+  // ============================================
+  const getStat = (typeId) => {
+    if (!stats?.statistics?.[0]?.details) return null;
+    return stats.statistics[0].details.find(d => d.type_id === typeId);
+  };
+
+  // ============================================
+  // EXTRACT CORNERS DATA
+  // ============================================
+  const getCornersData = () => {
+    // Type ID 34 = CORNERS
+    // API Structure: { count: 96, average: 5.65 }
+    const cornersStat = getStat(STAT_TYPE_IDS.CORNERS);
+    const corners = cornersStat?.value;
+    
+    // Get games played for context
+    const wins = getStat(STAT_TYPE_IDS.WIN)?.value;
+    const draws = getStat(STAT_TYPE_IDS.DRAW)?.value;
+    const losses = getStat(STAT_TYPE_IDS.LOST)?.value;
+    
+    const homeGames = (wins?.home?.count || 0) + (draws?.home?.count || 0) + (losses?.home?.count || 0);
+    const awayGames = (wins?.away?.count || 0) + (draws?.away?.count || 0) + (losses?.away?.count || 0);
+    const totalGames = homeGames + awayGames;
+
+    return {
+      total: corners?.count ?? null,
+      average: corners?.average ?? null,
+      gamesPlayed: totalGames
+    };
+  };
+
+  const cornersData = getCornersData();
+  const hasData = cornersData.total !== null;
+
+  // ============================================
+  // RENDER
+  // ============================================
+  return (
+    <div className="bg-white rounded-lg shadow-md p-6">
+      {/* Header with Season Selector */}
+      <div className="flex items-center justify-between mb-6">
+        <h2 className="text-xl font-semibold text-gray-900">
+          🚩 Corners
+        </h2>
+        
+        {/* Season Selector */}
+        <div className="flex items-center space-x-2">
+          <label className="text-sm text-gray-600">Season:</label>
+          <select
+            value={selectedSeasonId || ''}
+            onChange={(e) => setSelectedSeasonId(parseInt(e.target.value))}
+            className="border border-gray-300 rounded-md px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+            disabled={seasons.length === 0}
+          >
+            {seasons.length === 0 ? (
+              <option value="">Loading...</option>
+            ) : (
+              seasons.map((season) => {
+                const leagueName = season.league?.name || 
+                  (season.league_id === 8 ? 'Premier League' : 
+                   season.league_id === 24 ? 'FA Cup' : 
+                   season.league_id === 27 ? 'EFL Cup' : 
+                   `League ${season.league_id}`);
+                
+                return (
+                  <option key={season.id} value={season.id}>
+                    {season.name} - {leagueName} {season.is_current ? '✓' : ''}
+                  </option>
+                );
+              })
+            )}
+          </select>
+        </div>
+      </div>
+
+      {/* Loading State */}
+      {loading && (
+        <div className="text-center py-8 text-gray-500">
+          <div className="animate-pulse">Loading statistics...</div>
+        </div>
+      )}
+
+      {/* Error State */}
+      {error && (
+        <div className="bg-red-50 text-red-600 p-3 rounded-md text-sm">
+          {error}
+        </div>
+      )}
+
+      {/* Stats Display */}
+      {!loading && !error && hasData && (
+        <div>
+          {/* Main Stats Grid */}
+          <div className="grid grid-cols-3 gap-4">
+            {/* Total Corners */}
+            <div className="bg-orange-50 rounded-lg p-4 border border-orange-200 text-center">
+              <div className="text-xs text-orange-600 font-semibold mb-1">TOTAL</div>
+              <div className="text-3xl font-bold text-orange-700">
+                {cornersData.total}
+              </div>
+              <div className="text-xs text-gray-500 mt-1">corners won</div>
+            </div>
+
+            {/* Average Per Game */}
+            <div className="bg-blue-50 rounded-lg p-4 border border-blue-200 text-center">
+              <div className="text-xs text-blue-600 font-semibold mb-1">AVERAGE</div>
+              <div className="text-3xl font-bold text-blue-700">
+                {cornersData.average ?? '-'}
+              </div>
+              <div className="text-xs text-gray-500 mt-1">per game</div>
+            </div>
+
+            {/* Games Played */}
+            <div className="bg-gray-50 rounded-lg p-4 border border-gray-200 text-center">
+              <div className="text-xs text-gray-600 font-semibold mb-1">GAMES</div>
+              <div className="text-3xl font-bold text-gray-700">
+                {cornersData.gamesPlayed}
+              </div>
+              <div className="text-xs text-gray-500 mt-1">played</div>
+            </div>
+          </div>
+
+          {/* Betting Insight */}
+          <div className="mt-6 pt-4 border-t border-gray-100">
+            <p className="text-xs text-gray-500">
+              📊 <strong>Betting Insight:</strong> 
+              {cornersData.average && (
+                <span>
+                  This team averages <strong>{cornersData.average}</strong> corners per game.
+                  {cornersData.average >= 6 && ' They win a lot of corners - consider Over corners bets.'}
+                  {cornersData.average < 4 && ' They tend to win fewer corners - consider Under corners bets.'}
+                </span>
+              )}
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* No Data State */}
+      {!loading && !error && !hasData && (
+        <div className="text-center py-8 text-gray-400">
+          No corner data available for this season
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ============================================
 // MAIN TEAM DETAIL COMPONENT
 // ============================================
 const TeamDetail = () => {
@@ -701,8 +1947,20 @@ const TeamDetail = () => {
       {/* Home/Away Performance Section */}
       <HomeAwayPerformanceSection teamId={id} />
 
+      {/* W/D/L Distribution Section - Premier League Only */}
+      <WinDrawLossDistributionSection teamId={id} />
+
+      {/* Half & Timing Analysis Section - All Competitions */}
+      <HalfTimingAnalysisSection teamId={id} />
+
+      {/* Over/Under Goals Analysis Section - All Competitions */}
+      <OverUnderGoalsSection teamId={id} />
+
       {/* Scoring Pattern Section */}
       <ScoringPatternSection teamId={id} />
+
+      {/* Corners Section */}
+      <CornersSection teamId={id} />
 
       {/* Squad Section */}
       {team.players && team.players.length > 0 && (

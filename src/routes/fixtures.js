@@ -21,7 +21,8 @@ import {
   getFixturesByDate, 
   getFixturesByDateRange,
   getTeamFixturesByDateRange,
-  searchFixtures
+  searchFixtures,
+  getFixturePredictions
 } from '../services/sportsmonks.js';
 
 // Create a router
@@ -325,6 +326,56 @@ router.get('/search/:query', async (req, res) => {
     console.error('Fixture search error:', error);
     res.status(500).json({ 
       error: 'Failed to search fixtures',
+      details: error.message 
+    });
+  }
+});
+
+// ============================================
+// GET PREDICTIONS FOR A FIXTURE
+// GET /fixtures/:id/predictions
+// Example: GET /fixtures/19427635/predictions
+// ============================================
+// Returns AI-generated predictions for betting research
+// Includes: Match result, BTTS, Over/Under, Corners, Correct Score, etc.
+
+router.get('/:id/predictions', async (req, res) => {
+  try {
+    const fixtureId = req.params.id;
+    
+    // Validate: ID must be a number
+    if (isNaN(fixtureId)) {
+      return res.status(400).json({
+        error: 'Fixture ID must be a number'
+      });
+    }
+    
+    // Call the SportsMonks service
+    const result = await getFixturePredictions(fixtureId);
+    
+    // Check if fixture was found
+    if (!result.data) {
+      return res.status(404).json({
+        error: `Fixture with ID ${fixtureId} not found`
+      });
+    }
+    
+    // Extract predictions from the response
+    const predictions = result.data.predictions || [];
+    
+    // Return the predictions
+    res.json({
+      fixtureId: parseInt(fixtureId),
+      fixtureName: result.data.name,
+      startingAt: result.data.starting_at,
+      predictionsCount: predictions.length,
+      predictions: predictions
+    });
+    
+  } catch (error) {
+    console.error('Get predictions error:', error);
+    res.status(500).json({ 
+      error: 'Failed to get predictions',
       details: error.message 
     });
   }

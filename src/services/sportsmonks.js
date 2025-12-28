@@ -216,12 +216,16 @@ async function getFixtureById(fixtureId, options = {}) {
   
   // Optional includes - added if requested
   if (options.includeOdds) {
-    includes.push('odds');
+    // Include odds WITH bookmaker names embedded in each odd object
+    // This way we don't need a separate API call to get bookmaker names
+    includes.push('odds.bookmaker');
   }
   if (options.includeSidelined) {
-    // Include both player info and sideline details (injury reason, expected return)
+    // Include player info, sideline details (injury reason, expected return),
+    // AND the type info which gives us the specific reason (e.g., "Red Card", "Hamstring Injury")
     includes.push('sidelined.player');
     includes.push('sidelined.sideline');
+    includes.push('sidelined.type');
   }
   
   return makeRequest(endpoint, includes);
@@ -969,6 +973,38 @@ async function getTeamSquadWithStats(seasonId, teamId) {
 }
 
 // ============================================
+// PREDICTIONS FUNCTIONS
+// ============================================
+
+/**
+ * Get AI predictions for a specific fixture
+ * @param {number|string} fixtureId - The SportsMonks fixture ID
+ * @returns {Promise<object>} - Predictions with probability percentages
+ * 
+ * Predictions include:
+ * - Fulltime Result (home/draw/away %)
+ * - BTTS (Both Teams To Score)
+ * - Over/Under 1.5, 2.5, 3.5, 4.5 goals
+ * - First Half Winner
+ * - Correct Score probabilities
+ * - Team to Score First
+ * - Double Chance
+ * - Home/Away specific Over/Under
+ * - Corners Over/Under (4-11 corners)
+ * - Half Time / Full Time combos
+ * 
+ * Example: getFixturePredictions(19427635)
+ */
+async function getFixturePredictions(fixtureId) {
+  // API: GET /fixtures/{fixture_id}
+  // We only need predictions.type to get prediction names
+  const endpoint = `/fixtures/${fixtureId}`;
+  
+  // Include predictions with their type info (name, code, etc.)
+  return makeRequest(endpoint, ['predictions.type']);
+}
+
+// ============================================
 // EXPORT ALL FUNCTIONS
 // ============================================
 
@@ -1037,5 +1073,8 @@ export {
   getTopScorersBySeason,
 
   // Team top scorers/assists functions
-  getTeamSquadWithStats
+  getTeamSquadWithStats,
+
+  // Predictions functions
+  getFixturePredictions
 };
