@@ -9,11 +9,12 @@
 // - Add Note modal
 // ============================================
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { dataApi, notesApi } from '../api/client';
+import { dataApi } from '../api/client';
 import { useAuth } from '../context/AuthContext';
 import MatchPredictions from '../components/MatchPredictions';
+import FloatingNoteWidget from '../components/FloatingNoteWidget';
 
 // ============================================
 // DEFAULT BOOKMAKERS (prepopulated)
@@ -133,6 +134,122 @@ function getScore(fixture, location) {
     s => s.description === 'CURRENT' && s.score?.participant === location
   );
   return score?.score?.goals ?? null;
+}
+
+// ============================================
+// BETTING MARKET NAMES LOOKUP
+// ============================================
+// Maps SportsMonks market_id to user-friendly names
+// Used as fallback when market.name is not included in API response
+const MARKET_NAMES = {
+  1: 'Fulltime Result (1X2)',
+  2: 'Home/Away',
+  5: 'Alternative Match Goals',
+  10: 'Home/Away',
+  12: 'Over/Under Goals',
+  14: 'Both Teams to Score',
+  28: 'Asian Handicap',
+  29: 'Asian Handicap Cards',
+  30: 'Asian Total Cards',
+  31: 'First Card Received',
+  32: 'Time of First Card',
+  33: 'Team Cards',
+  34: 'Corner Match Bet',
+  35: 'Corner Handicap',
+  36: 'Time of First Corner',
+  37: '1st Half Result',
+  38: '2nd Half Over/Under',
+  39: 'Team Corners',
+  47: '2nd Half Over/Under',
+  63: 'Double Chance',
+  69: 'Team to Score First',
+  75: 'Team to Score Last',
+  80: '2nd Half Result',
+  83: 'Handicap Result',
+  97: 'Exact Goals',
+  98: 'Goal Range',
+  99: 'Odd/Even Goals',
+  100: 'Result & Both Teams Score',
+  101: 'Result & Over/Under',
+  13343: 'Team Clean Sheet',
+  28075: 'Fulltime Result',
+  28076: 'To Win 2nd Half'
+};
+
+// Helper to get market name from ID
+function getMarketName(marketId) {
+  return MARKET_NAMES[marketId] || `Market ${marketId}`;
+}
+
+// ============================================
+// HELPER: Format Odd Label for Display
+// ============================================
+// Makes cryptic labels like "1", "X", "2", "Yes", "No" more user-friendly
+// based on the market context
+function formatOddLabel(label, marketId) {
+  if (!label) return '-';
+  
+  // Fulltime Result / 1X2 markets (1, 37, 80, 28075)
+  if ([1, 37, 80, 28075].includes(marketId)) {
+    if (label === '1') return 'Home Win';
+    if (label === 'X') return 'Draw';
+    if (label === '2') return 'Away Win';
+  }
+  
+  // Both Teams to Score (market 14)
+  if (marketId === 14) {
+    if (label.toLowerCase() === 'yes') return 'Yes (BTTS)';
+    if (label.toLowerCase() === 'no') return 'No';
+  }
+  
+  // Double Chance (market 63)
+  if (marketId === 63) {
+    if (label === '1X') return 'Home or Draw';
+    if (label === 'X2') return 'Draw or Away';
+    if (label === '12') return 'Home or Away';
+  }
+  
+  // Over/Under (market 12, 38, 47) - clean up format
+  if ([12, 38, 47].includes(marketId)) {
+    // Labels like "Over 2.5" or "Under 1.5" - keep as-is but capitalize
+    const cleaned = label.replace(/over/i, 'Over').replace(/under/i, 'Under');
+    // Handle "more 2" style labels
+    if (label.toLowerCase().startsWith('more')) {
+      return label.replace(/more/i, 'Over');
+    }
+    if (label.toLowerCase().startsWith('less')) {
+      return label.replace(/less/i, 'Under');
+    }
+    return cleaned;
+  }
+  
+  // Team to Score First/Last (markets 69, 75)
+  if ([69, 75].includes(marketId)) {
+    if (label === '1') return 'Home';
+    if (label === '2') return 'Away';
+    if (label.toLowerCase() === 'none' || label === 'X') return 'No Goal';
+  }
+  
+  // Odd/Even (market 99)
+  if (marketId === 99) {
+    if (label.toLowerCase() === 'odd') return 'Odd (1,3,5...)';
+    if (label.toLowerCase() === 'even') return 'Even (0,2,4...)';
+  }
+  
+  // Home/Away markets - team-specific
+  if ([2, 10].includes(marketId)) {
+    if (label === '1') return 'Home';
+    if (label === '2') return 'Away';
+  }
+  
+  // Clean up common patterns
+  // Handle "0", "1", "2" etc. for exact goals
+  if (marketId === 97 && /^\d+$/.test(label)) {
+    return `Exactly ${label} ${label === '1' ? 'Goal' : 'Goals'}`;
+  }
+  
+  // Return original label if no special formatting needed
+  return label;
 }
 
 // ============================================
@@ -1102,10 +1219,10 @@ function RecentFormSection({ homeForm, awayForm, homeTeam, awayTeam, loading }) 
         <h3 className="font-medium text-gray-800">{teamName}</h3>
       </div>
 
-      {/* Form badges */}
+      {/* Form badges - reversed so most recent is on the RIGHT (standard PL format) */}
       <div className="flex space-x-1 mb-3">
         {form && form.length > 0 ? (
-          form.slice(0, 5).map((match, idx) => (
+          [...form.slice(0, 5)].reverse().map((match, idx) => (
             <div key={idx} title={`${match.opponent}: ${match.goalsFor}-${match.goalsAgainst}`}>
               {getResultBadge(match.result)}
             </div>
@@ -1158,86 +1275,11 @@ function RecentFormSection({ homeForm, awayForm, homeTeam, awayTeam, loading }) 
 // CORNERS BREAKDOWN SECTION COMPONENT
 // ============================================
 // Shows each team's corner kick statistics for the season
-// Uses HOME/AWAY splits for contextually relevant data:
-// - Home team: shows their corners when playing AT HOME
-// - Away team: shows their corners when playing AWAY
-// Type ID: 34 = CORNERS (from SportsMonks team statistics)
-function CornersBreakdownSection({ homeStats, awayStats, homeTeam, awayTeam, loading }) {
-  // ============================================
-  // HELPER: Extract full corners object from team statistics
-  // ============================================
-  // SportsMonks returns corners with home/away breakdown:
-  // { all: {count, percentage}, home: {count, percentage}, away: {count, percentage} }
-  const extractCornersData = (stats) => {
-    if (!stats?.statistics) return null;
-    
-    for (const statGroup of stats.statistics) {
-      if (!statGroup.details) continue;
-      
-      for (const detail of statGroup.details) {
-        // Type ID 34 = CORNERS
-        if (detail.type_id === 34) {
-          const value = detail.value;
-          
-          // Return the full object if it has home/away breakdown
-          if (value && typeof value === 'object') {
-            return {
-              all: value.all?.count ?? value.count ?? null,
-              home: value.home?.count ?? null,
-              away: value.away?.count ?? null
-            };
-          }
-          
-          // Simple number value (no breakdown)
-          if (typeof value === 'number') {
-            return { all: value, home: null, away: null };
-          }
-          
-          return null;
-        }
-      }
-    }
-    return null;
-  };
-
-  // ============================================
-  // HELPER: Extract games played with home/away split
-  // ============================================
-  // Type IDs: 214=wins, 215=draws, 216=losses
-  // Each has {all, home, away} breakdown
-  const getGamesBreakdown = (stats) => {
-    if (!stats?.statistics) return { all: 0, home: 0, away: 0 };
-    
-    let wins = { all: 0, home: 0, away: 0 };
-    let draws = { all: 0, home: 0, away: 0 };
-    let losses = { all: 0, home: 0, away: 0 };
-    
-    for (const statGroup of stats.statistics) {
-      if (!statGroup.details) continue;
-      
-      for (const detail of statGroup.details) {
-        const value = detail.value;
-        if (!value || typeof value !== 'object') continue;
-        
-        const extractCount = (obj) => ({
-          all: obj?.all?.count ?? obj?.count ?? 0,
-          home: obj?.home?.count ?? 0,
-          away: obj?.away?.count ?? 0
-        });
-        
-        if (detail.type_id === 214) wins = extractCount(value);      // Wins
-        if (detail.type_id === 215) draws = extractCount(value);     // Draws
-        if (detail.type_id === 216) losses = extractCount(value);    // Losses
-      }
-    }
-    
-    return {
-      all: wins.all + draws.all + losses.all,
-      home: wins.home + draws.home + losses.home,
-      away: wins.away + draws.away + losses.away
-    };
-  };
-
+// Now uses HOME/AWAY breakdown from our calculated endpoint:
+// - Home team: shows their average when playing AT HOME
+// - Away team: shows their average when playing AWAY
+// This gives contextually accurate predictions for the fixture
+function CornersBreakdownSection({ homeCornerAvg, awayCornerAvg, homeTeam, awayTeam, loading }) {
   // ============================================
   // LOADING STATE
   // ============================================
@@ -1250,39 +1292,22 @@ function CornersBreakdownSection({ homeStats, awayStats, homeTeam, awayTeam, loa
     );
   }
 
-  // ============================================
-  // EXTRACT CORNERS DATA (type_id = 34)
-  // ============================================
-  const homeTeamCorners = extractCornersData(homeStats);
-  const awayTeamCorners = extractCornersData(awayStats);
-  const homeTeamGames = getGamesBreakdown(homeStats);
-  const awayTeamGames = getGamesBreakdown(awayStats);
-
-  // Don't render if no corners data available
-  if (!homeTeamCorners && !awayTeamCorners) {
+  // Don't render if no corners data available for either team
+  if (!homeCornerAvg?.corners && !awayCornerAvg?.corners) {
     return null;
   }
 
   // ============================================
-  // CALCULATE CONTEXTUAL AVERAGES
+  // EXTRACT CONTEXTUAL DATA
   // ============================================
   // Home team: their corners when playing AT HOME
   // Away team: their corners when playing AWAY
-  const homeTeamHomeCorners = homeTeamCorners?.home ?? null;
-  const homeTeamHomeGames = homeTeamGames.home;
-  const homeTeamHomeAvg = homeTeamHomeGames > 0 && homeTeamHomeCorners !== null
-    ? (homeTeamHomeCorners / homeTeamHomeGames).toFixed(1)
-    : null;
-
-  const awayTeamAwayCorners = awayTeamCorners?.away ?? null;
-  const awayTeamAwayGames = awayTeamGames.away;
-  const awayTeamAwayAvg = awayTeamAwayGames > 0 && awayTeamAwayCorners !== null
-    ? (awayTeamAwayCorners / awayTeamAwayGames).toFixed(1)
-    : null;
+  const homeTeamHomeData = homeCornerAvg?.corners?.home;
+  const awayTeamAwayData = awayCornerAvg?.corners?.away;
 
   // Combined expected corners for this fixture
-  const combinedExpected = homeTeamHomeAvg && awayTeamAwayAvg
-    ? (parseFloat(homeTeamHomeAvg) + parseFloat(awayTeamAwayAvg)).toFixed(1)
+  const combinedExpected = homeTeamHomeData?.average && awayTeamAwayData?.average
+    ? (homeTeamHomeData.average + awayTeamAwayData.average).toFixed(1)
     : null;
 
   // ============================================
@@ -1291,7 +1316,7 @@ function CornersBreakdownSection({ homeStats, awayStats, homeTeam, awayTeam, loa
   return (
     <div className="bg-white rounded-lg shadow-md p-4">
       <h2 className="text-lg font-semibold text-gray-900 mb-1">
-        🚩 Corner Kicks Breakdown
+        🚩 Corner Kicks
       </h2>
       <p className="text-sm text-gray-500 mb-4">
         Contextual stats: Home team at home, Away team on the road
@@ -1320,7 +1345,7 @@ function CornersBreakdownSection({ homeStats, awayStats, homeTeam, awayTeam, loa
             {/* Corners at Home */}
             <div className="bg-white rounded-lg p-3 text-center shadow-sm">
               <div className="text-2xl font-bold text-blue-600">
-                {homeTeamHomeCorners !== null ? homeTeamHomeCorners : '-'}
+                {homeTeamHomeData?.total ?? '-'}
               </div>
               <div className="text-xs text-gray-500 mt-1">Corners at Home</div>
             </div>
@@ -1328,15 +1353,17 @@ function CornersBreakdownSection({ homeStats, awayStats, homeTeam, awayTeam, loa
             {/* Average Per Home Game */}
             <div className="bg-white rounded-lg p-3 text-center shadow-sm">
               <div className="text-2xl font-bold text-blue-600">
-                {homeTeamHomeAvg ?? '-'}
+                {homeTeamHomeData?.average ?? '-'}
               </div>
               <div className="text-xs text-gray-500 mt-1">Per Home Game</div>
             </div>
           </div>
           
-          <div className="text-xs text-gray-400 mt-2 text-center">
-            ({homeTeamHomeGames} home games)
-          </div>
+          {homeTeamHomeData?.games > 0 && (
+            <div className="text-xs text-gray-400 mt-2 text-center">
+              ({homeTeamHomeData.games} home games)
+            </div>
+          )}
         </div>
 
         {/* Divider */}
@@ -1363,7 +1390,7 @@ function CornersBreakdownSection({ homeStats, awayStats, homeTeam, awayTeam, loa
             {/* Corners Away */}
             <div className="bg-white rounded-lg p-3 text-center shadow-sm">
               <div className="text-2xl font-bold text-red-600">
-                {awayTeamAwayCorners !== null ? awayTeamAwayCorners : '-'}
+                {awayTeamAwayData?.total ?? '-'}
               </div>
               <div className="text-xs text-gray-500 mt-1">Corners Away</div>
             </div>
@@ -1371,15 +1398,17 @@ function CornersBreakdownSection({ homeStats, awayStats, homeTeam, awayTeam, loa
             {/* Average Per Away Game */}
             <div className="bg-white rounded-lg p-3 text-center shadow-sm">
               <div className="text-2xl font-bold text-red-600">
-                {awayTeamAwayAvg ?? '-'}
+                {awayTeamAwayData?.average ?? '-'}
               </div>
               <div className="text-xs text-gray-500 mt-1">Per Away Game</div>
             </div>
           </div>
           
-          <div className="text-xs text-gray-400 mt-2 text-center">
-            ({awayTeamAwayGames} away games)
-          </div>
+          {awayTeamAwayData?.games > 0 && (
+            <div className="text-xs text-gray-400 mt-2 text-center">
+              ({awayTeamAwayData.games} away games)
+            </div>
+          )}
         </div>
       </div>
 
@@ -1393,7 +1422,7 @@ function CornersBreakdownSection({ homeStats, awayStats, homeTeam, awayTeam, loa
             </div>
           </div>
           <div className="text-xs text-gray-500 text-center mt-2">
-            Based on {homeTeam?.name}'s home avg ({homeTeamHomeAvg}) + {awayTeam?.name}'s away avg ({awayTeamAwayAvg})
+            {homeTeam?.name}'s home avg ({homeTeamHomeData?.average}) + {awayTeam?.name}'s away avg ({awayTeamAwayData?.average})
           </div>
         </div>
       )}
@@ -1405,15 +1434,22 @@ function CornersBreakdownSection({ homeStats, awayStats, homeTeam, awayTeam, loa
           <span>
             {' '}Expected <strong>{combinedExpected}</strong> total corners. 
             {parseFloat(combinedExpected) >= 11 
-              ? 'High corner activity expected - consider over 10.5.' 
+              ? 'High corner activity - consider over 10.5.' 
               : parseFloat(combinedExpected) >= 9 
-                ? 'Moderate activity - 9-10 range common for this matchup.' 
-                : 'Lower corner activity - under markets may have value.'}
+                ? 'Moderate activity - 9-10 range typical for this matchup.' 
+                : 'Lower corner activity - under markets may offer value.'}
           </span>
         ) : (
-          <span> Home/away splits not available - check overall averages.</span>
+          <span> Corner data not available for this fixture.</span>
         )}
       </div>
+
+      {/* Cache indicator (small, subtle) */}
+      {(homeCornerAvg?.fromCache || awayCornerAvg?.fromCache) && (
+        <div className="text-xs text-gray-400 text-right mt-2">
+          📦 Cached data
+        </div>
+      )}
     </div>
   );
 }
@@ -1687,126 +1723,199 @@ function TeamStatsComparisonSection(props) {
 
 
 // ============================================
-// ADD NOTE MODAL COMPONENT
+// ALL BETTING MARKETS CONTENT COMPONENT
 // ============================================
-function AddNoteModal({ isOpen, onClose, fixtureId, fixtureName, token, onNoteAdded }) {
-  const [title, setTitle] = useState('');
-  const [content, setContent] = useState('');
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState('');
+// Shows ALL markets with odds grouped by bookmaker within each market
+// Each market is individually expandable/collapsible
+// This section ignores the main bookmaker filter - shows everything
+function AllBettingMarketsContent({ odds, bookmakers, formatAmericanOdds, formatOddLabel, getMarketName }) {
+  // State to track which markets are expanded
+  // Default: all collapsed (empty set)
+  const [expandedMarkets, setExpandedMarkets] = useState(new Set());
 
-  // Reset form when modal opens
-  useEffect(() => {
-    if (isOpen) {
-      setTitle(`Note: ${fixtureName}`);
-      setContent('');
-      setError('');
-    }
-  }, [isOpen, fixtureName]);
-
-  const handleSave = async () => {
-    if (!content.trim()) {
-      setError('Please enter some content for your note');
-      return;
-    }
-
-    setSaving(true);
-    setError('');
-
-    try {
-      await notesApi.create({
-        title: title.trim() || `Note: ${fixtureName}`,
-        content: content.trim(),
-        contextType: 'fixture',
-        contextId: fixtureId.toString()
-      }, token);
-
-      onNoteAdded?.();
-      onClose();
-    } catch (err) {
-      setError(err.message || 'Failed to save note');
-    } finally {
-      setSaving(false);
-    }
+  // Toggle a specific market's expanded state
+  const toggleMarket = (marketId) => {
+    setExpandedMarkets(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(marketId)) {
+        newSet.delete(marketId);
+      } else {
+        newSet.add(marketId);
+      }
+      return newSet;
+    });
   };
 
-  if (!isOpen) return null;
+  // Expand all markets
+  const expandAll = () => {
+    const allMarketIds = [...new Set(odds.map(o => o.market_id))];
+    setExpandedMarkets(new Set(allMarketIds));
+  };
+
+  // Collapse all markets
+  const collapseAll = () => {
+    setExpandedMarkets(new Set());
+  };
+
+  // Build a map of bookmaker ID -> name from the odds data
+  // This ensures we show proper names even for bookmakers not in the main filter
+  const bookmakerNames = useMemo(() => {
+    const names = {};
+    odds.forEach(odd => {
+      if (odd.bookmaker_id && !names[odd.bookmaker_id]) {
+        names[odd.bookmaker_id] = odd.bookmaker?.name || `Bookmaker ${odd.bookmaker_id}`;
+      }
+    });
+    return names;
+  }, [odds]);
+
+  // Group ALL odds by market (ignoring any filter)
+  const allOddsByMarket = useMemo(() => {
+    return odds.reduce((acc, odd) => {
+      const marketId = odd.market_id;
+      if (!acc[marketId]) {
+        acc[marketId] = [];
+      }
+      acc[marketId].push(odd);
+      return acc;
+    }, {});
+  }, [odds]);
+
+  // If no odds available, show message
+  if (Object.keys(allOddsByMarket).length === 0) {
+    return (
+      <div className="text-center text-gray-500 py-4">
+        No betting markets available
+      </div>
+    );
+  }
 
   return (
-    // Semi-transparent backdrop that doesn't block interaction with page
-    <div className="fixed inset-0 z-50 pointer-events-none">
-      {/* Modal positioned to the side so user can still see data */}
-      <div className="absolute right-4 top-20 w-96 pointer-events-auto">
-        <div className="bg-white rounded-lg shadow-2xl border border-gray-200">
-          {/* Header */}
-          <div className="px-4 py-3 border-b border-gray-200 flex items-center justify-between bg-blue-600 rounded-t-lg">
-            <h3 className="font-semibold text-white">Add Note</h3>
-            <button
-              onClick={onClose}
-              className="text-white hover:text-gray-200 text-xl leading-none"
-            >
-              ×
-            </button>
-          </div>
+    <div className="space-y-3">
+      {/* Expand/Collapse All Controls */}
+      <div className="flex justify-end space-x-3 text-sm mb-2">
+        <button
+          onClick={expandAll}
+          className="text-blue-600 hover:text-blue-800 hover:underline"
+        >
+          Expand All
+        </button>
+        <span className="text-gray-300">|</span>
+        <button
+          onClick={collapseAll}
+          className="text-gray-600 hover:text-gray-800 hover:underline"
+        >
+          Collapse All
+        </button>
+      </div>
 
-          {/* Body */}
-          <div className="p-4 space-y-4">
-            {error && (
-              <div className="bg-red-50 text-red-600 p-2 rounded text-sm">
-                {error}
+      {/* Market Cards */}
+      {Object.entries(allOddsByMarket).map(([marketId, marketOdds]) => {
+        const mId = parseInt(marketId);
+        const isExpanded = expandedMarkets.has(mId);
+        
+        // Get market name from the included market data, or fallback to lookup
+        const marketName = marketOdds[0]?.market?.name || getMarketName(mId);
+        
+        // Group odds by bookmaker within this market
+        const oddsByBookmaker = marketOdds.reduce((acc, odd) => {
+          const bmId = odd.bookmaker_id;
+          if (!acc[bmId]) {
+            acc[bmId] = [];
+          }
+          acc[bmId].push(odd);
+          return acc;
+        }, {});
+        
+        // Count unique bookmakers for this market
+        const bookmakerCount = Object.keys(oddsByBookmaker).length;
+        
+        // Get unique selection labels for this market (for header preview)
+        const uniqueLabels = [...new Set(marketOdds.map(o => o.label || o.name))].slice(0, 4);
+        
+        return (
+          <div key={marketId} className="border border-gray-200 rounded-lg overflow-hidden">
+            {/* Market Header (clickable to expand/collapse) */}
+            <button
+              onClick={() => toggleMarket(mId)}
+              className="w-full px-4 py-3 bg-gray-50 hover:bg-gray-100 flex items-center justify-between transition-colors"
+            >
+              <div className="flex items-center space-x-3">
+                <span className={`transform transition-transform text-gray-400 ${isExpanded ? 'rotate-90' : ''}`}>
+                  ▶
+                </span>
+                <span className="font-medium text-gray-800">{marketName}</span>
+                <span className="text-xs text-gray-500 bg-gray-200 px-2 py-0.5 rounded">
+                  {bookmakerCount} bookmaker{bookmakerCount !== 1 ? 's' : ''}
+                </span>
+              </div>
+              {/* Preview of selections when collapsed */}
+              {!isExpanded && (
+                <div className="text-xs text-gray-400 hidden sm:block">
+                  {uniqueLabels.map(label => formatOddLabel(label, mId)).join(' • ')}
+                </div>
+              )}
+            </button>
+            
+            {/* Expanded Content - Odds grouped by bookmaker */}
+            {isExpanded && (
+              <div className="p-4 bg-white border-t border-gray-200 space-y-3">
+                {Object.entries(oddsByBookmaker)
+                  .sort((a, b) => {
+                    // Sort bookmakers alphabetically by name
+                    const nameA = bookmakerNames[a[0]] || '';
+                    const nameB = bookmakerNames[b[0]] || '';
+                    return nameA.localeCompare(nameB);
+                  })
+                  .map(([bmId, bmOdds]) => {
+                    const bookmakerName = bookmakerNames[bmId] || `Bookmaker ${bmId}`;
+                    
+                    // Get unique labels for this bookmaker's odds
+                    const labels = [...new Set(bmOdds.map(o => o.label || o.name))];
+                    
+                    return (
+                      <div key={bmId} className="border-b border-gray-100 pb-3 last:border-0 last:pb-0">
+                        {/* Bookmaker Name */}
+                        <div className="text-sm font-medium text-gray-700 mb-2">
+                          {bookmakerName}
+                        </div>
+                        
+                        {/* Odds Grid */}
+                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2">
+                          {labels.map(label => {
+                            const odd = bmOdds.find(o => (o.label || o.name) === label);
+                            const displayLabel = formatOddLabel(label, mId);
+                            const americanOdd = formatAmericanOdds(odd?.american);
+                            
+                            // Skip if no valid odds value
+                            if (americanOdd === '-') return null;
+                            
+                            return (
+                              <div 
+                                key={label} 
+                                className="bg-gray-50 p-2 rounded text-center hover:bg-gray-100 transition-colors"
+                              >
+                                <div 
+                                  className="text-xs text-gray-500 truncate mb-1" 
+                                  title={displayLabel}
+                                >
+                                  {displayLabel}
+                                </div>
+                                <div className="font-bold text-gray-800">
+                                  {americanOdd}
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    );
+                  })}
               </div>
             )}
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Title
-              </label>
-              <input
-                type="text"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Note title..."
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Content
-              </label>
-              <textarea
-                value={content}
-                onChange={(e) => setContent(e.target.value)}
-                rows={6}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
-                placeholder="Your research notes..."
-                autoFocus
-              />
-            </div>
-
-            <div className="text-xs text-gray-500">
-              📎 Linked to: {fixtureName}
-            </div>
           </div>
-
-          {/* Footer */}
-          <div className="px-4 py-3 border-t border-gray-200 flex justify-end space-x-2">
-            <button
-              onClick={onClose}
-              className="px-4 py-2 text-gray-600 hover:text-gray-800"
-            >
-              Cancel
-            </button>
-            <button
-              onClick={handleSave}
-              disabled={saving}
-              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
-            >
-              {saving ? 'Saving...' : 'Save Note'}
-            </button>
-          </div>
-        </div>
-      </div>
+        );
+      })}
     </div>
   );
 }
@@ -1848,8 +1957,10 @@ const FixtureDetail = () => {
   const [awayTopStats, setAwayTopStats] = useState(null);
   const [topStatsLoading, setTopStatsLoading] = useState(false);
 
-  // Note modal
-  const [noteModalOpen, setNoteModalOpen] = useState(false);
+  // Corner averages (calculated from historical fixtures)
+  const [homeCornerAvg, setHomeCornerAvg] = useState(null);
+  const [awayCornerAvg, setAwayCornerAvg] = useState(null);
+  const [cornersLoading, setCornersLoading] = useState(false);
 
   // ============================================
   // FETCH FIXTURE DATA ON MOUNT
@@ -2133,6 +2244,43 @@ const FixtureDetail = () => {
   }, [fixture]);
 
   // ============================================
+  // FETCH CORNER AVERAGES (from new endpoint)
+  // ============================================
+  // Fetches calculated home/away corner averages for each team
+  // Uses the new cached endpoint that calculates from historical fixtures
+  useEffect(() => {
+    if (!fixture) return;
+
+    const homeTeam = fixture.participants?.find(p => p.meta?.location === 'home');
+    const awayTeam = fixture.participants?.find(p => p.meta?.location === 'away');
+    const seasonId = fixture.season_id || fixture.season?.id;
+
+    // Need both teams and a season to fetch corner averages
+    if (!homeTeam || !awayTeam || !seasonId) return;
+
+    const fetchCornerAverages = async () => {
+      setCornersLoading(true);
+      try {
+        // Fetch corner averages for both teams in parallel
+        const [homeData, awayData] = await Promise.all([
+          dataApi.getTeamCornerAverages(homeTeam.id, seasonId),
+          dataApi.getTeamCornerAverages(awayTeam.id, seasonId)
+        ]);
+
+        setHomeCornerAvg(homeData);
+        setAwayCornerAvg(awayData);
+      } catch (err) {
+        console.error('Failed to fetch corner averages:', err);
+        // Non-critical, don't show error to user
+      } finally {
+        setCornersLoading(false);
+      }
+    };
+
+    fetchCornerAverages();
+  }, [fixture]);
+
+  // ============================================
   // BOOKMAKER TOGGLE HANDLER
   // ============================================
   const toggleBookmaker = (bookmakerId) => {
@@ -2316,19 +2464,6 @@ const FixtureDetail = () => {
             )}
           </div>
         </div>
-
-        {/* Add Note button */}
-        {isAuthenticated && (
-          <div className="px-6 pb-4">
-            <button
-              onClick={() => setNoteModalOpen(true)}
-              className="w-full py-2 bg-blue-50 text-blue-600 rounded-md hover:bg-blue-100 transition-colors flex items-center justify-center space-x-2"
-            >
-              <span>📝</span>
-              <span>Add Note</span>
-            </button>
-          </div>
-        )}
       </div>
 
       {/* ============================================ */}
@@ -2540,14 +2675,14 @@ const FixtureDetail = () => {
       {/* ============================================ */}
       {/* CORNERS BREAKDOWN SECTION - UPCOMING ONLY */}
       {/* ============================================ */}
-      {/* Shows each team's season corner stats for corners betting */}
+      {/* Shows each team's HOME/AWAY corner averages for corners betting */}
       {isUpcoming && (
         <CornersBreakdownSection
-          homeStats={homeTeamStats}
-          awayStats={awayTeamStats}
+          homeCornerAvg={homeCornerAvg}
+          awayCornerAvg={awayCornerAvg}
           homeTeam={homeTeam}
           awayTeam={awayTeam}
-          loading={teamStatsLoading}
+          loading={cornersLoading}
         />
       )}
 
@@ -2568,39 +2703,16 @@ const FixtureDetail = () => {
       {/* ============================================ */}
       <div className="space-y-3">
         {/* Detailed Odds - UPCOMING ONLY */}
+        {/* This section uses ALL odds (ignoring main filter) and groups by bookmaker */}
         {isUpcoming && (
         <AccordionSection title="All Betting Markets" icon="📊">
-          {Object.keys(oddsByMarket).length > 0 ? (
-            <div className="space-y-4">
-              {Object.entries(oddsByMarket).map(([marketId, marketOdds]) => {
-                // Get unique values for this market
-                const uniqueLabels = [...new Set(marketOdds.map(o => o.label || o.name))];
-                
-                return (
-                  <div key={marketId} className="border-b border-gray-100 pb-3 last:border-0">
-                    <h4 className="text-sm font-medium text-gray-700 mb-2">
-                      Market {marketId}
-                    </h4>
-                    <div className="grid grid-cols-3 gap-2 text-sm">
-                      {uniqueLabels.slice(0, 6).map(label => {
-                        const odd = marketOdds.find(o => (o.label || o.name) === label);
-                        return (
-                          <div key={label} className="bg-gray-50 p-2 rounded text-center">
-                            <div className="text-xs text-gray-500 truncate">{label}</div>
-                            <div className="font-bold">{formatAmericanOdds(odd?.american)}</div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          ) : (
-            <div className="text-center text-gray-500 py-4">
-              No additional markets available
-            </div>
-          )}
+          <AllBettingMarketsContent 
+            odds={safeOdds} 
+            bookmakers={bookmakers}
+            formatAmericanOdds={formatAmericanOdds}
+            formatOddLabel={formatOddLabel}
+            getMarketName={getMarketName}
+          />
         </AccordionSection>
         )}
 
@@ -2715,19 +2827,25 @@ const FixtureDetail = () => {
       </div>
 
       {/* ============================================ */}
-      {/* ADD NOTE MODAL */}
+      {/* FLOATING NOTE WIDGET */}
       {/* ============================================ */}
-      <AddNoteModal
-        isOpen={noteModalOpen}
-        onClose={() => setNoteModalOpen(false)}
-        fixtureId={id}
-        fixtureName={fixtureName}
-        token={token}
-        onNoteAdded={() => {
-          // Could show a toast or refresh notes
-          console.log('Note added successfully');
-        }}
-      />
+      {/* Shows on the right side, minimizes to bottom-right corner */}
+      {/* Auto-links to this fixture + both teams */}
+      {isAuthenticated && homeTeam && awayTeam && (
+        <FloatingNoteWidget
+          token={token}
+          contextType="fixture"
+          contextId={id}
+          contextLabel={fixtureName}
+          additionalLinks={[
+            { contextType: 'team', contextId: homeTeam.id, label: homeTeam.name },
+            { contextType: 'team', contextId: awayTeam.id, label: awayTeam.name }
+          ]}
+          onNoteAdded={() => {
+            console.log('Note added successfully');
+          }}
+        />
+      )}
     </div>
   );
 };

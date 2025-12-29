@@ -19,8 +19,11 @@ import {
   getTeamSeasons,
   getTeamSchedule,
   getCoachById,
-  searchCoaches
+  searchCoaches,
+  getSeasonById,
+  getTeamFixturesWithStats
 } from '../services/sportsmonks.js';
+import cache from '../services/cache.js';
 
 // Create a router
 const router = express.Router();
@@ -854,6 +857,239 @@ router.get('/coaches/:id', async (req, res) => {
       error: 'Failed to get coach',
       details: error.message 
     });
+  }
+});
+
+// ============================================
+// GET TEAM CORNER AVERAGES BY SEASON
+// GET /teams/:id/corners/seasons/:seasonId
+// Example: GET /teams/1/corners/seasons/23614
+// ============================================
+// Calculates home and away corner averages from historical fixtures.
+// Uses caching (12h TTL) to reduce API calls.
+//
+// Response:
+// {
+//   teamId: 1,
+//   teamName: "West Ham",
+//   seasonId: 23614,
+//   corners: {
+//     home: { total: 95, games: 19, average: 5.0 },
+//     away: { total: 57, games: 17, average: 3.4 },
+//     overall: { total: 152, games: 36, average: 4.2 }
+//   },
+//   cachedAt: "2024-12-28T15:30:00Z"
+// }
+
+router.get('/:id/corners/seasons/:seasonId', async (req, res) => {
+  try {
+    const { id: teamId, seasonId } = req.params;
+    
+    // Validate IDs
+    if (isNaN(teamId)) {
+      return res.status(400).json({ error: 'Team ID must be a number' });
+    }
+    if (isNaN(seasonId)) {
+      return res.status(400).json({ error: 'Season ID must be a number' });
+    }
+    
+    // ============================================
+    // CHECK CACHE FIRST
+    // ============================================
+    const cacheKey = cache.keys.corners(teamId, seasonId);
+    const cached = cache.get(cacheKey);
+    
+    if (cached) {
+      // Return cached data with cache info
+      return res.json({
+        ...cached,
+        fromCache: true
+      });
+    }
+    
+    // ============================================
+    // FETCH SEASON DATES
+    // ============================================
+    // We need the season start date to fetch fixtures
+    // Cache season data separately (24h TTL) since it rarely changes
+    const seasonCacheKey = cache.keys.season(seasonId);
+    let seasonData = cache.get(seasonCacheKey);
+    
+    if (!seasonData) {
+      console.log(`[Corners] Fetching season ${seasonId} dates...`);
+      const seasonResult = await getSeasonById(seasonId);
+      
+      if (!seasonResult.data) {
+        return res.status(404).json({ error: `Season ${seasonId} not found` });
+      }
+      
+      seasonData = {
+        id: seasonResult.data.id,
+        name: seasonResult.data.name,
+        startDate: seasonResult.data.starting_at,
+        endDate: seasonResult.data.ending_at,
+        leagueName: seasonResult.data.league?.name
+      };
+      
+      // Cache season data for 24 hours
+      cache.set(seasonCacheKey, seasonData, cache.TTL.SEASON);
+    }
+    
+    // ============================================
+    // FETCH TEAM FIXTURES WITH STATISTICS
+    // ============================================
+    // Get fixtures from season start to today
+    const today = new Date().toISOString().split('T')[0];
+    const startDate = seasonData.startDate;
+    
+    console.log(`[Corners] Fetching fixtures for team ${teamId} from ${startDate} to ${today}...`);
+    const fixturesResult = await getTeamFixturesWithStats(startDate, today, teamId);
+    const allFixtures = fixturesResult.data || [];
+    
+    // ============================================
+    // FILTER TO THIS SEASON ONLY
+    // ============================================
+    // The fixtures endpoint returns ALL matches (including cups),
+    // so we must filter to only include fixtures from the specified season.
+    // This ensures Premier League stats don't include FA Cup / Carabao Cup games.
+    const fixtures = allFixtures.filter(f => f.season_id === parseInt(seasonId));
+    
+    console.log(`[Corners] Found ${allFixtures.length} total fixtures, ${fixtures.length} in season ${seasonId}`);
+    
+    // ============================================
+    // CALCULATE CORNER AVERAGES
+    // ============================================
+    // Filter to finished matches only and calculate averages
+    
+    const CORNERS_TYPE_ID = 34;
+    
+    let homeCorners = 0;
+    let homeGames = 0;
+    let awayCorners = 0;
+    let awayGames = 0;
+    
+    // Process each fixture
+    for (const fixture of fixtures) {
+      // Only count finished matches
+      if (fixture.state?.state !== 'FT') continue;
+      
+      // Find this team's location in this match (home or away)
+      const teamParticipant = fixture.participants?.find(
+        p => p.id === parseInt(teamId)
+      );
+      
+      if (!teamParticipant) continue;
+      
+      const teamLocation = teamParticipant.meta?.location; // 'home' or 'away'
+      
+      // Find corners stat for this team in this match
+      // Statistics are per-team, identified by participant_id
+      const cornersStat = fixture.statistics?.find(
+        s => s.type_id === CORNERS_TYPE_ID && s.participant_id === parseInt(teamId)
+      );
+      
+      // Extract corner count
+      // Data structure: { value: 6 } or sometimes just a number
+      let corners = 0;
+      if (cornersStat?.data) {
+        corners = typeof cornersStat.data === 'number' 
+          ? cornersStat.data 
+          : cornersStat.data.value ?? 0;
+      }
+      
+      // Add to appropriate totals
+      if (teamLocation === 'home') {
+        homeCorners += corners;
+        homeGames++;
+      } else if (teamLocation === 'away') {
+        awayCorners += corners;
+        awayGames++;
+      }
+    }
+    
+    // Calculate averages
+    const homeAvg = homeGames > 0 ? parseFloat((homeCorners / homeGames).toFixed(2)) : 0;
+    const awayAvg = awayGames > 0 ? parseFloat((awayCorners / awayGames).toFixed(2)) : 0;
+    const overallGames = homeGames + awayGames;
+    const overallCorners = homeCorners + awayCorners;
+    const overallAvg = overallGames > 0 ? parseFloat((overallCorners / overallGames).toFixed(2)) : 0;
+    
+    // ============================================
+    // BUILD RESPONSE
+    // ============================================
+    const response = {
+      teamId: parseInt(teamId),
+      seasonId: parseInt(seasonId),
+      seasonName: seasonData.name,
+      leagueName: seasonData.leagueName,
+      corners: {
+        home: {
+          total: homeCorners,
+          games: homeGames,
+          average: homeAvg
+        },
+        away: {
+          total: awayCorners,
+          games: awayGames,
+          average: awayAvg
+        },
+        overall: {
+          total: overallCorners,
+          games: overallGames,
+          average: overallAvg
+        }
+      },
+      cachedAt: new Date().toISOString()
+    };
+    
+    // ============================================
+    // CACHE AND RETURN
+    // ============================================
+    cache.set(cacheKey, response, cache.TTL.CORNERS);
+    
+    res.json({
+      ...response,
+      fromCache: false
+    });
+    
+  } catch (error) {
+    console.error('Get team corner averages error:', error);
+    res.status(500).json({ 
+      error: 'Failed to get team corner averages',
+      details: error.message 
+    });
+  }
+});
+
+// ============================================
+// CLEAR CORNERS CACHE (Development)
+// DELETE /teams/:id/corners/seasons/:seasonId/cache
+// Example: DELETE /teams/1/corners/seasons/23614/cache
+// ============================================
+// Clears cached corner data for a specific team/season.
+// Useful when data is stale or after fixing calculation bugs.
+
+router.delete('/:id/corners/seasons/:seasonId/cache', async (req, res) => {
+  try {
+    const { id: teamId, seasonId } = req.params;
+    
+    // Build the cache key
+    const cacheKey = cache.keys.corners(teamId, seasonId);
+    
+    // Delete from cache
+    const deleted = cache.del(cacheKey);
+    
+    res.json({
+      message: deleted > 0 
+        ? `Cache cleared for team ${teamId}, season ${seasonId}` 
+        : `No cached data found for team ${teamId}, season ${seasonId}`,
+      cacheKey,
+      deleted: deleted > 0
+    });
+    
+  } catch (error) {
+    console.error('Clear cache error:', error);
+    res.status(500).json({ error: 'Failed to clear cache' });
   }
 });
 

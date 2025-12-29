@@ -155,6 +155,10 @@ export const dataApi = {
 
   // Stages (for cup competitions - fixtures organized by stage/round)
   getStagesBySeason: (seasonId) => api.get(`/fixtures/seasons/${seasonId}`),
+
+  // Corner averages (calculated from historical fixtures, cached 12h)
+  // Returns home/away/overall corner averages for a team in a season
+  getTeamCornerAverages: (teamId, seasonId) => api.get(`/teams/${teamId}/corners/seasons/${seasonId}`),
 };
 
 export default api;

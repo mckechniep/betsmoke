@@ -216,9 +216,12 @@ async function getFixtureById(fixtureId, options = {}) {
   
   // Optional includes - added if requested
   if (options.includeOdds) {
-    // Include odds WITH bookmaker names embedded in each odd object
-    // This way we don't need a separate API call to get bookmaker names
+    // Include odds WITH bookmaker AND market names embedded in each odd object
+    // This way we don't need separate API calls to get bookmaker/market names
+    // - odds.bookmaker: Gives us bookmaker name (e.g., "Betfair", "Unibet")
+    // - odds.market: Gives us market name (e.g., "Fulltime Result", "Over/Under")
     includes.push('odds.bookmaker');
+    includes.push('odds.market');
   }
   if (options.includeSidelined) {
     // Include player info, sideline details (injury reason, expected return),
@@ -1047,6 +1050,43 @@ async function getStagesBySeason(seasonId) {
 }
 
 // ============================================
+// TEAM FIXTURES WITH STATISTICS
+// ============================================
+
+/**
+ * Get a team's fixtures within a date range WITH match statistics
+ * Used for calculating corner averages, shots, etc. from historical data
+ * 
+ * @param {string} startDate - Start date in YYYY-MM-DD format
+ * @param {string} endDate - End date in YYYY-MM-DD format  
+ * @param {number|string} teamId - The SportsMonks team ID
+ * @returns {Promise<object>} - Fixtures with full statistics
+ * 
+ * Statistics include type_id 34 (corners) with:
+ * - participant_id: which team
+ * - location: "home" or "away" (team's location in THIS match)
+ * - data: { value: 6 } (corner count)
+ * 
+ * Example: getTeamFixturesWithStats("2024-08-16", "2024-12-28", 1)
+ */
+async function getTeamFixturesWithStats(startDate, endDate, teamId) {
+  // API: GET /fixtures/between/{start_date}/{end_date}/{team_id}
+  const endpoint = `/fixtures/between/${startDate}/${endDate}/${teamId}`;
+  
+  // Include statistics and state for filtering finished matches
+  // - statistics: Match stats including corners (type_id 34)
+  // - participants: Team info to determine home/away
+  // - state: To filter only finished matches (FT)
+  // - scores: Final scores
+  return makeRequest(endpoint, [
+    'statistics',
+    'participants', 
+    'state',
+    'scores'
+  ]);
+}
+
+// ============================================
 // EXPORT ALL FUNCTIONS
 // ============================================
 
@@ -1121,5 +1161,8 @@ export {
   getFixturePredictions,
 
   // Stages / Schedule functions (for cup competitions)
-  getStagesBySeason
+  getStagesBySeason,
+
+  // Team fixtures with statistics (for corner calculations)
+  getTeamFixturesWithStats
 };

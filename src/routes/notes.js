@@ -41,7 +41,14 @@ router.post('/', async (req, res) => {
     }
 
     // 5. Validate each link in the array
-    const validContextTypes = ['team', 'fixture', 'general'];
+    // Supported context types:
+    //   - team: Link to a specific team (e.g., "Arsenal")
+    //   - fixture: Link to a specific match (e.g., "Arsenal vs Chelsea")
+    //   - player: Link to a specific player (e.g., "Haaland")
+    //   - league: Link to a competition (e.g., "Premier League")
+    //   - betting: Link to a betting strategy/category (e.g., "BTTS Research")
+    //   - general: No specific link, just a general note
+    const validContextTypes = ['team', 'fixture', 'player', 'league', 'betting', 'general'];
 
     for (const link of links) {
       // Check contextType is valid
@@ -251,7 +258,8 @@ router.put('/:id', async (req, res) => {
         });
       }
 
-      const validContextTypes = ['team', 'fixture', 'general'];
+      // Supported context types (must match CREATE route)
+      const validContextTypes = ['team', 'fixture', 'player', 'league', 'betting', 'general'];
 
       for (const link of links) {
         if (!link.contextType || !validContextTypes.includes(link.contextType)) {
@@ -260,6 +268,7 @@ router.put('/:id', async (req, res) => {
           });
         }
 
+        // All types except 'general' require a contextId
         if (link.contextType !== 'general' && !link.contextId) {
           return res.status(400).json({
             error: `contextId is required when contextType is '${link.contextType}'`

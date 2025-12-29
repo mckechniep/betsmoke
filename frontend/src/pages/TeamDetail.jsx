@@ -16,7 +16,9 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { dataApi } from '../api/client';
+import { useAuth } from '../context/AuthContext';
 import SquadRoster from '../components/SquadRoster';
+import FloatingNoteWidget from '../components/FloatingNoteWidget';
 
 // ============================================
 // TYPE IDS FROM SPORTSMONKS
@@ -342,11 +344,15 @@ function HomeAwayPerformanceSection({ teamId }) {
             <StatRow label="Goal Difference" home={homeData.goalDiff > 0 ? `+${homeData.goalDiff}` : homeData.goalDiff} away={awayData.goalDiff > 0 ? `+${awayData.goalDiff}` : awayData.goalDiff} />
             <StatRow label="Clean Sheets" home={homeData.cleansheets} away={awayData.cleansheets} />
             <StatRow label="Failed to Score" home={homeData.failedToScore} away={awayData.failedToScore} />
-            <StatRow label="Points" home={homeData.points} away={awayData.points} highlight={true} />
+            {/* Only show Points for league competitions (not cups) */}
+            {/* Premier League = 8, FA Cup = 24, Carabao Cup = 27 */}
+            {selectedSeasonLeagueId === 8 && (
+              <StatRow label="Points" home={homeData.points} away={awayData.points} highlight={true} />
+            )}
           </div>
 
-          {/* Points Per Game */}
-          {homeData.played !== '-' && awayData.played !== '-' && (
+          {/* Points Per Game - Only for league competitions (Premier League) */}
+          {selectedSeasonLeagueId === 8 && homeData.played !== '-' && awayData.played !== '-' && (
             <div className="mt-4 pt-4 border-t border-gray-200">
               <div className="flex items-center">
                 <div className="w-1/3 text-center text-green-700 font-medium">
@@ -1621,19 +1627,21 @@ function ScoringPatternSection({ teamId }) {
 // ============================================
 // CORNERS SECTION
 // ============================================
-// Displays corner kick statistics
-// Type ID: 34 = CORNERS
-// All competitions, with season selector
+// Displays corner kick statistics with HOME/AWAY breakdown
+// Premier League only, current season
+// Uses our cached corner averages endpoint for home/away split
 
 function CornersSection({ teamId }) {
   const [seasons, setSeasons] = useState([]);
   const [selectedSeasonId, setSelectedSeasonId] = useState(null);
   const [stats, setStats] = useState(null);
+  const [cornerAvg, setCornerAvg] = useState(null);  // Home/away breakdown from our endpoint
   const [loading, setLoading] = useState(true);
+  const [cornerAvgLoading, setCornerAvgLoading] = useState(false);
   const [error, setError] = useState('');
 
   // ============================================
-  // FETCH AVAILABLE SEASONS (All competitions)
+  // FETCH AVAILABLE SEASONS (Premier League only)
   // ============================================
   useEffect(() => {
     const fetchSeasons = async () => {
@@ -1641,25 +1649,24 @@ function CornersSection({ teamId }) {
         const data = await dataApi.getTeamSeasons(teamId);
         const teamSeasons = data.seasons || [];
         
-        // Sort by year descending, then by league ID (Premier League first)
-        const sorted = teamSeasons.sort((a, b) => {
+        // Filter to Premier League seasons only (league_id: 8)
+        const plSeasons = teamSeasons.filter(s => 
+          s.league_id === 8 || s.league?.id === 8
+        );
+        
+        // Sort by year descending
+        const sorted = plSeasons.sort((a, b) => {
           const aYear = parseInt(a.name?.split('/')[0] || a.name || '0');
           const bYear = parseInt(b.name?.split('/')[0] || b.name || '0');
-          if (bYear !== aYear) return bYear - aYear;
-          
-          const aLeagueId = a.league_id || a.league?.id || 999;
-          const bLeagueId = b.league_id || b.league?.id || 999;
-          return aLeagueId - bLeagueId;
+          return bYear - aYear;
         });
         
         setSeasons(sorted);
         
-        // Auto-select the current Premier League season first, else any current
+        // Auto-select the current Premier League season
         if (sorted.length > 0) {
-          const currentPL = sorted.find(s => s.is_current && (s.league_id === 8 || s.league?.id === 8));
-          const anyCurrent = sorted.find(s => s.is_current);
-          const firstPL = sorted.find(s => s.league_id === 8 || s.league?.id === 8);
-          const selected = currentPL || anyCurrent || firstPL || sorted[0];
+          const currentPL = sorted.find(s => s.is_current);
+          const selected = currentPL || sorted[0];
           setSelectedSeasonId(selected.id);
         }
       } catch (err) {
@@ -1697,6 +1704,30 @@ function CornersSection({ teamId }) {
   }, [teamId, selectedSeasonId]);
 
   // ============================================
+  // FETCH CORNER AVERAGES (home/away breakdown)
+  // ============================================
+  // Uses our cached endpoint that calculates from historical fixtures
+  useEffect(() => {
+    if (!selectedSeasonId) return;
+
+    const fetchCornerAvg = async () => {
+      setCornerAvgLoading(true);
+      try {
+        const data = await dataApi.getTeamCornerAverages(teamId, selectedSeasonId);
+        setCornerAvg(data);
+      } catch (err) {
+        console.error('Failed to fetch corner averages:', err);
+        // Non-critical - just won't show home/away breakdown
+        setCornerAvg(null);
+      } finally {
+        setCornerAvgLoading(false);
+      }
+    };
+
+    fetchCornerAvg();
+  }, [teamId, selectedSeasonId]);
+
+  // ============================================
   // HELPER: Get stat by type_id
   // ============================================
   const getStat = (typeId) => {
@@ -1705,7 +1736,7 @@ function CornersSection({ teamId }) {
   };
 
   // ============================================
-  // EXTRACT CORNERS DATA
+  // EXTRACT CORNERS DATA (overall from team stats)
   // ============================================
   const getCornersData = () => {
     // Type ID 34 = CORNERS
@@ -1732,6 +1763,11 @@ function CornersSection({ teamId }) {
   const cornersData = getCornersData();
   const hasData = cornersData.total !== null;
 
+  // If no Premier League seasons found, don't render anything
+  if (seasons.length === 0 && !loading) {
+    return null;
+  }
+
   // ============================================
   // RENDER
   // ============================================
@@ -1743,7 +1779,7 @@ function CornersSection({ teamId }) {
           🚩 Corners
         </h2>
         
-        {/* Season Selector */}
+        {/* Season Selector - Premier League only */}
         <div className="flex items-center space-x-2">
           <label className="text-sm text-gray-600">Season:</label>
           <select
@@ -1755,19 +1791,11 @@ function CornersSection({ teamId }) {
             {seasons.length === 0 ? (
               <option value="">Loading...</option>
             ) : (
-              seasons.map((season) => {
-                const leagueName = season.league?.name || 
-                  (season.league_id === 8 ? 'Premier League' : 
-                   season.league_id === 24 ? 'FA Cup' : 
-                   season.league_id === 27 ? 'EFL Cup' : 
-                   `League ${season.league_id}`);
-                
-                return (
-                  <option key={season.id} value={season.id}>
-                    {season.name} - {leagueName} {season.is_current ? '✓' : ''}
-                  </option>
-                );
-              })
+              seasons.map((season) => (
+                <option key={season.id} value={season.id}>
+                  {season.name} - Premier League {season.is_current ? '✓' : ''}
+                </option>
+              ))
             )}
           </select>
         </div>
@@ -1790,7 +1818,7 @@ function CornersSection({ teamId }) {
       {/* Stats Display */}
       {!loading && !error && hasData && (
         <div>
-          {/* Main Stats Grid */}
+          {/* Main Stats Grid - Overall */}
           <div className="grid grid-cols-3 gap-4">
             {/* Total Corners */}
             <div className="bg-orange-50 rounded-lg p-4 border border-orange-200 text-center">
@@ -1820,13 +1848,110 @@ function CornersSection({ teamId }) {
             </div>
           </div>
 
+          {/* ============================================ */}
+          {/* HOME / AWAY BREAKDOWN */}
+          {/* ============================================ */}
+          {/* Uses our cached corner averages endpoint */}
+          {cornerAvgLoading ? (
+            <div className="mt-6 pt-4 border-t border-gray-100">
+              <div className="text-center py-4 text-gray-400 text-sm">
+                <div className="animate-pulse">Loading home/away breakdown...</div>
+              </div>
+            </div>
+          ) : cornerAvg?.corners ? (
+            <div className="mt-6 pt-4 border-t border-gray-100">
+              <h3 className="text-sm font-semibold text-gray-700 mb-3">
+                📊 Home vs Away Breakdown
+              </h3>
+              
+              <div className="grid grid-cols-2 gap-4">
+                {/* Home Corners */}
+                <div className="bg-green-50 rounded-lg p-4 border border-green-200">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs font-semibold text-green-700">🏠 HOME</span>
+                    <span className="text-xs text-gray-500">
+                      {cornerAvg.corners.home.games} games
+                    </span>
+                  </div>
+                  <div className="flex items-baseline justify-between">
+                    <div>
+                      <span className="text-2xl font-bold text-green-700">
+                        {cornerAvg.corners.home.total}
+                      </span>
+                      <span className="text-sm text-gray-500 ml-1">corners</span>
+                    </div>
+                    <div className="text-right">
+                      <span className="text-lg font-bold text-green-600">
+                        {cornerAvg.corners.home.average}
+                      </span>
+                      <span className="text-xs text-gray-500 ml-1">avg</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Away Corners */}
+                <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs font-semibold text-blue-700">✈️ AWAY</span>
+                    <span className="text-xs text-gray-500">
+                      {cornerAvg.corners.away.games} games
+                    </span>
+                  </div>
+                  <div className="flex items-baseline justify-between">
+                    <div>
+                      <span className="text-2xl font-bold text-blue-700">
+                        {cornerAvg.corners.away.total}
+                      </span>
+                      <span className="text-sm text-gray-500 ml-1">corners</span>
+                    </div>
+                    <div className="text-right">
+                      <span className="text-lg font-bold text-blue-600">
+                        {cornerAvg.corners.away.average}
+                      </span>
+                      <span className="text-xs text-gray-500 ml-1">avg</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Home vs Away Comparison Insight */}
+              {cornerAvg.corners.home.average !== cornerAvg.corners.away.average && (
+                <div className="mt-3 text-center">
+                  <span className={`text-xs px-3 py-1 rounded-full ${
+                    cornerAvg.corners.home.average > cornerAvg.corners.away.average
+                      ? 'bg-green-100 text-green-700'
+                      : 'bg-blue-100 text-blue-700'
+                  }`}>
+                    {cornerAvg.corners.home.average > cornerAvg.corners.away.average
+                      ? `+${(cornerAvg.corners.home.average - cornerAvg.corners.away.average).toFixed(1)} more corners at home`
+                      : `+${(cornerAvg.corners.away.average - cornerAvg.corners.home.average).toFixed(1)} more corners away`
+                    }
+                  </span>
+                </div>
+              )}
+
+              {/* Cache indicator */}
+              {cornerAvg.fromCache && (
+                <div className="text-xs text-gray-400 text-right mt-2">
+                  📦 Cached data
+                </div>
+              )}
+            </div>
+          ) : null}
+
           {/* Betting Insight */}
           <div className="mt-6 pt-4 border-t border-gray-100">
             <p className="text-xs text-gray-500">
               📊 <strong>Betting Insight:</strong> 
               {cornersData.average && (
                 <span>
-                  This team averages <strong>{cornersData.average}</strong> corners per game.
+                  This team averages <strong>{cornersData.average}</strong> corners per game overall.
+                  {cornerAvg?.corners && (
+                    <span>
+                      {' '}At home: <strong>{cornerAvg.corners.home.average}</strong>, 
+                      away: <strong>{cornerAvg.corners.away.average}</strong>.
+                    </span>
+                  )}
                   {cornersData.average >= 6 && ' They win a lot of corners - consider Over corners bets.'}
                   {cornersData.average < 4 && ' They tend to win fewer corners - consider Under corners bets.'}
                 </span>
@@ -1851,6 +1976,8 @@ function CornersSection({ teamId }) {
 // ============================================
 const TeamDetail = () => {
   const { id } = useParams();
+  const { token, isAuthenticated } = useAuth();
+  
   const [team, setTeam] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -1965,6 +2092,24 @@ const TeamDetail = () => {
 
       {/* Squad Roster Section - Full stats table with sorting */}
       <SquadRoster teamId={id} />
+
+      {/* ============================================ */}
+      {/* FLOATING NOTE WIDGET */}
+      {/* ============================================ */}
+      {/* Shows on the right side, minimizes to bottom-right corner */}
+      {/* Auto-links to this team */}
+      {isAuthenticated && team && (
+        <FloatingNoteWidget
+          token={token}
+          contextType="team"
+          contextId={id}
+          contextLabel={team.name}
+          additionalLinks={[]}  // No additional links for team pages
+          onNoteAdded={() => {
+            console.log('Note added successfully');
+          }}
+        />
+      )}
     </div>
   );
 };

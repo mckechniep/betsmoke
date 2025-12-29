@@ -61,20 +61,53 @@ const getMatchState = (fixture) => {
   const stateId = fixture.state_id;
   const state = fixture.state?.state;
   
-  // Common state IDs:
+  // Common state IDs (from SportsMonks API):
   // 1 = Not Started (NS)
-  // 2 = In Play (LIVE)
+  // 2 = 1st Half (INPLAY_1ST_HALF) - LIVE
   // 3 = Half Time (HT)
-  // 5 = Finished (FT)
-  // 7 = Postponed
+  // 4 = Break (BREAK)
+  // 5 = Full Time (FT) - FINISHED
+  // 6 = Extra Time (INPLAY_ET) - LIVE
+  // 7 = After Extra Time (AET) - FINISHED (cup games)
+  // 8 = After Penalties (FT_PEN) - FINISHED (cup games)
+  // 9 = Penalties (INPLAY_PENALTIES) - LIVE
+  // 10 = Postponed (POSTPONED)
+  // 11 = Suspended
   // 13 = Cancelled
+  // 14 = TBA
+  // 15 = Walkover (WO) - FINISHED
+  // 16 = Abandoned
+  // 17 = Interrupted
+  // 19 = Awaiting Updates (AU) - Ghost/stale fixture
+  // 22 = 2nd Half (INPLAY_2ND_HALF) - LIVE
   
+  // FINISHED states (game is over, result is final)
   if (state === 'FT' || stateId === 5) return { text: 'FT', class: 'bg-gray-500' };
-  if (state === 'LIVE' || stateId === 2) return { text: 'LIVE', class: 'bg-red-500 animate-pulse' };
+  if (state === 'AET' || stateId === 7) return { text: 'AET', class: 'bg-gray-500' };
+  if (state === 'FT_PEN' || stateId === 8) return { text: 'FT (Pen)', class: 'bg-gray-500' };
+  if (state === 'WO' || stateId === 15) return { text: 'W/O', class: 'bg-gray-500' };
+  
+  // STALE/GHOST fixture (SportsMonks data issue)
+  if (state === 'AWAITING_UPDATES' || stateId === 19) return { text: 'Stale', class: 'bg-gray-400' };
+  
+  // LIVE states (game is currently being played)
+  if (state === 'INPLAY_1ST_HALF' || stateId === 2) return { text: '1st Half', class: 'bg-red-500 animate-pulse' };
+  if (state === 'INPLAY_2ND_HALF' || stateId === 22) return { text: '2nd Half', class: 'bg-red-500 animate-pulse' };
   if (state === 'HT' || stateId === 3) return { text: 'HT', class: 'bg-yellow-500' };
+  if (state === 'BREAK' || stateId === 4) return { text: 'Break', class: 'bg-yellow-500' };
+  if (state === 'INPLAY_ET' || stateId === 6) return { text: 'ET', class: 'bg-red-500 animate-pulse' };
+  if (state === 'INPLAY_PENALTIES' || stateId === 9) return { text: 'Penalties', class: 'bg-red-500 animate-pulse' };
+  
+  // UPCOMING state
   if (state === 'NS' || stateId === 1) return { text: 'Upcoming', class: 'bg-blue-500' };
-  if (stateId === 7) return { text: 'Postponed', class: 'bg-orange-500' };
-  if (stateId === 13) return { text: 'Cancelled', class: 'bg-red-700' };
+  if (state === 'TBA' || stateId === 14) return { text: 'TBA', class: 'bg-blue-500' };
+  
+  // DISRUPTED states (game didn't complete normally)
+  if (state === 'POSTPONED' || stateId === 10) return { text: 'Postponed', class: 'bg-orange-500' };
+  if (state === 'SUSP' || stateId === 11) return { text: 'Suspended', class: 'bg-orange-500' };
+  if (state === 'CANCELLED' || stateId === 13) return { text: 'Cancelled', class: 'bg-red-700' };
+  if (state === 'ABANDONED' || stateId === 16) return { text: 'Abandoned', class: 'bg-red-700' };
+  if (state === 'INT' || stateId === 17) return { text: 'Interrupted', class: 'bg-orange-500' };
   
   return { text: 'TBD', class: 'bg-gray-400' };
 };
@@ -121,6 +154,9 @@ const CupCompetition = ({
   const [selectedStageId, setSelectedStageId] = useState(null);
   const [stagesLoading, setStagesLoading] = useState(false);
   const [error, setError] = useState('');
+  
+  // State for team name filter (fuzzy search)
+  const [teamFilter, setTeamFilter] = useState('');
 
   // ============================================
   // COLOR CLASS MAPPINGS
@@ -241,11 +277,54 @@ const CupCompetition = ({
         
         setStages(sortedStages);
         
-        // Auto-select the current stage, or the first stage with fixtures
+        // ============================================
+        // AUTO-SELECT THE "CURRENT" STAGE
+        // ============================================
+        // Priority:
+        // 1. Stage with is_current = true (from API)
+        // 2. First stage with upcoming/unfinished fixtures (the "active" round)
+        // 3. Last stage with fixtures (most recent completed round)
+        // 4. First stage as fallback
         if (sortedStages.length > 0) {
-          const currentStage = sortedStages.find(s => s.is_current);
-          const stageWithFixtures = sortedStages.find(s => s.fixtures?.length > 0);
-          const selected = currentStage || stageWithFixtures || sortedStages[0];
+          // Helper: Check if a stage has any fixtures still pending (not resolved)
+          // 
+          // RESOLVED states (game won't be played or is done):
+          // - Finished: 5 (FT), 7 (AET), 8 (FT_PEN), 15 (W/O)
+          // - Disrupted: 10 (POSTPONED), 11 (SUSP), 13 (CANCELLED), 16 (ABANDONED), 17 (INT)
+          // - Stale: 19 (AWAITING_UPDATES) - ghost fixtures from SportsMonks
+          //
+          // PENDING states (game still needs to happen or is live):
+          // - Upcoming: 1 (NS), 14 (TBA)
+          // - Live: 2, 3, 4, 6, 9, 22
+          //
+          // NOTE: Fixtures without state data are treated as resolved (ghost/bad data)
+          const resolvedStateIds = [5, 7, 8, 15, 10, 11, 13, 16, 17, 19];
+          const resolvedStates = ['FT', 'AET', 'FT_PEN', 'WO', 'POSTPONED', 'SUSP', 'CANCELLED', 'ABANDONED', 'INT', 'AWAITING_UPDATES'];
+          
+          const hasUpcomingFixtures = (stage) => {
+            return stage.fixtures?.some(f => {
+              const state = f.state?.state || '';
+              const stateId = f.state_id;
+              
+              // If no state data at all, treat as resolved (ghost fixture)
+              // This prevents bad SportsMonks data from keeping us stuck on old rounds
+              if (!stateId && !state) {
+                return false; // Not pending
+              }
+              
+              // Pending if state is NOT in resolved list
+              const isResolved = resolvedStateIds.includes(stateId) || resolvedStates.includes(state);
+              return !isResolved;
+            });
+          };
+          
+          // Try to find the current stage using multiple strategies
+          const apiCurrentStage = sortedStages.find(s => s.is_current);
+          const activeStage = sortedStages.find(s => hasUpcomingFixtures(s));
+          const lastStageWithFixtures = [...sortedStages].reverse().find(s => s.fixtures?.length > 0);
+          
+          // Pick the best option
+          const selected = apiCurrentStage || activeStage || lastStageWithFixtures || sortedStages[0];
           setSelectedStageId(selected.id);
         }
       } catch (err) {
@@ -264,7 +343,57 @@ const CupCompetition = ({
   // GET SELECTED STAGE DATA
   // ============================================
   const selectedStage = stages.find(s => s.id === selectedStageId);
-  const fixtures = selectedStage?.fixtures || [];
+  const allFixtures = selectedStage?.fixtures || [];
+  
+  // ============================================
+  // HELPER: Filter fixtures by team name
+  // ============================================
+  const filterFixturesByTeam = (fixtureList, searchText) => {
+    if (!searchText.trim()) return fixtureList;
+    
+    const lowerSearch = searchText.toLowerCase().trim();
+    return fixtureList.filter(fixture => {
+      const participants = fixture.participants || [];
+      const homeTeam = participants.find(p => p.meta?.location === 'home') || participants[0];
+      const awayTeam = participants.find(p => p.meta?.location === 'away') || participants[1];
+      
+      const homeMatch = homeTeam?.name?.toLowerCase().includes(lowerSearch);
+      const awayMatch = awayTeam?.name?.toLowerCase().includes(lowerSearch);
+      
+      return homeMatch || awayMatch;
+    });
+  };
+  
+  // ============================================
+  // FILTER FIXTURES BY TEAM NAME (fuzzy search)
+  // ============================================
+  // First, filter current stage fixtures
+  const currentStageFiltered = filterFixturesByTeam(allFixtures, teamFilter);
+  
+  // If filter is active but no results in current stage,
+  // search across ALL stages and group by stage
+  const crossStageResults = [];
+  let isShowingCrossStageResults = false;
+  
+  if (teamFilter.trim() && currentStageFiltered.length === 0 && stages.length > 0) {
+    isShowingCrossStageResults = true;
+    
+    // Search all stages for matching fixtures
+    stages.forEach(stage => {
+      const stageFixtures = stage.fixtures || [];
+      const matches = filterFixturesByTeam(stageFixtures, teamFilter);
+      
+      if (matches.length > 0) {
+        crossStageResults.push({
+          stage: stage,
+          fixtures: matches
+        });
+      }
+    });
+  }
+  
+  // The fixtures to display (either current stage filtered, or we'll handle cross-stage separately)
+  const fixtures = currentStageFiltered;
 
   // ============================================
   // GET SEASON NAME FOR DISPLAY
@@ -283,7 +412,13 @@ const CupCompetition = ({
     const awayTeam = participants.find(p => p.meta?.location === 'away') || participants[1];
     const score = getScore(fixture);
     const matchState = getMatchState(fixture);
-    const isFinished = fixture.state?.state === 'FT' || fixture.state_id === 5;
+    
+    // Check if match is finished (includes cup-specific states like AET and FT_PEN)
+    // Finished state IDs: 5 (FT), 7 (AET), 8 (FT_PEN), 15 (W/O)
+    const finishedStateIds = [5, 7, 8, 15];
+    const finishedStates = ['FT', 'AET', 'FT_PEN', 'WO'];
+    const isFinished = finishedStateIds.includes(fixture.state_id) || 
+                       finishedStates.includes(fixture.state?.state);
     
     return (
       <Link
@@ -382,7 +517,10 @@ const CupCompetition = ({
         ) : (
           <select
             value={selectedSeasonId || ''}
-            onChange={(e) => setSelectedSeasonId(parseInt(e.target.value))}
+            onChange={(e) => {
+              setSelectedSeasonId(parseInt(e.target.value));
+              setTeamFilter(''); // Clear filter when changing seasons
+            }}
             className="px-3 py-2 bg-white/10 text-white border border-white/30 rounded-md 
                        focus:outline-none focus:ring-2 focus:ring-white/50
                        cursor-pointer"
@@ -407,7 +545,10 @@ const CupCompetition = ({
             {stages.map((stage) => (
               <button
                 key={stage.id}
-                onClick={() => setSelectedStageId(stage.id)}
+                onClick={() => {
+                  setSelectedStageId(stage.id);
+                  setTeamFilter(''); // Clear filter when changing stages
+                }}
                 className={`px-4 py-2 rounded-md text-sm font-medium transition-colors whitespace-nowrap
                   ${selectedStageId === stage.id
                     ? `${colors.buttonActive} text-white border`
@@ -421,6 +562,58 @@ const CupCompetition = ({
               </button>
             ))}
           </div>
+        </div>
+      )}
+
+      {/* Team Filter Input */}
+      {!stagesLoading && allFixtures.length > 0 && (
+        <div className="px-4 py-3 bg-gray-100 border-b border-gray-200">
+          <div className="relative">
+            <input
+              type="text"
+              placeholder="Filter by team name (e.g. 'ful' for Fulham)..."
+              value={teamFilter}
+              onChange={(e) => setTeamFilter(e.target.value)}
+              className="w-full px-4 py-2 pl-10 border border-gray-300 rounded-lg 
+                         focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent
+                         text-sm"
+            />
+            {/* Search Icon */}
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+              🔍
+            </span>
+            {/* Clear Button */}
+            {teamFilter && (
+              <button
+                onClick={() => setTeamFilter('')}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 
+                           hover:text-gray-600 text-sm font-medium"
+              >
+                ✕
+              </button>
+            )}
+          </div>
+          {/* Filter Results Count */}
+          {teamFilter.trim() && (
+            <p className="text-xs text-gray-500 mt-2">
+              {isShowingCrossStageResults ? (
+                // Cross-stage search results
+                crossStageResults.length > 0 ? (
+                  <span>
+                    No matches in current round. Found <strong>{crossStageResults.reduce((sum, r) => sum + r.fixtures.length, 0)}</strong> fixture(s) in other rounds.
+                  </span>
+                ) : (
+                  <span>No matches found in any round</span>
+                )
+              ) : (
+                // Current stage results
+                <span>
+                  Showing {fixtures.length} of {allFixtures.length} fixtures
+                  {fixtures.length === 0 && ' — no matches found'}
+                </span>
+              )}
+            </p>
+          )}
         </div>
       )}
 
@@ -440,9 +633,37 @@ const CupCompetition = ({
         <div className="text-center py-12 text-gray-500">
           No stages available for this season.
         </div>
-      ) : fixtures.length === 0 ? (
+      ) : fixtures.length === 0 && !isShowingCrossStageResults ? (
         <div className="text-center py-12 text-gray-500">
           No fixtures in this stage yet.
+        </div>
+      ) : isShowingCrossStageResults && crossStageResults.length > 0 ? (
+        /* Cross-Stage Search Results */
+        <div className="p-4 space-y-6">
+          <div className="text-center pb-3 border-b border-gray-200">
+            <p className="text-sm text-gray-600">
+              🔍 Showing all "{teamFilter}" fixtures across rounds
+            </p>
+          </div>
+          
+          {crossStageResults.map(({ stage, fixtures: stageFixtures }) => (
+            <div key={stage.id} className="space-y-3">
+              {/* Stage Header */}
+              <div className="flex items-center justify-between">
+                <h3 className="font-semibold text-gray-900">{stage.name}</h3>
+                <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${colors.badge}`}>
+                  {stageFixtures.length} {stageFixtures.length === 1 ? 'Match' : 'Matches'}
+                </span>
+              </div>
+              
+              {/* Stage Fixtures */}
+              {stageFixtures.map(renderFixture)}
+            </div>
+          ))}
+        </div>
+      ) : isShowingCrossStageResults && crossStageResults.length === 0 ? (
+        <div className="text-center py-12 text-gray-500">
+          No matches found for "{teamFilter}" in any round.
         </div>
       ) : (
         /* Fixtures List */
@@ -472,8 +693,8 @@ const CupCompetition = ({
         </div>
       )}
 
-      {/* Footer with Stage Stats */}
-      {!stagesLoading && stages.length > 0 && selectedStage && (
+      {/* Footer with Stage Stats - Hide when showing cross-stage results */}
+      {!stagesLoading && stages.length > 0 && selectedStage && !isShowingCrossStageResults && fixtures.length > 0 && (
         <div className="px-4 py-3 bg-gray-50 border-t text-xs text-gray-500">
           <p>
             📊 <strong>Stage Status:</strong> {selectedStage.finished ? 'Completed' : 'In Progress'}
