@@ -142,6 +142,7 @@ exports.Prisma.NoteLinkScalarFieldEnum = {
   noteId: 'noteId',
   contextType: 'contextType',
   contextId: 'contextId',
+  label: 'label',
   isPrimary: 'isPrimary',
   createdAt: 'createdAt'
 };
@@ -155,9 +156,17 @@ exports.Prisma.QueryMode = {
   default: 'default',
   insensitive: 'insensitive'
 };
+
+exports.Prisma.NullsOrder = {
+  first: 'first',
+  last: 'last'
+};
 exports.ContextType = exports.$Enums.ContextType = {
   team: 'team',
   fixture: 'fixture',
+  player: 'player',
+  league: 'league',
+  betting: 'betting',
   general: 'general'
 };
 

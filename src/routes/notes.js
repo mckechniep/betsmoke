@@ -15,7 +15,7 @@ const router = express.Router();
 // ============================================
 // CREATE NOTE
 // POST /notes
-// Body: { title, content, links: [{ contextType, contextId, isPrimary }] }
+// Body: { title, content, links: [{ contextType, contextId?, label?, isPrimary }] }
 // ============================================
 
 router.post('/', async (req, res) => {
@@ -57,13 +57,8 @@ router.post('/', async (req, res) => {
           error: `Invalid contextType in link. Must be one of: ${validContextTypes.join(', ')}`
         });
       }
-
-      // Check contextId is provided for team/fixture
-      if (link.contextType !== 'general' && !link.contextId) {
-        return res.status(400).json({
-          error: `contextId is required when contextType is '${link.contextType}'`
-        });
-      }
+      // Note: contextId is now OPTIONAL for all types
+      // Users can just tag with a category (e.g., "Teams") without specifying which team
     }
 
     // 6. Validate exactly one link is marked as primary
@@ -90,7 +85,8 @@ router.post('/', async (req, res) => {
         links: {
           create: links.map(link => ({
             contextType: link.contextType,
-            contextId: link.contextType === 'general' ? '' : link.contextId,
+            contextId: link.contextId || '',  // Empty string if not provided
+            label: link.label || null,        // Store friendly name (e.g., "Arsenal")
             isPrimary: link.isPrimary || false
           }))
         }
@@ -267,13 +263,8 @@ router.put('/:id', async (req, res) => {
             error: `Invalid contextType in link. Must be one of: ${validContextTypes.join(', ')}`
           });
         }
-
-        // All types except 'general' require a contextId
-        if (link.contextType !== 'general' && !link.contextId) {
-          return res.status(400).json({
-            error: `contextId is required when contextType is '${link.contextType}'`
-          });
-        }
+        // Note: contextId is now OPTIONAL for all types
+        // Users can just tag with a category (e.g., "Teams") without specifying which team
       }
 
       const primaryLinks = links.filter(link => link.isPrimary === true);
@@ -302,7 +293,8 @@ router.put('/:id', async (req, res) => {
         deleteMany: {},  // Delete all existing links
         create: links.map(link => ({
           contextType: link.contextType,
-          contextId: link.contextType === 'general' ? '' : link.contextId,
+          contextId: link.contextId || '',  // Empty string if not provided
+          label: link.label || null,        // Store friendly name (e.g., "Arsenal")
           isPrimary: link.isPrimary || false
         }))
       };

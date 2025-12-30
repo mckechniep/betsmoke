@@ -28,7 +28,7 @@ import { notesApi } from '../api/client';
 // ============================================
 // CONSTANTS
 // ============================================
-const MAX_LINKS = 6;  // Maximum number of links per note
+const MAX_LINKS = 6;  // Maximum links per note (1 primary + up to 5 secondary)
 
 // Available context types for the dropdown
 const CONTEXT_TYPES = [
@@ -60,7 +60,22 @@ const formatContextType = (contextType) => {
 // LINK TAG COMPONENT
 // ============================================
 // Displays a single link as a removable tag
+// - Shows icon + category name (e.g., "🛡️ Teams")
+// - If label or contextId exists, shows it in parentheses (e.g., "🛡️ Teams (Arsenal)")
 const LinkTag = ({ link, isPrimary, onRemove, onSetPrimary, canRemove }) => {
+  // Get the human-readable label for this context type
+  const typeLabel = formatContextType(link.contextType);
+  
+  // Use label if available, otherwise fall back to contextId
+  // label = friendly name (e.g., "Arsenal")
+  // contextId = ID (e.g., "19")
+  const specificValue = link.label || link.contextId;
+  
+  // Build display: "Category" or "Category (specific)"
+  const displayLabel = specificValue 
+    ? `${typeLabel} (${specificValue})`  // Has specific value
+    : typeLabel;                          // Category only
+  
   return (
     <div 
       className={`inline-flex items-center rounded-full text-xs font-medium
@@ -82,7 +97,7 @@ const LinkTag = ({ link, isPrimary, onRemove, onSetPrimary, canRemove }) => {
       
       {/* Link content */}
       <span className="py-1">
-        {getContextIcon(link.contextType)} {link.label || formatContextType(link.contextType)}
+        {getContextIcon(link.contextType)} {displayLabel}
       </span>
       
       {/* Remove button */}
@@ -106,62 +121,71 @@ const LinkTag = ({ link, isPrimary, onRemove, onSetPrimary, canRemove }) => {
 // ============================================
 // ADD LINK FORM COMPONENT
 // ============================================
+// Allows user to add a link to a note
+// - User picks a category (required)
+// - User can OPTIONALLY add a specific ID/name (e.g., "Arsenal", "12345")
+// - If no ID provided, the link is just a category tag
 const AddLinkForm = ({ onAdd, onCancel, existingTypes }) => {
   const [selectedType, setSelectedType] = useState('betting');
   const [labelValue, setLabelValue] = useState('');
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!labelValue.trim() && selectedType !== 'general') return;
     
+    // Build the link object
+    // contextId is optional - empty string means "category only"
     onAdd({
       contextType: selectedType,
-      contextId: selectedType === 'general' ? '' : labelValue.trim(),
-      label: selectedType === 'general' ? 'General' : labelValue.trim()
+      contextId: labelValue.trim(),  // Can be empty - that's OK!
+      label: labelValue.trim() || ''  // Label matches contextId (or empty)
     });
     
     setLabelValue('');
     setSelectedType('betting');
   };
 
-  // Check if general is already used (only one allowed)
-  const isGeneralUsed = existingTypes.includes('general');
+  // Check if this exact type+id combo already exists
+  // (User can have multiple "team" links with different IDs)
+  const isDuplicate = existingTypes.some(
+    existing => existing.contextType === selectedType && 
+                existing.contextId === labelValue.trim()
+  );
+
+  // Get placeholder text based on selected type
+  const getPlaceholder = () => {
+    switch (selectedType) {
+      case 'team': return 'Optional: team name or ID...';
+      case 'fixture': return 'Optional: match description...';
+      case 'player': return 'Optional: player name...';
+      case 'league': return 'Optional: league name...';
+      case 'betting': return 'Optional: strategy name...';
+      default: return 'Optional: specify...';
+    }
+  };
 
   return (
     <form onSubmit={handleSubmit} className="mt-2 p-2 bg-gray-50 rounded-lg border border-gray-200">
       <div className="flex flex-col space-y-2">
-        {/* Type dropdown */}
+        {/* Category dropdown (required) */}
         <select
           value={selectedType}
           onChange={(e) => setSelectedType(e.target.value)}
           className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
         >
           {CONTEXT_TYPES.map(type => (
-            <option 
-              key={type.value} 
-              value={type.value}
-              disabled={type.value === 'general' && isGeneralUsed}
-            >
+            <option key={type.value} value={type.value}>
               {type.icon} {type.label}
-              {type.value === 'general' && isGeneralUsed ? ' (already added)' : ''}
             </option>
           ))}
         </select>
         
-        {/* Label input (not needed for general) */}
+        {/* Optional ID/name input (not shown for 'general' since it's always just a category) */}
         {selectedType !== 'general' && (
           <input
             type="text"
             value={labelValue}
             onChange={(e) => setLabelValue(e.target.value)}
-            placeholder={
-              selectedType === 'betting' ? 'e.g., BTTS Research, Over System...' :
-              selectedType === 'team' ? 'e.g., Arsenal, Liverpool...' :
-              selectedType === 'player' ? 'e.g., Haaland, Salah...' :
-              selectedType === 'league' ? 'e.g., Premier League, FA Cup...' :
-              selectedType === 'fixture' ? 'e.g., Arsenal vs Chelsea...' :
-              'Enter label...'
-            }
+            placeholder={getPlaceholder()}
             className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
             autoFocus
           />
@@ -178,8 +202,9 @@ const AddLinkForm = ({ onAdd, onCancel, existingTypes }) => {
           </button>
           <button
             type="submit"
-            disabled={selectedType !== 'general' && !labelValue.trim()}
+            disabled={isDuplicate}
             className="px-3 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            title={isDuplicate ? 'This link already exists' : 'Add link'}
           >
             Add
           </button>
@@ -384,9 +409,11 @@ const FloatingNoteWidget = ({
 
     try {
       // Build the links array for the API
+      // Include label for display (e.g., "Arsenal" instead of just "19")
       const apiLinks = links.map(link => ({
         contextType: link.contextType,
-        contextId: link.contextType === 'general' ? '' : String(link.contextId),
+        contextId: link.contextId || '',
+        label: link.label || null,  // Friendly name for display
         isPrimary: link.id === primaryLinkId
       }));
 
@@ -447,8 +474,11 @@ const FloatingNoteWidget = ({
     );
   }
 
-  // Get existing context types for the add link form
-  const existingTypes = links.map(l => l.contextType);
+  // Pass full link info for duplicate checking (type + id combo)
+  const existingLinks = links.map(l => ({
+    contextType: l.contextType,
+    contextId: l.contextId || ''
+  }));
 
   // ============================================
   // EXPANDED STATE - Full form on the right side
@@ -530,7 +560,7 @@ const FloatingNoteWidget = ({
             <AddLinkForm
               onAdd={handleAddLink}
               onCancel={() => setShowAddLink(false)}
-              existingTypes={existingTypes}
+              existingTypes={existingLinks}
             />
           )}
           

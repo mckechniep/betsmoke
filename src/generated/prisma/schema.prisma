@@ -15,9 +15,19 @@ generator client {
 // ============================================
 
 // Defines the allowed context types for notes
+// These map to the categories users can tag notes with:
+//   - team: Team-related research (e.g., Arsenal form analysis)
+//   - fixture: Match-specific notes (e.g., Arsenal vs Chelsea preview)
+//   - player: Player-focused research (e.g., Haaland goal patterns)
+//   - league: League/competition notes (e.g., Premier League trends)
+//   - betting: Betting strategy/system notes (e.g., BTTS research)
+//   - general: Uncategorized notes
 enum ContextType {
   team
   fixture
+  player
+  league
+  betting
   general
 }
 
@@ -59,7 +69,8 @@ model NoteLink {
   noteId      String
   note        Note        @relation(fields: [noteId], references: [id], onDelete: Cascade)
   contextType ContextType
-  contextId   String // SportsMonks ID (empty string for general)
+  contextId   String // SportsMonks ID (empty string for general/category-only)
+  label       String? // Human-readable name (e.g., "Arsenal" instead of just "19")
   isPrimary   Boolean     @default(false)
   createdAt   DateTime    @default(now())
 

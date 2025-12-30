@@ -129,6 +129,7 @@ export const dataApi = {
   // Leagues
   getLeagues: () => api.get('/leagues'),
   getLeague: (id) => api.get(`/leagues/${id}`),
+  searchLeagues: (query) => api.get(`/leagues/search/${encodeURIComponent(query)}`),
 
   // Seasons
   getSeasons: () => api.get('/seasons'),

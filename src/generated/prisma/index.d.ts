@@ -36,6 +36,9 @@ export namespace $Enums {
   export const ContextType: {
   team: 'team',
   fixture: 'fixture',
+  player: 'player',
+  league: 'league',
+  betting: 'betting',
   general: 'general'
 };
 
@@ -3309,6 +3312,7 @@ export namespace Prisma {
     noteId: string | null
     contextType: $Enums.ContextType | null
     contextId: string | null
+    label: string | null
     isPrimary: boolean | null
     createdAt: Date | null
   }
@@ -3318,6 +3322,7 @@ export namespace Prisma {
     noteId: string | null
     contextType: $Enums.ContextType | null
     contextId: string | null
+    label: string | null
     isPrimary: boolean | null
     createdAt: Date | null
   }
@@ -3327,6 +3332,7 @@ export namespace Prisma {
     noteId: number
     contextType: number
     contextId: number
+    label: number
     isPrimary: number
     createdAt: number
     _all: number
@@ -3338,6 +3344,7 @@ export namespace Prisma {
     noteId?: true
     contextType?: true
     contextId?: true
+    label?: true
     isPrimary?: true
     createdAt?: true
   }
@@ -3347,6 +3354,7 @@ export namespace Prisma {
     noteId?: true
     contextType?: true
     contextId?: true
+    label?: true
     isPrimary?: true
     createdAt?: true
   }
@@ -3356,6 +3364,7 @@ export namespace Prisma {
     noteId?: true
     contextType?: true
     contextId?: true
+    label?: true
     isPrimary?: true
     createdAt?: true
     _all?: true
@@ -3438,6 +3447,7 @@ export namespace Prisma {
     noteId: string
     contextType: $Enums.ContextType
     contextId: string
+    label: string | null
     isPrimary: boolean
     createdAt: Date
     _count: NoteLinkCountAggregateOutputType | null
@@ -3464,6 +3474,7 @@ export namespace Prisma {
     noteId?: boolean
     contextType?: boolean
     contextId?: boolean
+    label?: boolean
     isPrimary?: boolean
     createdAt?: boolean
     note?: boolean | NoteDefaultArgs<ExtArgs>
@@ -3474,6 +3485,7 @@ export namespace Prisma {
     noteId?: boolean
     contextType?: boolean
     contextId?: boolean
+    label?: boolean
     isPrimary?: boolean
     createdAt?: boolean
     note?: boolean | NoteDefaultArgs<ExtArgs>
@@ -3484,6 +3496,7 @@ export namespace Prisma {
     noteId?: boolean
     contextType?: boolean
     contextId?: boolean
+    label?: boolean
     isPrimary?: boolean
     createdAt?: boolean
     note?: boolean | NoteDefaultArgs<ExtArgs>
@@ -3494,11 +3507,12 @@ export namespace Prisma {
     noteId?: boolean
     contextType?: boolean
     contextId?: boolean
+    label?: boolean
     isPrimary?: boolean
     createdAt?: boolean
   }
 
-  export type NoteLinkOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "noteId" | "contextType" | "contextId" | "isPrimary" | "createdAt", ExtArgs["result"]["noteLink"]>
+  export type NoteLinkOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "noteId" | "contextType" | "contextId" | "label" | "isPrimary" | "createdAt", ExtArgs["result"]["noteLink"]>
   export type NoteLinkInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     note?: boolean | NoteDefaultArgs<ExtArgs>
   }
@@ -3519,6 +3533,7 @@ export namespace Prisma {
       noteId: string
       contextType: $Enums.ContextType
       contextId: string
+      label: string | null
       isPrimary: boolean
       createdAt: Date
     }, ExtArgs["result"]["noteLink"]>
@@ -3949,6 +3964,7 @@ export namespace Prisma {
     readonly noteId: FieldRef<"NoteLink", 'String'>
     readonly contextType: FieldRef<"NoteLink", 'ContextType'>
     readonly contextId: FieldRef<"NoteLink", 'String'>
+    readonly label: FieldRef<"NoteLink", 'String'>
     readonly isPrimary: FieldRef<"NoteLink", 'Boolean'>
     readonly createdAt: FieldRef<"NoteLink", 'DateTime'>
   }
@@ -4407,6 +4423,7 @@ export namespace Prisma {
     noteId: 'noteId',
     contextType: 'contextType',
     contextId: 'contextId',
+    label: 'label',
     isPrimary: 'isPrimary',
     createdAt: 'createdAt'
   };
@@ -4428,6 +4445,14 @@ export namespace Prisma {
   };
 
   export type QueryMode = (typeof QueryMode)[keyof typeof QueryMode]
+
+
+  export const NullsOrder: {
+    first: 'first',
+    last: 'last'
+  };
+
+  export type NullsOrder = (typeof NullsOrder)[keyof typeof NullsOrder]
 
 
   /**
@@ -4627,6 +4652,7 @@ export namespace Prisma {
     noteId?: StringFilter<"NoteLink"> | string
     contextType?: EnumContextTypeFilter<"NoteLink"> | $Enums.ContextType
     contextId?: StringFilter<"NoteLink"> | string
+    label?: StringNullableFilter<"NoteLink"> | string | null
     isPrimary?: BoolFilter<"NoteLink"> | boolean
     createdAt?: DateTimeFilter<"NoteLink"> | Date | string
     note?: XOR<NoteScalarRelationFilter, NoteWhereInput>
@@ -4637,6 +4663,7 @@ export namespace Prisma {
     noteId?: SortOrder
     contextType?: SortOrder
     contextId?: SortOrder
+    label?: SortOrderInput | SortOrder
     isPrimary?: SortOrder
     createdAt?: SortOrder
     note?: NoteOrderByWithRelationInput
@@ -4651,6 +4678,7 @@ export namespace Prisma {
     noteId?: StringFilter<"NoteLink"> | string
     contextType?: EnumContextTypeFilter<"NoteLink"> | $Enums.ContextType
     contextId?: StringFilter<"NoteLink"> | string
+    label?: StringNullableFilter<"NoteLink"> | string | null
     isPrimary?: BoolFilter<"NoteLink"> | boolean
     createdAt?: DateTimeFilter<"NoteLink"> | Date | string
     note?: XOR<NoteScalarRelationFilter, NoteWhereInput>
@@ -4661,6 +4689,7 @@ export namespace Prisma {
     noteId?: SortOrder
     contextType?: SortOrder
     contextId?: SortOrder
+    label?: SortOrderInput | SortOrder
     isPrimary?: SortOrder
     createdAt?: SortOrder
     _count?: NoteLinkCountOrderByAggregateInput
@@ -4676,6 +4705,7 @@ export namespace Prisma {
     noteId?: StringWithAggregatesFilter<"NoteLink"> | string
     contextType?: EnumContextTypeWithAggregatesFilter<"NoteLink"> | $Enums.ContextType
     contextId?: StringWithAggregatesFilter<"NoteLink"> | string
+    label?: StringNullableWithAggregatesFilter<"NoteLink"> | string | null
     isPrimary?: BoolWithAggregatesFilter<"NoteLink"> | boolean
     createdAt?: DateTimeWithAggregatesFilter<"NoteLink"> | Date | string
   }
@@ -4810,6 +4840,7 @@ export namespace Prisma {
     id?: string
     contextType: $Enums.ContextType
     contextId: string
+    label?: string | null
     isPrimary?: boolean
     createdAt?: Date | string
     note: NoteCreateNestedOneWithoutLinksInput
@@ -4820,6 +4851,7 @@ export namespace Prisma {
     noteId: string
     contextType: $Enums.ContextType
     contextId: string
+    label?: string | null
     isPrimary?: boolean
     createdAt?: Date | string
   }
@@ -4828,6 +4860,7 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     contextType?: EnumContextTypeFieldUpdateOperationsInput | $Enums.ContextType
     contextId?: StringFieldUpdateOperationsInput | string
+    label?: NullableStringFieldUpdateOperationsInput | string | null
     isPrimary?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     note?: NoteUpdateOneRequiredWithoutLinksNestedInput
@@ -4838,6 +4871,7 @@ export namespace Prisma {
     noteId?: StringFieldUpdateOperationsInput | string
     contextType?: EnumContextTypeFieldUpdateOperationsInput | $Enums.ContextType
     contextId?: StringFieldUpdateOperationsInput | string
+    label?: NullableStringFieldUpdateOperationsInput | string | null
     isPrimary?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -4847,6 +4881,7 @@ export namespace Prisma {
     noteId: string
     contextType: $Enums.ContextType
     contextId: string
+    label?: string | null
     isPrimary?: boolean
     createdAt?: Date | string
   }
@@ -4855,6 +4890,7 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     contextType?: EnumContextTypeFieldUpdateOperationsInput | $Enums.ContextType
     contextId?: StringFieldUpdateOperationsInput | string
+    label?: NullableStringFieldUpdateOperationsInput | string | null
     isPrimary?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -4864,6 +4900,7 @@ export namespace Prisma {
     noteId?: StringFieldUpdateOperationsInput | string
     contextType?: EnumContextTypeFieldUpdateOperationsInput | $Enums.ContextType
     contextId?: StringFieldUpdateOperationsInput | string
+    label?: NullableStringFieldUpdateOperationsInput | string | null
     isPrimary?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -5009,6 +5046,21 @@ export namespace Prisma {
     not?: NestedEnumContextTypeFilter<$PrismaModel> | $Enums.ContextType
   }
 
+  export type StringNullableFilter<$PrismaModel = never> = {
+    equals?: string | StringFieldRefInput<$PrismaModel> | null
+    in?: string[] | ListStringFieldRefInput<$PrismaModel> | null
+    notIn?: string[] | ListStringFieldRefInput<$PrismaModel> | null
+    lt?: string | StringFieldRefInput<$PrismaModel>
+    lte?: string | StringFieldRefInput<$PrismaModel>
+    gt?: string | StringFieldRefInput<$PrismaModel>
+    gte?: string | StringFieldRefInput<$PrismaModel>
+    contains?: string | StringFieldRefInput<$PrismaModel>
+    startsWith?: string | StringFieldRefInput<$PrismaModel>
+    endsWith?: string | StringFieldRefInput<$PrismaModel>
+    mode?: QueryMode
+    not?: NestedStringNullableFilter<$PrismaModel> | string | null
+  }
+
   export type BoolFilter<$PrismaModel = never> = {
     equals?: boolean | BooleanFieldRefInput<$PrismaModel>
     not?: NestedBoolFilter<$PrismaModel> | boolean
@@ -5017,6 +5069,11 @@ export namespace Prisma {
   export type NoteScalarRelationFilter = {
     is?: NoteWhereInput
     isNot?: NoteWhereInput
+  }
+
+  export type SortOrderInput = {
+    sort: SortOrder
+    nulls?: NullsOrder
   }
 
   export type NoteLinkNoteIdContextTypeContextIdCompoundUniqueInput = {
@@ -5030,6 +5087,7 @@ export namespace Prisma {
     noteId?: SortOrder
     contextType?: SortOrder
     contextId?: SortOrder
+    label?: SortOrder
     isPrimary?: SortOrder
     createdAt?: SortOrder
   }
@@ -5039,6 +5097,7 @@ export namespace Prisma {
     noteId?: SortOrder
     contextType?: SortOrder
     contextId?: SortOrder
+    label?: SortOrder
     isPrimary?: SortOrder
     createdAt?: SortOrder
   }
@@ -5048,6 +5107,7 @@ export namespace Prisma {
     noteId?: SortOrder
     contextType?: SortOrder
     contextId?: SortOrder
+    label?: SortOrder
     isPrimary?: SortOrder
     createdAt?: SortOrder
   }
@@ -5060,6 +5120,24 @@ export namespace Prisma {
     _count?: NestedIntFilter<$PrismaModel>
     _min?: NestedEnumContextTypeFilter<$PrismaModel>
     _max?: NestedEnumContextTypeFilter<$PrismaModel>
+  }
+
+  export type StringNullableWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: string | StringFieldRefInput<$PrismaModel> | null
+    in?: string[] | ListStringFieldRefInput<$PrismaModel> | null
+    notIn?: string[] | ListStringFieldRefInput<$PrismaModel> | null
+    lt?: string | StringFieldRefInput<$PrismaModel>
+    lte?: string | StringFieldRefInput<$PrismaModel>
+    gt?: string | StringFieldRefInput<$PrismaModel>
+    gte?: string | StringFieldRefInput<$PrismaModel>
+    contains?: string | StringFieldRefInput<$PrismaModel>
+    startsWith?: string | StringFieldRefInput<$PrismaModel>
+    endsWith?: string | StringFieldRefInput<$PrismaModel>
+    mode?: QueryMode
+    not?: NestedStringNullableWithAggregatesFilter<$PrismaModel> | string | null
+    _count?: NestedIntNullableFilter<$PrismaModel>
+    _min?: NestedStringNullableFilter<$PrismaModel>
+    _max?: NestedStringNullableFilter<$PrismaModel>
   }
 
   export type BoolWithAggregatesFilter<$PrismaModel = never> = {
@@ -5186,6 +5264,10 @@ export namespace Prisma {
     set?: $Enums.ContextType
   }
 
+  export type NullableStringFieldUpdateOperationsInput = {
+    set?: string | null
+  }
+
   export type BoolFieldUpdateOperationsInput = {
     set?: boolean
   }
@@ -5272,6 +5354,20 @@ export namespace Prisma {
     not?: NestedEnumContextTypeFilter<$PrismaModel> | $Enums.ContextType
   }
 
+  export type NestedStringNullableFilter<$PrismaModel = never> = {
+    equals?: string | StringFieldRefInput<$PrismaModel> | null
+    in?: string[] | ListStringFieldRefInput<$PrismaModel> | null
+    notIn?: string[] | ListStringFieldRefInput<$PrismaModel> | null
+    lt?: string | StringFieldRefInput<$PrismaModel>
+    lte?: string | StringFieldRefInput<$PrismaModel>
+    gt?: string | StringFieldRefInput<$PrismaModel>
+    gte?: string | StringFieldRefInput<$PrismaModel>
+    contains?: string | StringFieldRefInput<$PrismaModel>
+    startsWith?: string | StringFieldRefInput<$PrismaModel>
+    endsWith?: string | StringFieldRefInput<$PrismaModel>
+    not?: NestedStringNullableFilter<$PrismaModel> | string | null
+  }
+
   export type NestedBoolFilter<$PrismaModel = never> = {
     equals?: boolean | BooleanFieldRefInput<$PrismaModel>
     not?: NestedBoolFilter<$PrismaModel> | boolean
@@ -5285,6 +5381,34 @@ export namespace Prisma {
     _count?: NestedIntFilter<$PrismaModel>
     _min?: NestedEnumContextTypeFilter<$PrismaModel>
     _max?: NestedEnumContextTypeFilter<$PrismaModel>
+  }
+
+  export type NestedStringNullableWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: string | StringFieldRefInput<$PrismaModel> | null
+    in?: string[] | ListStringFieldRefInput<$PrismaModel> | null
+    notIn?: string[] | ListStringFieldRefInput<$PrismaModel> | null
+    lt?: string | StringFieldRefInput<$PrismaModel>
+    lte?: string | StringFieldRefInput<$PrismaModel>
+    gt?: string | StringFieldRefInput<$PrismaModel>
+    gte?: string | StringFieldRefInput<$PrismaModel>
+    contains?: string | StringFieldRefInput<$PrismaModel>
+    startsWith?: string | StringFieldRefInput<$PrismaModel>
+    endsWith?: string | StringFieldRefInput<$PrismaModel>
+    not?: NestedStringNullableWithAggregatesFilter<$PrismaModel> | string | null
+    _count?: NestedIntNullableFilter<$PrismaModel>
+    _min?: NestedStringNullableFilter<$PrismaModel>
+    _max?: NestedStringNullableFilter<$PrismaModel>
+  }
+
+  export type NestedIntNullableFilter<$PrismaModel = never> = {
+    equals?: number | IntFieldRefInput<$PrismaModel> | null
+    in?: number[] | ListIntFieldRefInput<$PrismaModel> | null
+    notIn?: number[] | ListIntFieldRefInput<$PrismaModel> | null
+    lt?: number | IntFieldRefInput<$PrismaModel>
+    lte?: number | IntFieldRefInput<$PrismaModel>
+    gt?: number | IntFieldRefInput<$PrismaModel>
+    gte?: number | IntFieldRefInput<$PrismaModel>
+    not?: NestedIntNullableFilter<$PrismaModel> | number | null
   }
 
   export type NestedBoolWithAggregatesFilter<$PrismaModel = never> = {
@@ -5376,6 +5500,7 @@ export namespace Prisma {
     id?: string
     contextType: $Enums.ContextType
     contextId: string
+    label?: string | null
     isPrimary?: boolean
     createdAt?: Date | string
   }
@@ -5384,6 +5509,7 @@ export namespace Prisma {
     id?: string
     contextType: $Enums.ContextType
     contextId: string
+    label?: string | null
     isPrimary?: boolean
     createdAt?: Date | string
   }
@@ -5449,6 +5575,7 @@ export namespace Prisma {
     noteId?: StringFilter<"NoteLink"> | string
     contextType?: EnumContextTypeFilter<"NoteLink"> | $Enums.ContextType
     contextId?: StringFilter<"NoteLink"> | string
+    label?: StringNullableFilter<"NoteLink"> | string | null
     isPrimary?: BoolFilter<"NoteLink"> | boolean
     createdAt?: DateTimeFilter<"NoteLink"> | Date | string
   }
@@ -5543,6 +5670,7 @@ export namespace Prisma {
     id?: string
     contextType: $Enums.ContextType
     contextId: string
+    label?: string | null
     isPrimary?: boolean
     createdAt?: Date | string
   }
@@ -5551,6 +5679,7 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     contextType?: EnumContextTypeFieldUpdateOperationsInput | $Enums.ContextType
     contextId?: StringFieldUpdateOperationsInput | string
+    label?: NullableStringFieldUpdateOperationsInput | string | null
     isPrimary?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -5559,6 +5688,7 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     contextType?: EnumContextTypeFieldUpdateOperationsInput | $Enums.ContextType
     contextId?: StringFieldUpdateOperationsInput | string
+    label?: NullableStringFieldUpdateOperationsInput | string | null
     isPrimary?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -5567,6 +5697,7 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     contextType?: EnumContextTypeFieldUpdateOperationsInput | $Enums.ContextType
     contextId?: StringFieldUpdateOperationsInput | string
+    label?: NullableStringFieldUpdateOperationsInput | string | null
     isPrimary?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
