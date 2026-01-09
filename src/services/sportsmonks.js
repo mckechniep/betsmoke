@@ -210,8 +210,7 @@ async function getFixtureById(fixtureId, options = {}) {
     'venue',
     'league',
     'season',
-    'state',
-    'weatherReport'
+    'state'
   ];
   
   // Optional includes - added if requested
@@ -1007,6 +1006,34 @@ async function getFixturePredictions(fixtureId) {
   return makeRequest(endpoint, ['predictions.type']);
 }
 
+/**
+ * Get the performance/accuracy of SportsMonks prediction model for a league
+ * @param {number|string} leagueId - The SportsMonks league ID
+ * @returns {Promise<object>} - Prediction model performance stats
+ * 
+ * Returns accuracy metrics for various prediction markets:
+ * - Fulltime Result (1X2)
+ * - Over/Under goals
+ * - Both Teams To Score
+ * - Correct Score
+ * - And more...
+ * 
+ * League IDs:
+ *   - 8: Premier League
+ *   - 24: FA Cup
+ *   - 27: Carabao Cup
+ * 
+ * Example: getPredictabilityByLeague(8) // Premier League prediction performance
+ */
+async function getPredictabilityByLeague(leagueId) {
+  // API: GET /predictions/predictability/leagues/{league_id}
+  // Note: This uses the FOOTBALL base URL, not odds
+  const endpoint = `/predictions/predictability/leagues/${leagueId}`;
+  
+  // No includes needed for this endpoint
+  return makeRequest(endpoint);
+}
+
 // ============================================
 // STAGES / SCHEDULE FUNCTIONS (Cup Competitions)
 // ============================================
@@ -1159,6 +1186,7 @@ export {
 
   // Predictions functions
   getFixturePredictions,
+  getPredictabilityByLeague,
 
   // Stages / Schedule functions (for cup competitions)
   getStagesBySeason,

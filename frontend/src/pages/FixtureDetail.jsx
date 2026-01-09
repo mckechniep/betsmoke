@@ -47,32 +47,6 @@ function formatAmericanOdds(americanOdd) {
   return oddStr;
 }
 
-// ============================================
-// HELPER: Convert Celsius to Fahrenheit
-// ============================================
-// SportsMonks provides temperature in Celsius by default
-function celsiusToFahrenheit(celsius) {
-  if (celsius === null || celsius === undefined) return null;
-  return Math.round((celsius * 9/5) + 32);
-}
-
-// ============================================
-// HELPER: Get weather icon
-// ============================================
-function getWeatherIcon(description) {
-  if (!description) return '🌤️';
-  
-  const desc = description.toLowerCase();
-  
-  if (desc.includes('clear') || desc.includes('sun')) return '☀️';
-  if (desc.includes('cloud')) return '☁️';
-  if (desc.includes('rain') || desc.includes('drizzle')) return '🌧️';
-  if (desc.includes('thunder')) return '⛈️';
-  if (desc.includes('snow')) return '❄️';
-  if (desc.includes('mist') || desc.includes('fog') || desc.includes('haze')) return '🌫️';
-  
-  return '🌤️';
-}
 
 // ============================================
 // HELPER: Parse UTC datetime string to Date object
@@ -129,11 +103,34 @@ function formatShortDate(dateString) {
 // ============================================
 // HELPER: Get score from fixture
 // ============================================
+// SportsMonks returns different score formats for different eras:
+// - Modern fixtures: description = "CURRENT" (aggregated final score)
+// - Older fixtures: description = "2ND_HALF" or "1ST_HALF" (period scores)
+//
+// For older fixtures, "2ND_HALF" represents the cumulative score at that point,
+// which IS the final score for a normal 90-minute match.
 function getScore(fixture, location) {
-  const score = fixture.scores?.find(
+  if (!fixture.scores || fixture.scores.length === 0) return null;
+  
+  // Priority 1: Look for "CURRENT" (modern fixtures)
+  const currentScore = fixture.scores.find(
     s => s.description === 'CURRENT' && s.score?.participant === location
   );
-  return score?.score?.goals ?? null;
+  if (currentScore) return currentScore.score?.goals ?? null;
+  
+  // Priority 2: Look for "2ND_HALF" (older fixtures - this is the final score)
+  const secondHalfScore = fixture.scores.find(
+    s => s.description === '2ND_HALF' && s.score?.participant === location
+  );
+  if (secondHalfScore) return secondHalfScore.score?.goals ?? null;
+  
+  // Priority 3: Look for "1ST_HALF" as last resort (partial data)
+  const firstHalfScore = fixture.scores.find(
+    s => s.description === '1ST_HALF' && s.score?.participant === location
+  );
+  if (firstHalfScore) return firstHalfScore.score?.goals ?? null;
+  
+  return null;
 }
 
 // ============================================
@@ -297,11 +294,38 @@ function HeadToHeadSection({ h2h, h2hLoading }) {
   const hasMore = safeH2h.length > INITIAL_DISPLAY;
   const remainingCount = safeH2h.length - INITIAL_DISPLAY;
 
+  // ============================================
   // Helper to get score from a match
+  // ============================================
+  // SportsMonks returns different score formats for different eras:
+  // - Modern fixtures: description = "CURRENT" (aggregated final score)
+  // - Older fixtures: description = "2ND_HALF" or "1ST_HALF" (period scores)
+  //
+  // For older fixtures, "2ND_HALF" represents the cumulative score at that point,
+  // which IS the final score for a normal 90-minute match.
   const getMatchScore = (match, location) => {
-    return match.scores?.find(
+    if (!match.scores || match.scores.length === 0) return null;
+    
+    // Priority 1: Look for "CURRENT" (modern fixtures)
+    const currentScore = match.scores.find(
       s => s.description === 'CURRENT' && s.score?.participant === location
-    )?.score?.goals;
+    );
+    if (currentScore) return currentScore.score?.goals;
+    
+    // Priority 2: Look for "2ND_HALF" (older fixtures - this is the final score)
+    const secondHalfScore = match.scores.find(
+      s => s.description === '2ND_HALF' && s.score?.participant === location
+    );
+    if (secondHalfScore) return secondHalfScore.score?.goals;
+    
+    // Priority 3: Look for "1ST_HALF" as last resort (partial data)
+    const firstHalfScore = match.scores.find(
+      s => s.description === '1ST_HALF' && s.score?.participant === location
+    );
+    if (firstHalfScore) return firstHalfScore.score?.goals;
+    
+    // No score found
+    return null;
   };
 
   return (
@@ -742,12 +766,6 @@ function ScoringPatternsSection({ homeStats, awayStats, homeTeam, awayTeam, load
           false
         )}
       </div>
-
-      {/* Betting Insight */}
-      <div className="mt-4 p-3 bg-blue-50 rounded-lg text-sm text-blue-800">
-        💡 <strong>Betting Insight:</strong> Look for patterns like "slow starters" or "late surges". 
-        Teams that score late (76-90') are good targets for live betting.
-      </div>
     </div>
   );
 }
@@ -961,12 +979,6 @@ function TopScorersAssistsSection({ homeTopStats, awayTopStats, homeTeam, awayTe
         <div className="hidden md:block w-px bg-gray-200" />
         <div className="md:hidden h-px bg-gray-200" />
         {renderTeamStats(awayTopStats, awayTeam?.name, awayTeam?.image_path)}
-      </div>
-
-      {/* Betting Insight */}
-      <div className="mt-4 p-3 bg-purple-50 rounded-lg text-sm text-purple-800">
-        💡 <strong>Goalscorer Markets:</strong> Check anytime goalscorer odds for these players.
-        Assist markets often offer better value than goal markets.
       </div>
     </div>
   );
@@ -1427,23 +1439,6 @@ function CornersBreakdownSection({ homeCornerAvg, awayCornerAvg, homeTeam, awayT
         </div>
       )}
 
-      {/* Betting Insight Box */}
-      <div className="mt-4 p-3 bg-orange-50 rounded-lg text-sm text-orange-800">
-        <strong>💡 Corners Insight:</strong>
-        {combinedExpected ? (
-          <span>
-            {' '}Expected <strong>{combinedExpected}</strong> total corners. 
-            {parseFloat(combinedExpected) >= 11 
-              ? 'High corner activity - consider over 10.5.' 
-              : parseFloat(combinedExpected) >= 9 
-                ? 'Moderate activity - 9-10 range typical for this matchup.' 
-                : 'Lower corner activity - under markets may offer value.'}
-          </span>
-        ) : (
-          <span> Corner data not available for this fixture.</span>
-        )}
-      </div>
-
       {/* Cache indicator (small, subtle) */}
       {(homeCornerAvg?.fromCache || awayCornerAvg?.fromCache) && (
         <div className="text-xs text-gray-400 text-right mt-2">
@@ -1558,14 +1553,16 @@ function TeamStatsComparisonSection(props) {
       home: extractStat(homeStats, 52),
       away: extractStat(awayStats, 52),
       icon: '⚽',
-      better: 'higher'
+      better: 'higher',
+      hidePercentage: true  // Percentage doesn't make sense for goals
     },
     {
       label: 'Goals Conceded',
       home: extractStat(homeStats, 88),
       away: extractStat(awayStats, 88),
       icon: '🥅',
-      better: 'lower'
+      better: 'lower',
+      hidePercentage: true  // Percentage doesn't make sense for goals
     },
     {
       label: 'Clean Sheets',
@@ -1682,7 +1679,8 @@ function TeamStatsComparisonSection(props) {
                 better === 'home' ? 'text-green-600' : 'text-gray-700'
               }`}>
                 {homeValue}
-                {homeGames > 0 && typeof homeValue === 'number' && (
+                {/* Show percentage for most stats, but not for goals */}
+                {!stat.hidePercentage && homeGames > 0 && typeof homeValue === 'number' && (
                   <span className="text-xs text-gray-400 ml-1">
                     ({calcPercentage(homeValue, homeGames)}%)
                   </span>
@@ -1699,7 +1697,8 @@ function TeamStatsComparisonSection(props) {
               <div className={`flex-1 text-right font-medium ${
                 better === 'away' ? 'text-green-600' : 'text-gray-700'
               }`}>
-                {awayGames > 0 && typeof awayValue === 'number' && (
+                {/* Show percentage for most stats, but not for goals */}
+                {!stat.hidePercentage && awayGames > 0 && typeof awayValue === 'number' && (
                   <span className="text-xs text-gray-400 mr-1">
                     ({calcPercentage(awayValue, awayGames)}%)
                   </span>
@@ -1709,12 +1708,6 @@ function TeamStatsComparisonSection(props) {
             </div>
           );
         })}
-      </div>
-
-      {/* Betting Insight */}
-      <div className="mt-4 p-3 bg-yellow-50 rounded-lg text-sm text-yellow-800">
-        💡 <strong>Quick Analysis:</strong> Compare Clean Sheets vs BTTS for over/under decisions. 
-        High "Failed to Score" = potential under bet.
       </div>
     </div>
   );
@@ -1871,7 +1864,26 @@ function AllBettingMarketsContent({ odds, bookmakers, formatAmericanOdds, format
                     const bookmakerName = bookmakerNames[bmId] || `Bookmaker ${bmId}`;
                     
                     // Get unique labels for this bookmaker's odds
-                    const labels = [...new Set(bmOdds.map(o => o.label || o.name))];
+                    let labels = [...new Set(bmOdds.map(o => o.label || o.name))];
+                    
+                    // ============================================
+                    // ENFORCE CONSISTENT ORDER FOR 1X2 MARKETS
+                    // ============================================
+                    // For Fulltime Result markets (1, 37, 80, 28075), always show:
+                    // Home (1) → Draw (X) → Away (2)
+                    // This ensures consistent display across all bookmakers
+                    // Handle both uppercase and lowercase variants
+                    if ([1, 37, 80, 28075].includes(mId)) {
+                      const sortOrder = { 
+                        '1': 0, 'x': 1, 'X': 1, '2': 2,
+                        'Home': 0, 'home': 0, 'Draw': 1, 'draw': 1, 'Away': 2, 'away': 2
+                      };
+                      labels = labels.sort((a, b) => {
+                        const orderA = sortOrder[a] ?? 999; // Unknown labels go to end
+                        const orderB = sortOrder[b] ?? 999;
+                        return orderA - orderB;
+                      });
+                    }
                     
                     return (
                       <div key={bmId} className="border-b border-gray-100 pb-3 last:border-0 last:pb-0">
@@ -2446,22 +2458,7 @@ const FixtureDetail = () => {
             {fixture.venue?.name && (
               <div>📍 {fixture.venue.name}{fixture.venue.city ? `, ${fixture.venue.city}` : ''}</div>
             )}
-            {fixture.weatherReport && (
-              <div className="flex items-center justify-center space-x-2">
-                <span>{getWeatherIcon(fixture.weatherReport.description)}</span>
-                <span>
-                  {fixture.weatherReport.temperature?.temp 
-                    ? `${celsiusToFahrenheit(fixture.weatherReport.temperature.temp)}°F`
-                    : fixture.weatherReport.description
-                  }
-                </span>
-                {fixture.weatherReport.wind?.speed && (
-                  <span className="text-gray-400">
-                    💨 {Math.round(fixture.weatherReport.wind.speed * 2.237)} mph
-                  </span>
-                )}
-              </div>
-            )}
+
           </div>
         </div>
       </div>

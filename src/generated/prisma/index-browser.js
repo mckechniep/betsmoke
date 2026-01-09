@@ -125,7 +125,11 @@ exports.Prisma.UserScalarFieldEnum = {
   email: 'email',
   password: 'password',
   createdAt: 'createdAt',
-  updatedAt: 'updatedAt'
+  updatedAt: 'updatedAt',
+  oddsFormat: 'oddsFormat',
+  timezone: 'timezone',
+  securityQuestion: 'securityQuestion',
+  securityAnswer: 'securityAnswer'
 };
 
 exports.Prisma.NoteScalarFieldEnum = {
@@ -147,6 +151,15 @@ exports.Prisma.NoteLinkScalarFieldEnum = {
   createdAt: 'createdAt'
 };
 
+exports.Prisma.PasswordResetScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  token: 'token',
+  expiresAt: 'expiresAt',
+  used: 'used',
+  createdAt: 'createdAt'
+};
+
 exports.Prisma.SortOrder = {
   asc: 'asc',
   desc: 'desc'
@@ -161,6 +174,12 @@ exports.Prisma.NullsOrder = {
   first: 'first',
   last: 'last'
 };
+exports.OddsFormat = exports.$Enums.OddsFormat = {
+  AMERICAN: 'AMERICAN',
+  DECIMAL: 'DECIMAL',
+  FRACTIONAL: 'FRACTIONAL'
+};
+
 exports.ContextType = exports.$Enums.ContextType = {
   team: 'team',
   fixture: 'fixture',
@@ -173,7 +192,8 @@ exports.ContextType = exports.$Enums.ContextType = {
 exports.Prisma.ModelName = {
   User: 'User',
   Note: 'Note',
-  NoteLink: 'NoteLink'
+  NoteLink: 'NoteLink',
+  PasswordReset: 'PasswordReset'
 };
 
 /**

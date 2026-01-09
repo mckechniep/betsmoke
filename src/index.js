@@ -18,6 +18,7 @@ import livescoresRoutes from './routes/livescores.js';  // SportsMonks live scor
 import leaguesRoutes from './routes/leagues.js';  // SportsMonks leagues data
 import seasonsRoutes from './routes/seasons.js';  // SportsMonks seasons data
 import topscorersRoutes from './routes/topscorers.js';  // SportsMonks top scorers
+import predictionsRoutes from './routes/predictions.js';  // SportsMonks predictions
 import authMiddleware from './middleware/auth.js';  // Protects routes
 
 // ============================================
@@ -117,6 +118,10 @@ app.use('/seasons', seasonsRoutes);
 // Top scorers routes (public - SportsMonks data proxy)
 // Player leaderboards by season
 app.use('/topscorers', topscorersRoutes);
+
+// Predictions routes (public - SportsMonks data proxy)
+// AI prediction model performance/accuracy by league
+app.use('/predictions', predictionsRoutes);
 
 // ============================================
 // PROTECTED TEST ROUTE

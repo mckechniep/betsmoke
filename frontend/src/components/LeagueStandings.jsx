@@ -10,6 +10,7 @@
 // Props:
 // - leagueId (number): The league to show (default: 8 = Premier League)
 // - leagueName (string): Display name (default: "Premier League")
+// - leagueLogo (string): URL to the league logo image (optional)
 // - showZones (boolean): Show CL/Relegation zone indicators (default: true)
 // ============================================
 
@@ -29,6 +30,7 @@ const TYPE_IDS = {
   OVERALL_GOALS_FOR: 133,
   OVERALL_GOALS_AGAINST: 134,
   OVERALL_GOAL_DIFF: 179,
+  OVERALL_POINTS: 187,     // Total points (also available as row.points)
   // Home
   HOME_PLAYED: 135,
   HOME_WON: 136,
@@ -36,7 +38,7 @@ const TYPE_IDS = {
   HOME_LOST: 138,
   HOME_GOALS_FOR: 139,
   HOME_GOALS_AGAINST: 140,
-  HOME_POINTS: 176,
+  HOME_POINTS: 185,        // Fixed: was 176 (which is STREAK)
   // Away
   AWAY_PLAYED: 141,
   AWAY_WON: 142,
@@ -44,7 +46,7 @@ const TYPE_IDS = {
   AWAY_LOST: 144,
   AWAY_GOALS_FOR: 145,
   AWAY_GOALS_AGAINST: 146,
-  AWAY_POINTS: 185,
+  AWAY_POINTS: 186,        // Fixed: was 185 (which is HOME_POINTS)
 };
 
 // ============================================
@@ -53,6 +55,7 @@ const TYPE_IDS = {
 const LeagueStandings = ({ 
   leagueId = 8,           // Default: Premier League
   leagueName = 'Premier League',
+  leagueLogo = null,      // URL to league logo image
   showZones = true        // Show CL/Relegation indicators
 }) => {
   // State for seasons dropdown
@@ -372,11 +375,19 @@ const LeagueStandings = ({
       {/* Header with Season Selector */}
       <div className="px-4 py-4 bg-gradient-to-r from-purple-700 to-purple-900 flex items-center justify-between">
         <div className="flex items-center space-x-3">
-          {/* League "Logo" placeholder */}
-          <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center">
-            <span className="text-purple-700 font-bold text-sm">
-              {leagueName.split(' ').map(w => w[0]).join('').slice(0, 2)}
-            </span>
+          {/* League Logo */}
+          <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center p-1">
+            {leagueLogo ? (
+              <img 
+                src={leagueLogo} 
+                alt={leagueName}
+                className="w-8 h-8 object-contain"
+              />
+            ) : (
+              <span className="text-purple-700 font-bold text-sm">
+                {leagueName.split(' ').map(w => w[0]).join('').slice(0, 2)}
+              </span>
+            )}
           </div>
           <div>
             <h2 className="text-xl font-bold text-white">{leagueName}</h2>
@@ -454,7 +465,12 @@ const LeagueStandings = ({
       )}
 
       {/* Loading State */}
-      {standingsLoading ? (
+      {/* 
+        Show loading when:
+        - Seasons are still loading (can't fetch standings without a season)
+        - OR standings are actively being fetched
+      */}
+      {seasonsLoading || standingsLoading ? (
         <div className="text-center py-12 text-gray-500">
           Loading standings...
         </div>

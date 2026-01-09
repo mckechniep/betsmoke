@@ -162,7 +162,21 @@ function groupFixturesByDate(fixtures) {
 // ============================================
 // HELPER: Get score display
 // ============================================
+// Only returns a score if the match is LIVE or FINISHED.
+// For upcoming matches (state = 'NS'), returns null so kickoff time is shown.
+// This prevents showing "0 - 0" for matches that haven't started yet.
 function getScoreDisplay(fixture) {
+  // First check: Is the match in progress or finished?
+  // If not started ('NS'), don't show a score regardless of what's in the data
+  const matchState = fixture.state?.state;
+  const validStatesForScore = ['1H', '2H', 'HT', 'ET', 'PEN', 'FT', 'AET', 'FT_PEN'];
+  
+  if (!matchState || !validStatesForScore.includes(matchState)) {
+    // Match hasn't started or state is unknown - show kickoff time instead
+    return null;
+  }
+  
+  // Match is live or finished - try to get the score
   const homeScore = fixture.scores?.find(
     s => s.description === 'CURRENT' && s.score?.participant === 'home'
   )?.score?.goals;

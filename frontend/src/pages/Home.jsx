@@ -8,8 +8,10 @@
 // - Premier League standings (via LeagueStandings component)
 // ============================================
 
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { dataApi } from '../api/client';
 import LeagueStandings from '../components/LeagueStandings';
 
 // Premier League ID in SportsMonks
@@ -17,6 +19,26 @@ const PREMIER_LEAGUE_ID = 8;
 
 const Home = () => {
   const { isAuthenticated } = useAuth();
+  
+  // State for Premier League logo
+  const [plLogo, setPlLogo] = useState(null);
+
+  // ============================================
+  // FETCH PREMIER LEAGUE LOGO ON MOUNT
+  // ============================================
+  useEffect(() => {
+    const fetchLogo = async () => {
+      try {
+        const data = await dataApi.getLeague(PREMIER_LEAGUE_ID);
+        setPlLogo(data.league?.image_path || null);
+      } catch (err) {
+        console.error('Failed to fetch Premier League logo:', err);
+        // Keep null - component will show fallback
+      }
+    };
+
+    fetchLogo();
+  }, []);
 
   // ============================================
   // RENDER
@@ -53,11 +75,11 @@ const Home = () => {
         </Link>
 
         <Link
-          to="/standings"
+          to="/competitions"
           className="block p-6 bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow"
         >
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">All Standings</h2>
-          <p className="text-gray-600">View standings for all leagues.</p>
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">Competitions</h2>
+          <p className="text-gray-600">View standings and cup fixtures.</p>
         </Link>
       </div>
 
@@ -102,7 +124,8 @@ const Home = () => {
       {/* ============================================ */}
       <LeagueStandings 
         leagueId={PREMIER_LEAGUE_ID} 
-        leagueName="Premier League" 
+        leagueName="Premier League"
+        leagueLogo={plLogo}
         showZones={true}
       />
     </div>

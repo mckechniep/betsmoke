@@ -2,6 +2,7 @@
 // AUTH CONTEXT
 // ============================================
 // Manages authentication state across the app.
+// Includes user preferences (odds format, timezone).
 // Stores token in localStorage for persistence.
 // ============================================
 
@@ -10,6 +11,17 @@ import { authApi } from '../api/client';
 
 // Create the context
 const AuthContext = createContext(null);
+
+// ============================================
+// HELPER: Get browser timezone
+// ============================================
+const getBrowserTimezone = () => {
+  try {
+    return Intl.DateTimeFormat().resolvedOptions().timeZone;
+  } catch {
+    return 'America/New_York'; // Fallback
+  }
+};
 
 // ============================================
 // AUTH PROVIDER
@@ -33,11 +45,32 @@ export const AuthProvider = ({ children }) => {
     setLoading(false);
   }, []);
 
-  // Login function
+  // ============================================
+  // REGISTER
+  // ============================================
+  // Accepts optional preferences and security question
+  const register = async (email, password, options = {}) => {
+    const { oddsFormat, timezone, securityQuestion, securityAnswer } = options;
+    
+    const response = await authApi.register({
+      email,
+      password,
+      oddsFormat,
+      timezone: timezone || getBrowserTimezone(), // Auto-detect if not provided
+      securityQuestion,
+      securityAnswer
+    });
+    
+    return response;
+  };
+
+  // ============================================
+  // LOGIN
+  // ============================================
   const login = async (email, password) => {
     const response = await authApi.login(email, password);
 
-    // Store token and user
+    // Store token and user (including preferences)
     localStorage.setItem('betsmoke_token', response.token);
     localStorage.setItem('betsmoke_user', JSON.stringify(response.user));
 
@@ -47,18 +80,95 @@ export const AuthProvider = ({ children }) => {
     return response;
   };
 
-  // Register function
-  const register = async (email, password) => {
-    const response = await authApi.register(email, password);
-    return response;
-  };
-
-  // Logout function
+  // ============================================
+  // LOGOUT
+  // ============================================
   const logout = () => {
     localStorage.removeItem('betsmoke_token');
     localStorage.removeItem('betsmoke_user');
     setToken(null);
     setUser(null);
+  };
+
+  // ============================================
+  // REFRESH USER DATA
+  // ============================================
+  // Call after updating preferences/email to sync state
+  const refreshUser = async () => {
+    if (!token) return;
+    
+    try {
+      const response = await authApi.getMe(token);
+      localStorage.setItem('betsmoke_user', JSON.stringify(response.user));
+      setUser(response.user);
+      return response.user;
+    } catch (error) {
+      console.error('Failed to refresh user:', error);
+      // If token is invalid, log out
+      if (error.message.includes('401') || error.message.includes('token')) {
+        logout();
+      }
+      throw error;
+    }
+  };
+
+  // ============================================
+  // UPDATE PREFERENCES
+  // ============================================
+  const updatePreferences = async (preferences) => {
+    if (!token) throw new Error('Not authenticated');
+    
+    const response = await authApi.updatePreferences(preferences, token);
+    
+    // Update local state
+    localStorage.setItem('betsmoke_user', JSON.stringify(response.user));
+    setUser(response.user);
+    
+    return response;
+  };
+
+  // ============================================
+  // CHANGE EMAIL
+  // ============================================
+  const changeEmail = async (newEmail, password) => {
+    if (!token) throw new Error('Not authenticated');
+    
+    const response = await authApi.changeEmail(newEmail, password, token);
+    
+    // Update local state
+    localStorage.setItem('betsmoke_user', JSON.stringify(response.user));
+    setUser(response.user);
+    
+    return response;
+  };
+
+  // ============================================
+  // CHANGE PASSWORD
+  // ============================================
+  const changePassword = async (currentPassword, newPassword) => {
+    if (!token) throw new Error('Not authenticated');
+    
+    return await authApi.changePassword(currentPassword, newPassword, token);
+  };
+
+  // ============================================
+  // UPDATE SECURITY QUESTION
+  // ============================================
+  const updateSecurityQuestion = async (securityQuestion, securityAnswer, password) => {
+    if (!token) throw new Error('Not authenticated');
+    
+    const response = await authApi.updateSecurityQuestion(
+      securityQuestion, 
+      securityAnswer, 
+      password, 
+      token
+    );
+    
+    // Update local state
+    localStorage.setItem('betsmoke_user', JSON.stringify(response.user));
+    setUser(response.user);
+    
+    return response;
   };
 
   // Check if user is authenticated
@@ -70,9 +180,18 @@ export const AuthProvider = ({ children }) => {
     token,
     loading,
     isAuthenticated,
-    login,
+    // Auth actions
     register,
+    login,
     logout,
+    refreshUser,
+    // Account management
+    updatePreferences,
+    changeEmail,
+    changePassword,
+    updateSecurityQuestion,
+    // Utility
+    getBrowserTimezone,
   };
 
   return (

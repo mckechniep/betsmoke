@@ -13,6 +13,7 @@
 // Props:
 // - leagueId (number): The league ID (24 = FA Cup, 27 = EFL Cup)
 // - leagueName (string): Display name (e.g., "FA Cup")
+// - leagueLogo (string): URL to the league logo image (optional)
 // - accentColor (string): Tailwind color for styling (e.g., "red", "green")
 // ============================================
 
@@ -142,7 +143,8 @@ const getScore = (fixture) => {
 const CupCompetition = ({
   leagueId,
   leagueName = 'Cup Competition',
-  accentColor = 'blue'  // Tailwind color: red, green, blue, purple, etc.
+  leagueLogo = null,      // URL to league logo image
+  accentColor = 'blue'    // Tailwind color: red, green, blue, purple, etc.
 }) => {
   // State for seasons dropdown
   const [seasons, setSeasons] = useState([]);
@@ -497,11 +499,19 @@ const CupCompetition = ({
       {/* Header with Season Selector */}
       <div className={`px-4 py-4 bg-gradient-to-r ${colors.gradient} flex items-center justify-between`}>
         <div className="flex items-center space-x-3">
-          {/* Cup "Logo" placeholder */}
-          <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center">
-            <span className={`${colors.accent} font-bold text-sm`}>
-              {leagueName.split(' ').map(w => w[0]).join('').slice(0, 2)}
-            </span>
+          {/* Cup Logo */}
+          <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center p-1">
+            {leagueLogo ? (
+              <img 
+                src={leagueLogo} 
+                alt={leagueName}
+                className="w-8 h-8 object-contain"
+              />
+            ) : (
+              <span className={`${colors.accent} font-bold text-sm`}>
+                {leagueName.split(' ').map(w => w[0]).join('').slice(0, 2)}
+              </span>
+            )}
           </div>
           <div>
             <h2 className="text-xl font-bold text-white">{leagueName}</h2>
@@ -625,7 +635,12 @@ const CupCompetition = ({
       )}
 
       {/* Loading State */}
-      {stagesLoading ? (
+      {/* 
+        Show loading when:
+        - Seasons are still loading (can't fetch stages without a season)
+        - OR stages are actively being fetched
+      */}
+      {seasonsLoading || stagesLoading ? (
         <div className="text-center py-12 text-gray-500">
           Loading fixtures...
         </div>

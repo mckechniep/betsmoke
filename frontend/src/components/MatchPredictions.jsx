@@ -481,7 +481,6 @@ function CornersSection({ predictions }) {
     { label: 'Over 8', data: predictions.find(p => p.type_id === PREDICTION_TYPES.CORNERS_OVER_8) },
     { label: 'Over 9', data: predictions.find(p => p.type_id === PREDICTION_TYPES.CORNERS_OVER_9) },
     { label: 'Over 10', data: predictions.find(p => p.type_id === PREDICTION_TYPES.CORNERS_OVER_10) },
-    { label: 'Over 10.5', data: predictions.find(p => p.type_id === PREDICTION_TYPES.CORNERS_OVER_10_5) },
     { label: 'Over 11', data: predictions.find(p => p.type_id === PREDICTION_TYPES.CORNERS_OVER_11) },
   ].filter(p => p.data); // Only include predictions that exist
 
@@ -499,12 +498,6 @@ function CornersSection({ predictions }) {
           color="yellow"
         />
       ))}
-      
-      {/* Insight */}
-      <div className="mt-4 p-3 bg-yellow-50 rounded-lg text-sm text-yellow-800">
-        💡 <strong>Corners Tip:</strong> Higher corner lines often offer better value. 
-        Check team corner stats in their recent matches.
-      </div>
     </div>
   );
 }

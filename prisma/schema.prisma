@@ -14,6 +14,16 @@ generator client {
 // ENUMS
 // ============================================
 
+// Odds display format preference
+// - AMERICAN: +150, -110 (US style)
+// - DECIMAL: 2.50, 1.91 (European style)
+// - FRACTIONAL: 3/2, 10/11 (UK style)
+enum OddsFormat {
+  AMERICAN
+  DECIMAL
+  FRACTIONAL
+}
+
 // Defines the allowed context types for notes
 // These map to the categories users can tag notes with:
 //   - team: Team-related research (e.g., Arsenal form analysis)
@@ -43,8 +53,34 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  // Relationship: A user can have many notes
+  // ============================================
+  // USER PREFERENCES
+  // ============================================
+  // Odds format: how betting odds are displayed
+  // Default: AMERICAN (US-style odds like +150, -110)
+  oddsFormat  OddsFormat @default(AMERICAN)
+  
+  // Timezone: IANA timezone string (e.g., "America/New_York")
+  // Used for displaying match times in user's local time
+  // Default: Eastern Time (US)
+  timezone    String     @default("America/New_York")
+
+  // ============================================
+  // ACCOUNT RECOVERY (Optional)
+  // ============================================
+  // Security question for backup account recovery
+  // (in case user can't access their email)
+  securityQuestion  String?   // e.g., "What was your first pet's name?"
+  securityAnswer    String?   // Hashed answer (like password)
+
+  // ============================================
+  // RELATIONSHIPS
+  // ============================================
+  // A user can have many notes
   notes     Note[]
+  
+  // A user can have many password reset requests
+  passwordResets PasswordReset[]
 }
 
 // Our Note table
@@ -76,4 +112,32 @@ model NoteLink {
 
   // Ensure a note doesn't link to the same context twice
   @@unique([noteId, contextType, contextId])
+}
+
+// ============================================
+// PASSWORD RESET
+// ============================================
+// Stores password reset tokens for email-based account recovery.
+// Tokens are hashed (like passwords) for security.
+// Each token can only be used once and expires after 1 hour.
+model PasswordReset {
+  id          String    @id @default(uuid())
+  
+  // The user requesting the password reset
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // The reset token (hashed for security)
+  // The unhashed token is sent to the user's email
+  token       String
+  
+  // When this token expires (typically 1 hour from creation)
+  expiresAt   DateTime
+  
+  // Whether this token has been used
+  // Once used, it cannot be used again
+  used        Boolean   @default(false)
+  
+  // Timestamps
+  createdAt   DateTime  @default(now())
 }

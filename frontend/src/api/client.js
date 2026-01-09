@@ -26,8 +26,8 @@ const request = async (method, path, data = null, token = null) => {
     headers,
   };
 
-  // Add body for POST/PUT requests
-  if (data && (method === 'POST' || method === 'PUT')) {
+  // Add body for POST/PUT/PATCH requests
+  if (data && (method === 'POST' || method === 'PUT' || method === 'PATCH')) {
     config.body = JSON.stringify(data);
   }
 
@@ -62,6 +62,9 @@ export const api = {
   // PUT request (authenticated)
   putAuth: (path, data, token) => request('PUT', path, data, token),
 
+  // PATCH request (authenticated)
+  patchAuth: (path, data, token) => request('PATCH', path, data, token),
+
   // DELETE request (authenticated)
   deleteAuth: (path, token) => request('DELETE', path, null, token),
 };
@@ -71,9 +74,36 @@ export const api = {
 // ============================================
 
 export const authApi = {
-  register: (email, password) => api.post('/auth/register', { email, password }),
+  // Registration & Login
+  register: (data) => api.post('/auth/register', data),
   login: (email, password) => api.post('/auth/login', { email, password }),
-  getMe: (token) => api.getAuth('/me', token),
+  
+  // User Profile (protected)
+  getMe: (token) => api.getAuth('/auth/me', token),
+  
+  // Preferences (protected)
+  updatePreferences: (data, token) => api.patchAuth('/auth/preferences', data, token),
+  
+  // Email Change (protected)
+  changeEmail: (newEmail, password, token) => 
+    api.patchAuth('/auth/email', { newEmail, password }, token),
+  
+  // Password Change (protected)
+  changePassword: (currentPassword, newPassword, token) => 
+    api.patchAuth('/auth/password', { currentPassword, newPassword }, token),
+  
+  // Security Question (protected)
+  updateSecurityQuestion: (securityQuestion, securityAnswer, password, token) => 
+    api.patchAuth('/auth/security-question', { securityQuestion, securityAnswer, password }, token),
+  
+  // Password Recovery (public)
+  forgotPassword: (email) => api.post('/auth/forgot-password', { email }),
+  resetPassword: (token, newPassword) => api.post('/auth/reset-password', { token, newPassword }),
+  
+  // Security Question Recovery (public)
+  getSecurityQuestion: (email) => api.post('/auth/get-security-question', { email }),
+  verifySecurityAnswer: (email, securityAnswer) => 
+    api.post('/auth/verify-security-answer', { email, securityAnswer }),
 };
 
 // ============================================
@@ -153,6 +183,10 @@ export const dataApi = {
 
   // Predictions
   getPredictions: (fixtureId) => api.get(`/fixtures/${fixtureId}/predictions`),
+  
+  // Prediction Model Performance (accuracy stats by league)
+  // leagueId: 8 (Premier League), 24 (FA Cup), 27 (Carabao Cup)
+  getPredictability: (leagueId) => api.get(`/predictions/predictability/leagues/${leagueId}`),
 
   // Stages (for cup competitions - fixtures organized by stage/round)
   getStagesBySeason: (seasonId) => api.get(`/fixtures/seasons/${seasonId}`),
