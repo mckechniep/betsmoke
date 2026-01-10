@@ -53,13 +53,20 @@ It is a **betting journal + research terminal**, NOT a gambling platform.
 │   │   └── odds.js                # Odds data endpoints
 │   │
 │   ├── services/
-│   │   └── sportsmonks.js         # SportsMonks API wrapper
+│   │   ├── sportsmonks.js         # SportsMonks API wrapper
+│   │   └── types.js               # SportsMonks types lookup service
 │   │
 │   ├── middleware/
 │   │   └── auth.js                # JWT verification middleware
 │   │
 │   └── generated/
 │       └── prisma/                # Auto-generated Prisma client
+│
+├── scripts/
+│   └── seed-sportsmonks-types.js  # Seeds types from Excel file
+│
+├── other/
+│   └── Types_overview API V3.xlsx # SportsMonks types reference data
 │
 ├── prisma.config.ts               # Prisma configuration
 ├── docker-compose.yml             # PostgreSQL container config
@@ -216,6 +223,61 @@ SportsMonks uses `include` parameters to enrich responses with related data:
 ```
 Multiple includes separated by semicolons.
 
+### Types System (Local Storage - Best Practice)
+
+**IMPORTANT:** We do NOT use `.type` includes in API calls. Per SportsMonks recommendation, types are stored locally in our database and looked up by ID.
+
+**Why?**
+- Types are static reference data (~1200+ entries) that rarely change
+- Including `.type` on every API call wastes bandwidth and quota
+- Local lookup is faster (O(1) from in-memory cache)
+
+**How it works:**
+1. Types are fetched from SportsMonks `/core/types` endpoint and stored in `sportsmonks_types` table
+2. On server startup, all types are loaded into memory cache
+3. When API returns a `type_id`, use the types service to get the name
+
+**Using the types service:**
+```javascript
+import { getTypeName, getTypeById, enrichStatsWithTypes } from './services/types.js';
+
+// Get type name by ID
+const name = await getTypeName(34);  // Returns: "Corners"
+
+// Get full type object
+const type = await getTypeById(34);
+// Returns: { id: 34, name: "Corners", code: "corners", modelType: "statistic", ... }
+
+// Batch enrich statistics array
+await enrichStatsWithTypes(fixture.statistics);
+// Each stat now has a `typeName` property
+```
+
+**Type categories (modelType):**
+- `statistic` (133): Corners, Goals, Assists, Shots, Passes, etc.
+- `event` (12): Goal, Yellowcard, Substitution, VAR, etc.
+- `injury_suspension` (338): Hamstring Injury, Red Card Suspension, etc.
+- `prediction` (36): BTTS Probability, Over/Under, Correct Score, etc.
+- `position` (22): Goalkeeper, Midfielder, Centre Back, etc.
+- `standings` (23): Overall Won, Home Goals, Away Points, etc.
+- And more: period, referee, lineup, transfer, timeline, etc.
+
+**Sync types (admin only - fetches latest from API):**
+```
+POST /admin/types/sync
+Authorization: Bearer <admin-jwt-token>
+```
+
+**Initial seed (run once after fresh database setup):**
+```bash
+node scripts/seed-sportsmonks-types.js
+```
+
+**Check cache status:**
+```
+GET /types/status
+```
+
 ### Known Quirks
 - Odds endpoints may use different response structures than match endpoints
 - Route ordering matters in Express - more specific routes must come before parameterized routes
@@ -262,6 +324,7 @@ Our SportsMonks subscription is limited to specific competitions:
 - `id`: UUID primary key
 - `email`: Unique email address
 - `password`: Hashed with bcrypt
+- `isAdmin`: Boolean (default false) - grants access to admin endpoints
 - `createdAt`, `updatedAt`: Timestamps
 
 **Note**
@@ -280,6 +343,19 @@ Our SportsMonks subscription is limited to specific competitions:
 - `isPrimary`: Boolean - exactly one link per note must be primary
 - `createdAt`: Timestamp
 - Unique constraint: `[noteId, contextType, contextId]`
+
+**SportsMonksType** (Reference/lookup data - ~1200+ types)
+- `id`: Integer primary key (SportsMonks ID, NOT auto-generated)
+- `parentId`: Optional parent type ID (for hierarchical relationships)
+- `name`: Human-readable name (e.g., "Shots On Target")
+- `code`: Kebab-case code (e.g., "shots-on-target")
+- `developerName`: UPPER_SNAKE_CASE constant (e.g., "SHOTS_ON_TARGET")
+- `modelType`: Category (statistic, event, injury_suspension, position, etc.)
+- `group`: Sub-grouping within modelType (nullable)
+- `statGroup`: Statistical grouping - overall, home, away, offensive, defensive (nullable)
+- `lastSyncedAt`: Timestamp of last sync
+- Indexes on: `modelType`, `code`, `developerName`
+- Self-referencing relation for parent/child hierarchy
 
 ### How Note Linking Works
 
@@ -361,6 +437,7 @@ Each endpoint implementation should include:
 - ✅ Leagues - List/search competitions (GET /leagues, GET /leagues/:id, GET /leagues/search/:query)
 - ✅ Seasons - Navigate historical data (GET /seasons, GET /seasons/:id, GET /seasons/leagues/:leagueId)
 - ✅ Top Scorers - Player leaderboards (GET /topscorers/seasons/:seasonId)
+- ✅ SportsMonks Types - Local storage of 731 types with in-memory cache (GET /types/status)
 
 ### Not Yet Started
 
@@ -403,6 +480,12 @@ npx prisma studio
 
 # Generate Prisma client after schema changes
 npx prisma generate
+
+# Seed SportsMonks types (run after fresh database setup)
+node scripts/seed-sportsmonks-types.js
+
+# Promote a user to admin
+node scripts/promote-admin.js <email>
 ```
 
 ---

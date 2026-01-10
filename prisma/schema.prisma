@@ -74,6 +74,13 @@ model User {
   securityAnswer    String?   // Hashed answer (like password)
 
   // ============================================
+  // ADMIN ACCESS
+  // ============================================
+  // Admin users can access protected endpoints like /admin/types/sync
+  // Default is false - admins must be manually promoted via database
+  isAdmin     Boolean   @default(false) @map("is_admin")
+
+  // ============================================
   // RELATIONSHIPS
   // ============================================
   // A user can have many notes
@@ -140,4 +147,69 @@ model PasswordReset {
   
   // Timestamps
   createdAt   DateTime  @default(now())
+}
+
+// ============================================
+// SPORTSMONKS TYPES (Reference/Lookup Data)
+// ============================================
+// Stores all SportsMonks type definitions locally.
+// This follows SportsMonks best practice: fetch types once and store locally
+// instead of including .type on every API call.
+//
+// Types are used throughout the SportsMonks API to identify:
+// - Event types (Goal, Yellow Card, Substitution)
+// - Statistic types (Corners, Shots On Target, Possession)
+// - Injury/suspension types (Hamstring Injury, Red Card Suspension)
+// - Position types (Goalkeeper, Midfielder, Centre Back)
+// - Prediction types (BTTS Probability, Over/Under)
+// - And many more categories...
+//
+// The 'id' field uses SportsMonks' ID (not auto-generated) so we can
+// directly look up types by the IDs returned from API responses.
+model SportsMonksType {
+  // SportsMonks type ID (NOT auto-generated - we use their IDs)
+  id            Int       @id
+
+  // Parent type ID for hierarchical relationships
+  // Example: "Hamstring Injury" (id: 535) has parentId: 629 ("Injury")
+  parentId      Int?      @map("parent_id")
+
+  // Human-readable name (e.g., "Shots On Target")
+  name          String
+
+  // Kebab-case code (e.g., "shots-on-target")
+  code          String
+
+  // UPPER_SNAKE_CASE constant (e.g., "SHOTS_ON_TARGET")
+  developerName String    @map("developer_name")
+
+  // Category this type belongs to:
+  // event, statistic, injury_suspension, position, prediction,
+  // standings, standing_rule, period, referee, lineup, metadata,
+  // stage_type, sub_event, tie_breaker_rule, timeline, transfer, highlight
+  modelType     String    @map("model_type")
+
+  // Sub-grouping within modelType (nullable)
+  // Examples: "goals", "cards", "subs" for events
+  //           "offensive", "defensive" for statistics
+  group         String?
+
+  // Statistical grouping for standings/stats (nullable)
+  // Values: "overall", "home", "away", "offensive", "defensive"
+  statGroup     String?   @map("stat_group")
+
+  // When this type was last synced from SportsMonks
+  lastSyncedAt  DateTime  @default(now()) @map("last_synced_at")
+
+  // Self-referencing relationship for parent/child hierarchy
+  parent        SportsMonksType?  @relation("TypeHierarchy", fields: [parentId], references: [id])
+  children      SportsMonksType[] @relation("TypeHierarchy")
+
+  // Indexes for fast lookups
+  @@index([modelType])
+  @@index([code])
+  @@index([developerName])
+
+  // Use snake_case table name (PostgreSQL convention)
+  @@map("sportsmonks_types")
 }

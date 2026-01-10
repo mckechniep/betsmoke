@@ -33,6 +33,11 @@ export type NoteLink = $Result.DefaultSelection<Prisma.$NoteLinkPayload>
  * 
  */
 export type PasswordReset = $Result.DefaultSelection<Prisma.$PasswordResetPayload>
+/**
+ * Model SportsMonksType
+ * 
+ */
+export type SportsMonksType = $Result.DefaultSelection<Prisma.$SportsMonksTypePayload>
 
 /**
  * Enums
@@ -224,6 +229,16 @@ export class PrismaClient<
     * ```
     */
   get passwordReset(): Prisma.PasswordResetDelegate<ExtArgs, ClientOptions>;
+
+  /**
+   * `prisma.sportsMonksType`: Exposes CRUD operations for the **SportsMonksType** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more SportsMonksTypes
+    * const sportsMonksTypes = await prisma.sportsMonksType.findMany()
+    * ```
+    */
+  get sportsMonksType(): Prisma.SportsMonksTypeDelegate<ExtArgs, ClientOptions>;
 }
 
 export namespace Prisma {
@@ -661,7 +676,8 @@ export namespace Prisma {
     User: 'User',
     Note: 'Note',
     NoteLink: 'NoteLink',
-    PasswordReset: 'PasswordReset'
+    PasswordReset: 'PasswordReset',
+    SportsMonksType: 'SportsMonksType'
   };
 
   export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -677,7 +693,7 @@ export namespace Prisma {
       omit: GlobalOmitOptions
     }
     meta: {
-      modelProps: "user" | "note" | "noteLink" | "passwordReset"
+      modelProps: "user" | "note" | "noteLink" | "passwordReset" | "sportsMonksType"
       txIsolationLevel: Prisma.TransactionIsolationLevel
     }
     model: {
@@ -977,6 +993,80 @@ export namespace Prisma {
           }
         }
       }
+      SportsMonksType: {
+        payload: Prisma.$SportsMonksTypePayload<ExtArgs>
+        fields: Prisma.SportsMonksTypeFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.SportsMonksTypeFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$SportsMonksTypePayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.SportsMonksTypeFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$SportsMonksTypePayload>
+          }
+          findFirst: {
+            args: Prisma.SportsMonksTypeFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$SportsMonksTypePayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.SportsMonksTypeFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$SportsMonksTypePayload>
+          }
+          findMany: {
+            args: Prisma.SportsMonksTypeFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$SportsMonksTypePayload>[]
+          }
+          create: {
+            args: Prisma.SportsMonksTypeCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$SportsMonksTypePayload>
+          }
+          createMany: {
+            args: Prisma.SportsMonksTypeCreateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          createManyAndReturn: {
+            args: Prisma.SportsMonksTypeCreateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$SportsMonksTypePayload>[]
+          }
+          delete: {
+            args: Prisma.SportsMonksTypeDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$SportsMonksTypePayload>
+          }
+          update: {
+            args: Prisma.SportsMonksTypeUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$SportsMonksTypePayload>
+          }
+          deleteMany: {
+            args: Prisma.SportsMonksTypeDeleteManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateMany: {
+            args: Prisma.SportsMonksTypeUpdateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateManyAndReturn: {
+            args: Prisma.SportsMonksTypeUpdateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$SportsMonksTypePayload>[]
+          }
+          upsert: {
+            args: Prisma.SportsMonksTypeUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$SportsMonksTypePayload>
+          }
+          aggregate: {
+            args: Prisma.SportsMonksTypeAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregateSportsMonksType>
+          }
+          groupBy: {
+            args: Prisma.SportsMonksTypeGroupByArgs<ExtArgs>
+            result: $Utils.Optional<SportsMonksTypeGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.SportsMonksTypeCountArgs<ExtArgs>
+            result: $Utils.Optional<SportsMonksTypeCountAggregateOutputType> | number
+          }
+        }
+      }
     }
   } & {
     other: {
@@ -1089,6 +1179,7 @@ export namespace Prisma {
     note?: NoteOmit
     noteLink?: NoteLinkOmit
     passwordReset?: PasswordResetOmit
+    sportsMonksType?: SportsMonksTypeOmit
   }
 
   /* Types for Logging */
@@ -1232,6 +1323,37 @@ export namespace Prisma {
    */
   export type NoteCountOutputTypeCountLinksArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     where?: NoteLinkWhereInput
+  }
+
+
+  /**
+   * Count Type SportsMonksTypeCountOutputType
+   */
+
+  export type SportsMonksTypeCountOutputType = {
+    children: number
+  }
+
+  export type SportsMonksTypeCountOutputTypeSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    children?: boolean | SportsMonksTypeCountOutputTypeCountChildrenArgs
+  }
+
+  // Custom InputTypes
+  /**
+   * SportsMonksTypeCountOutputType without action
+   */
+  export type SportsMonksTypeCountOutputTypeDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SportsMonksTypeCountOutputType
+     */
+    select?: SportsMonksTypeCountOutputTypeSelect<ExtArgs> | null
+  }
+
+  /**
+   * SportsMonksTypeCountOutputType without action
+   */
+  export type SportsMonksTypeCountOutputTypeCountChildrenArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: SportsMonksTypeWhereInput
   }
 
 
@@ -5646,6 +5768,1203 @@ export namespace Prisma {
 
 
   /**
+   * Model SportsMonksType
+   */
+
+  export type AggregateSportsMonksType = {
+    _count: SportsMonksTypeCountAggregateOutputType | null
+    _avg: SportsMonksTypeAvgAggregateOutputType | null
+    _sum: SportsMonksTypeSumAggregateOutputType | null
+    _min: SportsMonksTypeMinAggregateOutputType | null
+    _max: SportsMonksTypeMaxAggregateOutputType | null
+  }
+
+  export type SportsMonksTypeAvgAggregateOutputType = {
+    id: number | null
+    parentId: number | null
+  }
+
+  export type SportsMonksTypeSumAggregateOutputType = {
+    id: number | null
+    parentId: number | null
+  }
+
+  export type SportsMonksTypeMinAggregateOutputType = {
+    id: number | null
+    parentId: number | null
+    name: string | null
+    code: string | null
+    developerName: string | null
+    modelType: string | null
+    group: string | null
+    statGroup: string | null
+    lastSyncedAt: Date | null
+  }
+
+  export type SportsMonksTypeMaxAggregateOutputType = {
+    id: number | null
+    parentId: number | null
+    name: string | null
+    code: string | null
+    developerName: string | null
+    modelType: string | null
+    group: string | null
+    statGroup: string | null
+    lastSyncedAt: Date | null
+  }
+
+  export type SportsMonksTypeCountAggregateOutputType = {
+    id: number
+    parentId: number
+    name: number
+    code: number
+    developerName: number
+    modelType: number
+    group: number
+    statGroup: number
+    lastSyncedAt: number
+    _all: number
+  }
+
+
+  export type SportsMonksTypeAvgAggregateInputType = {
+    id?: true
+    parentId?: true
+  }
+
+  export type SportsMonksTypeSumAggregateInputType = {
+    id?: true
+    parentId?: true
+  }
+
+  export type SportsMonksTypeMinAggregateInputType = {
+    id?: true
+    parentId?: true
+    name?: true
+    code?: true
+    developerName?: true
+    modelType?: true
+    group?: true
+    statGroup?: true
+    lastSyncedAt?: true
+  }
+
+  export type SportsMonksTypeMaxAggregateInputType = {
+    id?: true
+    parentId?: true
+    name?: true
+    code?: true
+    developerName?: true
+    modelType?: true
+    group?: true
+    statGroup?: true
+    lastSyncedAt?: true
+  }
+
+  export type SportsMonksTypeCountAggregateInputType = {
+    id?: true
+    parentId?: true
+    name?: true
+    code?: true
+    developerName?: true
+    modelType?: true
+    group?: true
+    statGroup?: true
+    lastSyncedAt?: true
+    _all?: true
+  }
+
+  export type SportsMonksTypeAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which SportsMonksType to aggregate.
+     */
+    where?: SportsMonksTypeWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of SportsMonksTypes to fetch.
+     */
+    orderBy?: SportsMonksTypeOrderByWithRelationInput | SportsMonksTypeOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: SportsMonksTypeWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` SportsMonksTypes from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` SportsMonksTypes.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned SportsMonksTypes
+    **/
+    _count?: true | SportsMonksTypeCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to average
+    **/
+    _avg?: SportsMonksTypeAvgAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to sum
+    **/
+    _sum?: SportsMonksTypeSumAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: SportsMonksTypeMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: SportsMonksTypeMaxAggregateInputType
+  }
+
+  export type GetSportsMonksTypeAggregateType<T extends SportsMonksTypeAggregateArgs> = {
+        [P in keyof T & keyof AggregateSportsMonksType]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregateSportsMonksType[P]>
+      : GetScalarType<T[P], AggregateSportsMonksType[P]>
+  }
+
+
+
+
+  export type SportsMonksTypeGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: SportsMonksTypeWhereInput
+    orderBy?: SportsMonksTypeOrderByWithAggregationInput | SportsMonksTypeOrderByWithAggregationInput[]
+    by: SportsMonksTypeScalarFieldEnum[] | SportsMonksTypeScalarFieldEnum
+    having?: SportsMonksTypeScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: SportsMonksTypeCountAggregateInputType | true
+    _avg?: SportsMonksTypeAvgAggregateInputType
+    _sum?: SportsMonksTypeSumAggregateInputType
+    _min?: SportsMonksTypeMinAggregateInputType
+    _max?: SportsMonksTypeMaxAggregateInputType
+  }
+
+  export type SportsMonksTypeGroupByOutputType = {
+    id: number
+    parentId: number | null
+    name: string
+    code: string
+    developerName: string
+    modelType: string
+    group: string | null
+    statGroup: string | null
+    lastSyncedAt: Date
+    _count: SportsMonksTypeCountAggregateOutputType | null
+    _avg: SportsMonksTypeAvgAggregateOutputType | null
+    _sum: SportsMonksTypeSumAggregateOutputType | null
+    _min: SportsMonksTypeMinAggregateOutputType | null
+    _max: SportsMonksTypeMaxAggregateOutputType | null
+  }
+
+  type GetSportsMonksTypeGroupByPayload<T extends SportsMonksTypeGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<SportsMonksTypeGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof SportsMonksTypeGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], SportsMonksTypeGroupByOutputType[P]>
+            : GetScalarType<T[P], SportsMonksTypeGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type SportsMonksTypeSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    parentId?: boolean
+    name?: boolean
+    code?: boolean
+    developerName?: boolean
+    modelType?: boolean
+    group?: boolean
+    statGroup?: boolean
+    lastSyncedAt?: boolean
+    parent?: boolean | SportsMonksType$parentArgs<ExtArgs>
+    children?: boolean | SportsMonksType$childrenArgs<ExtArgs>
+    _count?: boolean | SportsMonksTypeCountOutputTypeDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["sportsMonksType"]>
+
+  export type SportsMonksTypeSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    parentId?: boolean
+    name?: boolean
+    code?: boolean
+    developerName?: boolean
+    modelType?: boolean
+    group?: boolean
+    statGroup?: boolean
+    lastSyncedAt?: boolean
+    parent?: boolean | SportsMonksType$parentArgs<ExtArgs>
+  }, ExtArgs["result"]["sportsMonksType"]>
+
+  export type SportsMonksTypeSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    parentId?: boolean
+    name?: boolean
+    code?: boolean
+    developerName?: boolean
+    modelType?: boolean
+    group?: boolean
+    statGroup?: boolean
+    lastSyncedAt?: boolean
+    parent?: boolean | SportsMonksType$parentArgs<ExtArgs>
+  }, ExtArgs["result"]["sportsMonksType"]>
+
+  export type SportsMonksTypeSelectScalar = {
+    id?: boolean
+    parentId?: boolean
+    name?: boolean
+    code?: boolean
+    developerName?: boolean
+    modelType?: boolean
+    group?: boolean
+    statGroup?: boolean
+    lastSyncedAt?: boolean
+  }
+
+  export type SportsMonksTypeOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "parentId" | "name" | "code" | "developerName" | "modelType" | "group" | "statGroup" | "lastSyncedAt", ExtArgs["result"]["sportsMonksType"]>
+  export type SportsMonksTypeInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    parent?: boolean | SportsMonksType$parentArgs<ExtArgs>
+    children?: boolean | SportsMonksType$childrenArgs<ExtArgs>
+    _count?: boolean | SportsMonksTypeCountOutputTypeDefaultArgs<ExtArgs>
+  }
+  export type SportsMonksTypeIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    parent?: boolean | SportsMonksType$parentArgs<ExtArgs>
+  }
+  export type SportsMonksTypeIncludeUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    parent?: boolean | SportsMonksType$parentArgs<ExtArgs>
+  }
+
+  export type $SportsMonksTypePayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "SportsMonksType"
+    objects: {
+      parent: Prisma.$SportsMonksTypePayload<ExtArgs> | null
+      children: Prisma.$SportsMonksTypePayload<ExtArgs>[]
+    }
+    scalars: $Extensions.GetPayloadResult<{
+      id: number
+      parentId: number | null
+      name: string
+      code: string
+      developerName: string
+      modelType: string
+      group: string | null
+      statGroup: string | null
+      lastSyncedAt: Date
+    }, ExtArgs["result"]["sportsMonksType"]>
+    composites: {}
+  }
+
+  type SportsMonksTypeGetPayload<S extends boolean | null | undefined | SportsMonksTypeDefaultArgs> = $Result.GetResult<Prisma.$SportsMonksTypePayload, S>
+
+  type SportsMonksTypeCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
+    Omit<SportsMonksTypeFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+      select?: SportsMonksTypeCountAggregateInputType | true
+    }
+
+  export interface SportsMonksTypeDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['SportsMonksType'], meta: { name: 'SportsMonksType' } }
+    /**
+     * Find zero or one SportsMonksType that matches the filter.
+     * @param {SportsMonksTypeFindUniqueArgs} args - Arguments to find a SportsMonksType
+     * @example
+     * // Get one SportsMonksType
+     * const sportsMonksType = await prisma.sportsMonksType.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends SportsMonksTypeFindUniqueArgs>(args: SelectSubset<T, SportsMonksTypeFindUniqueArgs<ExtArgs>>): Prisma__SportsMonksTypeClient<$Result.GetResult<Prisma.$SportsMonksTypePayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find one SportsMonksType that matches the filter or throw an error with `error.code='P2025'`
+     * if no matches were found.
+     * @param {SportsMonksTypeFindUniqueOrThrowArgs} args - Arguments to find a SportsMonksType
+     * @example
+     * // Get one SportsMonksType
+     * const sportsMonksType = await prisma.sportsMonksType.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends SportsMonksTypeFindUniqueOrThrowArgs>(args: SelectSubset<T, SportsMonksTypeFindUniqueOrThrowArgs<ExtArgs>>): Prisma__SportsMonksTypeClient<$Result.GetResult<Prisma.$SportsMonksTypePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first SportsMonksType that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {SportsMonksTypeFindFirstArgs} args - Arguments to find a SportsMonksType
+     * @example
+     * // Get one SportsMonksType
+     * const sportsMonksType = await prisma.sportsMonksType.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends SportsMonksTypeFindFirstArgs>(args?: SelectSubset<T, SportsMonksTypeFindFirstArgs<ExtArgs>>): Prisma__SportsMonksTypeClient<$Result.GetResult<Prisma.$SportsMonksTypePayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first SportsMonksType that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {SportsMonksTypeFindFirstOrThrowArgs} args - Arguments to find a SportsMonksType
+     * @example
+     * // Get one SportsMonksType
+     * const sportsMonksType = await prisma.sportsMonksType.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends SportsMonksTypeFindFirstOrThrowArgs>(args?: SelectSubset<T, SportsMonksTypeFindFirstOrThrowArgs<ExtArgs>>): Prisma__SportsMonksTypeClient<$Result.GetResult<Prisma.$SportsMonksTypePayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find zero or more SportsMonksTypes that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {SportsMonksTypeFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all SportsMonksTypes
+     * const sportsMonksTypes = await prisma.sportsMonksType.findMany()
+     * 
+     * // Get first 10 SportsMonksTypes
+     * const sportsMonksTypes = await prisma.sportsMonksType.findMany({ take: 10 })
+     * 
+     * // Only select the `id`
+     * const sportsMonksTypeWithIdOnly = await prisma.sportsMonksType.findMany({ select: { id: true } })
+     * 
+     */
+    findMany<T extends SportsMonksTypeFindManyArgs>(args?: SelectSubset<T, SportsMonksTypeFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$SportsMonksTypePayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
+
+    /**
+     * Create a SportsMonksType.
+     * @param {SportsMonksTypeCreateArgs} args - Arguments to create a SportsMonksType.
+     * @example
+     * // Create one SportsMonksType
+     * const SportsMonksType = await prisma.sportsMonksType.create({
+     *   data: {
+     *     // ... data to create a SportsMonksType
+     *   }
+     * })
+     * 
+     */
+    create<T extends SportsMonksTypeCreateArgs>(args: SelectSubset<T, SportsMonksTypeCreateArgs<ExtArgs>>): Prisma__SportsMonksTypeClient<$Result.GetResult<Prisma.$SportsMonksTypePayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Create many SportsMonksTypes.
+     * @param {SportsMonksTypeCreateManyArgs} args - Arguments to create many SportsMonksTypes.
+     * @example
+     * // Create many SportsMonksTypes
+     * const sportsMonksType = await prisma.sportsMonksType.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *     
+     */
+    createMany<T extends SportsMonksTypeCreateManyArgs>(args?: SelectSubset<T, SportsMonksTypeCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create many SportsMonksTypes and returns the data saved in the database.
+     * @param {SportsMonksTypeCreateManyAndReturnArgs} args - Arguments to create many SportsMonksTypes.
+     * @example
+     * // Create many SportsMonksTypes
+     * const sportsMonksType = await prisma.sportsMonksType.createManyAndReturn({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Create many SportsMonksTypes and only return the `id`
+     * const sportsMonksTypeWithIdOnly = await prisma.sportsMonksType.createManyAndReturn({
+     *   select: { id: true },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    createManyAndReturn<T extends SportsMonksTypeCreateManyAndReturnArgs>(args?: SelectSubset<T, SportsMonksTypeCreateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$SportsMonksTypePayload<ExtArgs>, T, "createManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Delete a SportsMonksType.
+     * @param {SportsMonksTypeDeleteArgs} args - Arguments to delete one SportsMonksType.
+     * @example
+     * // Delete one SportsMonksType
+     * const SportsMonksType = await prisma.sportsMonksType.delete({
+     *   where: {
+     *     // ... filter to delete one SportsMonksType
+     *   }
+     * })
+     * 
+     */
+    delete<T extends SportsMonksTypeDeleteArgs>(args: SelectSubset<T, SportsMonksTypeDeleteArgs<ExtArgs>>): Prisma__SportsMonksTypeClient<$Result.GetResult<Prisma.$SportsMonksTypePayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Update one SportsMonksType.
+     * @param {SportsMonksTypeUpdateArgs} args - Arguments to update one SportsMonksType.
+     * @example
+     * // Update one SportsMonksType
+     * const sportsMonksType = await prisma.sportsMonksType.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    update<T extends SportsMonksTypeUpdateArgs>(args: SelectSubset<T, SportsMonksTypeUpdateArgs<ExtArgs>>): Prisma__SportsMonksTypeClient<$Result.GetResult<Prisma.$SportsMonksTypePayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Delete zero or more SportsMonksTypes.
+     * @param {SportsMonksTypeDeleteManyArgs} args - Arguments to filter SportsMonksTypes to delete.
+     * @example
+     * // Delete a few SportsMonksTypes
+     * const { count } = await prisma.sportsMonksType.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+     */
+    deleteMany<T extends SportsMonksTypeDeleteManyArgs>(args?: SelectSubset<T, SportsMonksTypeDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more SportsMonksTypes.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {SportsMonksTypeUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many SportsMonksTypes
+     * const sportsMonksType = await prisma.sportsMonksType.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    updateMany<T extends SportsMonksTypeUpdateManyArgs>(args: SelectSubset<T, SportsMonksTypeUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more SportsMonksTypes and returns the data updated in the database.
+     * @param {SportsMonksTypeUpdateManyAndReturnArgs} args - Arguments to update many SportsMonksTypes.
+     * @example
+     * // Update many SportsMonksTypes
+     * const sportsMonksType = await prisma.sportsMonksType.updateManyAndReturn({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Update zero or more SportsMonksTypes and only return the `id`
+     * const sportsMonksTypeWithIdOnly = await prisma.sportsMonksType.updateManyAndReturn({
+     *   select: { id: true },
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    updateManyAndReturn<T extends SportsMonksTypeUpdateManyAndReturnArgs>(args: SelectSubset<T, SportsMonksTypeUpdateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$SportsMonksTypePayload<ExtArgs>, T, "updateManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Create or update one SportsMonksType.
+     * @param {SportsMonksTypeUpsertArgs} args - Arguments to update or create a SportsMonksType.
+     * @example
+     * // Update or create a SportsMonksType
+     * const sportsMonksType = await prisma.sportsMonksType.upsert({
+     *   create: {
+     *     // ... data to create a SportsMonksType
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the SportsMonksType we want to update
+     *   }
+     * })
+     */
+    upsert<T extends SportsMonksTypeUpsertArgs>(args: SelectSubset<T, SportsMonksTypeUpsertArgs<ExtArgs>>): Prisma__SportsMonksTypeClient<$Result.GetResult<Prisma.$SportsMonksTypePayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+
+    /**
+     * Count the number of SportsMonksTypes.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {SportsMonksTypeCountArgs} args - Arguments to filter SportsMonksTypes to count.
+     * @example
+     * // Count the number of SportsMonksTypes
+     * const count = await prisma.sportsMonksType.count({
+     *   where: {
+     *     // ... the filter for the SportsMonksTypes we want to count
+     *   }
+     * })
+    **/
+    count<T extends SportsMonksTypeCountArgs>(
+      args?: Subset<T, SportsMonksTypeCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], SportsMonksTypeCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a SportsMonksType.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {SportsMonksTypeAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends SportsMonksTypeAggregateArgs>(args: Subset<T, SportsMonksTypeAggregateArgs>): Prisma.PrismaPromise<GetSportsMonksTypeAggregateType<T>>
+
+    /**
+     * Group by SportsMonksType.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {SportsMonksTypeGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends SportsMonksTypeGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: SportsMonksTypeGroupByArgs['orderBy'] }
+        : { orderBy?: SportsMonksTypeGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, SportsMonksTypeGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetSportsMonksTypeGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the SportsMonksType model
+   */
+  readonly fields: SportsMonksTypeFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for SportsMonksType.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__SportsMonksTypeClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise"
+    parent<T extends SportsMonksType$parentArgs<ExtArgs> = {}>(args?: Subset<T, SportsMonksType$parentArgs<ExtArgs>>): Prisma__SportsMonksTypeClient<$Result.GetResult<Prisma.$SportsMonksTypePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+    children<T extends SportsMonksType$childrenArgs<ExtArgs> = {}>(args?: Subset<T, SportsMonksType$childrenArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$SportsMonksTypePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
+  }
+
+
+
+
+  /**
+   * Fields of the SportsMonksType model
+   */
+  interface SportsMonksTypeFieldRefs {
+    readonly id: FieldRef<"SportsMonksType", 'Int'>
+    readonly parentId: FieldRef<"SportsMonksType", 'Int'>
+    readonly name: FieldRef<"SportsMonksType", 'String'>
+    readonly code: FieldRef<"SportsMonksType", 'String'>
+    readonly developerName: FieldRef<"SportsMonksType", 'String'>
+    readonly modelType: FieldRef<"SportsMonksType", 'String'>
+    readonly group: FieldRef<"SportsMonksType", 'String'>
+    readonly statGroup: FieldRef<"SportsMonksType", 'String'>
+    readonly lastSyncedAt: FieldRef<"SportsMonksType", 'DateTime'>
+  }
+    
+
+  // Custom InputTypes
+  /**
+   * SportsMonksType findUnique
+   */
+  export type SportsMonksTypeFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SportsMonksType
+     */
+    select?: SportsMonksTypeSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the SportsMonksType
+     */
+    omit?: SportsMonksTypeOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: SportsMonksTypeInclude<ExtArgs> | null
+    /**
+     * Filter, which SportsMonksType to fetch.
+     */
+    where: SportsMonksTypeWhereUniqueInput
+  }
+
+  /**
+   * SportsMonksType findUniqueOrThrow
+   */
+  export type SportsMonksTypeFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SportsMonksType
+     */
+    select?: SportsMonksTypeSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the SportsMonksType
+     */
+    omit?: SportsMonksTypeOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: SportsMonksTypeInclude<ExtArgs> | null
+    /**
+     * Filter, which SportsMonksType to fetch.
+     */
+    where: SportsMonksTypeWhereUniqueInput
+  }
+
+  /**
+   * SportsMonksType findFirst
+   */
+  export type SportsMonksTypeFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SportsMonksType
+     */
+    select?: SportsMonksTypeSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the SportsMonksType
+     */
+    omit?: SportsMonksTypeOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: SportsMonksTypeInclude<ExtArgs> | null
+    /**
+     * Filter, which SportsMonksType to fetch.
+     */
+    where?: SportsMonksTypeWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of SportsMonksTypes to fetch.
+     */
+    orderBy?: SportsMonksTypeOrderByWithRelationInput | SportsMonksTypeOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for SportsMonksTypes.
+     */
+    cursor?: SportsMonksTypeWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` SportsMonksTypes from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` SportsMonksTypes.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of SportsMonksTypes.
+     */
+    distinct?: SportsMonksTypeScalarFieldEnum | SportsMonksTypeScalarFieldEnum[]
+  }
+
+  /**
+   * SportsMonksType findFirstOrThrow
+   */
+  export type SportsMonksTypeFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SportsMonksType
+     */
+    select?: SportsMonksTypeSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the SportsMonksType
+     */
+    omit?: SportsMonksTypeOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: SportsMonksTypeInclude<ExtArgs> | null
+    /**
+     * Filter, which SportsMonksType to fetch.
+     */
+    where?: SportsMonksTypeWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of SportsMonksTypes to fetch.
+     */
+    orderBy?: SportsMonksTypeOrderByWithRelationInput | SportsMonksTypeOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for SportsMonksTypes.
+     */
+    cursor?: SportsMonksTypeWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` SportsMonksTypes from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` SportsMonksTypes.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of SportsMonksTypes.
+     */
+    distinct?: SportsMonksTypeScalarFieldEnum | SportsMonksTypeScalarFieldEnum[]
+  }
+
+  /**
+   * SportsMonksType findMany
+   */
+  export type SportsMonksTypeFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SportsMonksType
+     */
+    select?: SportsMonksTypeSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the SportsMonksType
+     */
+    omit?: SportsMonksTypeOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: SportsMonksTypeInclude<ExtArgs> | null
+    /**
+     * Filter, which SportsMonksTypes to fetch.
+     */
+    where?: SportsMonksTypeWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of SportsMonksTypes to fetch.
+     */
+    orderBy?: SportsMonksTypeOrderByWithRelationInput | SportsMonksTypeOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing SportsMonksTypes.
+     */
+    cursor?: SportsMonksTypeWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` SportsMonksTypes from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` SportsMonksTypes.
+     */
+    skip?: number
+    distinct?: SportsMonksTypeScalarFieldEnum | SportsMonksTypeScalarFieldEnum[]
+  }
+
+  /**
+   * SportsMonksType create
+   */
+  export type SportsMonksTypeCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SportsMonksType
+     */
+    select?: SportsMonksTypeSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the SportsMonksType
+     */
+    omit?: SportsMonksTypeOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: SportsMonksTypeInclude<ExtArgs> | null
+    /**
+     * The data needed to create a SportsMonksType.
+     */
+    data: XOR<SportsMonksTypeCreateInput, SportsMonksTypeUncheckedCreateInput>
+  }
+
+  /**
+   * SportsMonksType createMany
+   */
+  export type SportsMonksTypeCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many SportsMonksTypes.
+     */
+    data: SportsMonksTypeCreateManyInput | SportsMonksTypeCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * SportsMonksType createManyAndReturn
+   */
+  export type SportsMonksTypeCreateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SportsMonksType
+     */
+    select?: SportsMonksTypeSelectCreateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the SportsMonksType
+     */
+    omit?: SportsMonksTypeOmit<ExtArgs> | null
+    /**
+     * The data used to create many SportsMonksTypes.
+     */
+    data: SportsMonksTypeCreateManyInput | SportsMonksTypeCreateManyInput[]
+    skipDuplicates?: boolean
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: SportsMonksTypeIncludeCreateManyAndReturn<ExtArgs> | null
+  }
+
+  /**
+   * SportsMonksType update
+   */
+  export type SportsMonksTypeUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SportsMonksType
+     */
+    select?: SportsMonksTypeSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the SportsMonksType
+     */
+    omit?: SportsMonksTypeOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: SportsMonksTypeInclude<ExtArgs> | null
+    /**
+     * The data needed to update a SportsMonksType.
+     */
+    data: XOR<SportsMonksTypeUpdateInput, SportsMonksTypeUncheckedUpdateInput>
+    /**
+     * Choose, which SportsMonksType to update.
+     */
+    where: SportsMonksTypeWhereUniqueInput
+  }
+
+  /**
+   * SportsMonksType updateMany
+   */
+  export type SportsMonksTypeUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update SportsMonksTypes.
+     */
+    data: XOR<SportsMonksTypeUpdateManyMutationInput, SportsMonksTypeUncheckedUpdateManyInput>
+    /**
+     * Filter which SportsMonksTypes to update
+     */
+    where?: SportsMonksTypeWhereInput
+    /**
+     * Limit how many SportsMonksTypes to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * SportsMonksType updateManyAndReturn
+   */
+  export type SportsMonksTypeUpdateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SportsMonksType
+     */
+    select?: SportsMonksTypeSelectUpdateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the SportsMonksType
+     */
+    omit?: SportsMonksTypeOmit<ExtArgs> | null
+    /**
+     * The data used to update SportsMonksTypes.
+     */
+    data: XOR<SportsMonksTypeUpdateManyMutationInput, SportsMonksTypeUncheckedUpdateManyInput>
+    /**
+     * Filter which SportsMonksTypes to update
+     */
+    where?: SportsMonksTypeWhereInput
+    /**
+     * Limit how many SportsMonksTypes to update.
+     */
+    limit?: number
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: SportsMonksTypeIncludeUpdateManyAndReturn<ExtArgs> | null
+  }
+
+  /**
+   * SportsMonksType upsert
+   */
+  export type SportsMonksTypeUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SportsMonksType
+     */
+    select?: SportsMonksTypeSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the SportsMonksType
+     */
+    omit?: SportsMonksTypeOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: SportsMonksTypeInclude<ExtArgs> | null
+    /**
+     * The filter to search for the SportsMonksType to update in case it exists.
+     */
+    where: SportsMonksTypeWhereUniqueInput
+    /**
+     * In case the SportsMonksType found by the `where` argument doesn't exist, create a new SportsMonksType with this data.
+     */
+    create: XOR<SportsMonksTypeCreateInput, SportsMonksTypeUncheckedCreateInput>
+    /**
+     * In case the SportsMonksType was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<SportsMonksTypeUpdateInput, SportsMonksTypeUncheckedUpdateInput>
+  }
+
+  /**
+   * SportsMonksType delete
+   */
+  export type SportsMonksTypeDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SportsMonksType
+     */
+    select?: SportsMonksTypeSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the SportsMonksType
+     */
+    omit?: SportsMonksTypeOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: SportsMonksTypeInclude<ExtArgs> | null
+    /**
+     * Filter which SportsMonksType to delete.
+     */
+    where: SportsMonksTypeWhereUniqueInput
+  }
+
+  /**
+   * SportsMonksType deleteMany
+   */
+  export type SportsMonksTypeDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which SportsMonksTypes to delete
+     */
+    where?: SportsMonksTypeWhereInput
+    /**
+     * Limit how many SportsMonksTypes to delete.
+     */
+    limit?: number
+  }
+
+  /**
+   * SportsMonksType.parent
+   */
+  export type SportsMonksType$parentArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SportsMonksType
+     */
+    select?: SportsMonksTypeSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the SportsMonksType
+     */
+    omit?: SportsMonksTypeOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: SportsMonksTypeInclude<ExtArgs> | null
+    where?: SportsMonksTypeWhereInput
+  }
+
+  /**
+   * SportsMonksType.children
+   */
+  export type SportsMonksType$childrenArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SportsMonksType
+     */
+    select?: SportsMonksTypeSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the SportsMonksType
+     */
+    omit?: SportsMonksTypeOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: SportsMonksTypeInclude<ExtArgs> | null
+    where?: SportsMonksTypeWhereInput
+    orderBy?: SportsMonksTypeOrderByWithRelationInput | SportsMonksTypeOrderByWithRelationInput[]
+    cursor?: SportsMonksTypeWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: SportsMonksTypeScalarFieldEnum | SportsMonksTypeScalarFieldEnum[]
+  }
+
+  /**
+   * SportsMonksType without action
+   */
+  export type SportsMonksTypeDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SportsMonksType
+     */
+    select?: SportsMonksTypeSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the SportsMonksType
+     */
+    omit?: SportsMonksTypeOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: SportsMonksTypeInclude<ExtArgs> | null
+  }
+
+
+  /**
    * Enums
    */
 
@@ -5709,6 +7028,21 @@ export namespace Prisma {
   };
 
   export type PasswordResetScalarFieldEnum = (typeof PasswordResetScalarFieldEnum)[keyof typeof PasswordResetScalarFieldEnum]
+
+
+  export const SportsMonksTypeScalarFieldEnum: {
+    id: 'id',
+    parentId: 'parentId',
+    name: 'name',
+    code: 'code',
+    developerName: 'developerName',
+    modelType: 'modelType',
+    group: 'group',
+    statGroup: 'statGroup',
+    lastSyncedAt: 'lastSyncedAt'
+  };
+
+  export type SportsMonksTypeScalarFieldEnum = (typeof SportsMonksTypeScalarFieldEnum)[keyof typeof SportsMonksTypeScalarFieldEnum]
 
 
   export const SortOrder: {
@@ -5814,6 +7148,20 @@ export namespace Prisma {
    * Reference to a field of type 'Int[]'
    */
   export type ListIntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Int[]'>
+    
+
+
+  /**
+   * Reference to a field of type 'Float'
+   */
+  export type FloatFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Float'>
+    
+
+
+  /**
+   * Reference to a field of type 'Float[]'
+   */
+  export type ListFloatFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Float[]'>
     
   /**
    * Deep Input Types
@@ -6085,6 +7433,86 @@ export namespace Prisma {
     expiresAt?: DateTimeWithAggregatesFilter<"PasswordReset"> | Date | string
     used?: BoolWithAggregatesFilter<"PasswordReset"> | boolean
     createdAt?: DateTimeWithAggregatesFilter<"PasswordReset"> | Date | string
+  }
+
+  export type SportsMonksTypeWhereInput = {
+    AND?: SportsMonksTypeWhereInput | SportsMonksTypeWhereInput[]
+    OR?: SportsMonksTypeWhereInput[]
+    NOT?: SportsMonksTypeWhereInput | SportsMonksTypeWhereInput[]
+    id?: IntFilter<"SportsMonksType"> | number
+    parentId?: IntNullableFilter<"SportsMonksType"> | number | null
+    name?: StringFilter<"SportsMonksType"> | string
+    code?: StringFilter<"SportsMonksType"> | string
+    developerName?: StringFilter<"SportsMonksType"> | string
+    modelType?: StringFilter<"SportsMonksType"> | string
+    group?: StringNullableFilter<"SportsMonksType"> | string | null
+    statGroup?: StringNullableFilter<"SportsMonksType"> | string | null
+    lastSyncedAt?: DateTimeFilter<"SportsMonksType"> | Date | string
+    parent?: XOR<SportsMonksTypeNullableScalarRelationFilter, SportsMonksTypeWhereInput> | null
+    children?: SportsMonksTypeListRelationFilter
+  }
+
+  export type SportsMonksTypeOrderByWithRelationInput = {
+    id?: SortOrder
+    parentId?: SortOrderInput | SortOrder
+    name?: SortOrder
+    code?: SortOrder
+    developerName?: SortOrder
+    modelType?: SortOrder
+    group?: SortOrderInput | SortOrder
+    statGroup?: SortOrderInput | SortOrder
+    lastSyncedAt?: SortOrder
+    parent?: SportsMonksTypeOrderByWithRelationInput
+    children?: SportsMonksTypeOrderByRelationAggregateInput
+  }
+
+  export type SportsMonksTypeWhereUniqueInput = Prisma.AtLeast<{
+    id?: number
+    AND?: SportsMonksTypeWhereInput | SportsMonksTypeWhereInput[]
+    OR?: SportsMonksTypeWhereInput[]
+    NOT?: SportsMonksTypeWhereInput | SportsMonksTypeWhereInput[]
+    parentId?: IntNullableFilter<"SportsMonksType"> | number | null
+    name?: StringFilter<"SportsMonksType"> | string
+    code?: StringFilter<"SportsMonksType"> | string
+    developerName?: StringFilter<"SportsMonksType"> | string
+    modelType?: StringFilter<"SportsMonksType"> | string
+    group?: StringNullableFilter<"SportsMonksType"> | string | null
+    statGroup?: StringNullableFilter<"SportsMonksType"> | string | null
+    lastSyncedAt?: DateTimeFilter<"SportsMonksType"> | Date | string
+    parent?: XOR<SportsMonksTypeNullableScalarRelationFilter, SportsMonksTypeWhereInput> | null
+    children?: SportsMonksTypeListRelationFilter
+  }, "id">
+
+  export type SportsMonksTypeOrderByWithAggregationInput = {
+    id?: SortOrder
+    parentId?: SortOrderInput | SortOrder
+    name?: SortOrder
+    code?: SortOrder
+    developerName?: SortOrder
+    modelType?: SortOrder
+    group?: SortOrderInput | SortOrder
+    statGroup?: SortOrderInput | SortOrder
+    lastSyncedAt?: SortOrder
+    _count?: SportsMonksTypeCountOrderByAggregateInput
+    _avg?: SportsMonksTypeAvgOrderByAggregateInput
+    _max?: SportsMonksTypeMaxOrderByAggregateInput
+    _min?: SportsMonksTypeMinOrderByAggregateInput
+    _sum?: SportsMonksTypeSumOrderByAggregateInput
+  }
+
+  export type SportsMonksTypeScalarWhereWithAggregatesInput = {
+    AND?: SportsMonksTypeScalarWhereWithAggregatesInput | SportsMonksTypeScalarWhereWithAggregatesInput[]
+    OR?: SportsMonksTypeScalarWhereWithAggregatesInput[]
+    NOT?: SportsMonksTypeScalarWhereWithAggregatesInput | SportsMonksTypeScalarWhereWithAggregatesInput[]
+    id?: IntWithAggregatesFilter<"SportsMonksType"> | number
+    parentId?: IntNullableWithAggregatesFilter<"SportsMonksType"> | number | null
+    name?: StringWithAggregatesFilter<"SportsMonksType"> | string
+    code?: StringWithAggregatesFilter<"SportsMonksType"> | string
+    developerName?: StringWithAggregatesFilter<"SportsMonksType"> | string
+    modelType?: StringWithAggregatesFilter<"SportsMonksType"> | string
+    group?: StringNullableWithAggregatesFilter<"SportsMonksType"> | string | null
+    statGroup?: StringNullableWithAggregatesFilter<"SportsMonksType"> | string | null
+    lastSyncedAt?: DateTimeWithAggregatesFilter<"SportsMonksType"> | Date | string
   }
 
   export type UserCreateInput = {
@@ -6374,6 +7802,93 @@ export namespace Prisma {
     expiresAt?: DateTimeFieldUpdateOperationsInput | Date | string
     used?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type SportsMonksTypeCreateInput = {
+    id: number
+    name: string
+    code: string
+    developerName: string
+    modelType: string
+    group?: string | null
+    statGroup?: string | null
+    lastSyncedAt?: Date | string
+    parent?: SportsMonksTypeCreateNestedOneWithoutChildrenInput
+    children?: SportsMonksTypeCreateNestedManyWithoutParentInput
+  }
+
+  export type SportsMonksTypeUncheckedCreateInput = {
+    id: number
+    parentId?: number | null
+    name: string
+    code: string
+    developerName: string
+    modelType: string
+    group?: string | null
+    statGroup?: string | null
+    lastSyncedAt?: Date | string
+    children?: SportsMonksTypeUncheckedCreateNestedManyWithoutParentInput
+  }
+
+  export type SportsMonksTypeUpdateInput = {
+    id?: IntFieldUpdateOperationsInput | number
+    name?: StringFieldUpdateOperationsInput | string
+    code?: StringFieldUpdateOperationsInput | string
+    developerName?: StringFieldUpdateOperationsInput | string
+    modelType?: StringFieldUpdateOperationsInput | string
+    group?: NullableStringFieldUpdateOperationsInput | string | null
+    statGroup?: NullableStringFieldUpdateOperationsInput | string | null
+    lastSyncedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    parent?: SportsMonksTypeUpdateOneWithoutChildrenNestedInput
+    children?: SportsMonksTypeUpdateManyWithoutParentNestedInput
+  }
+
+  export type SportsMonksTypeUncheckedUpdateInput = {
+    id?: IntFieldUpdateOperationsInput | number
+    parentId?: NullableIntFieldUpdateOperationsInput | number | null
+    name?: StringFieldUpdateOperationsInput | string
+    code?: StringFieldUpdateOperationsInput | string
+    developerName?: StringFieldUpdateOperationsInput | string
+    modelType?: StringFieldUpdateOperationsInput | string
+    group?: NullableStringFieldUpdateOperationsInput | string | null
+    statGroup?: NullableStringFieldUpdateOperationsInput | string | null
+    lastSyncedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    children?: SportsMonksTypeUncheckedUpdateManyWithoutParentNestedInput
+  }
+
+  export type SportsMonksTypeCreateManyInput = {
+    id: number
+    parentId?: number | null
+    name: string
+    code: string
+    developerName: string
+    modelType: string
+    group?: string | null
+    statGroup?: string | null
+    lastSyncedAt?: Date | string
+  }
+
+  export type SportsMonksTypeUpdateManyMutationInput = {
+    id?: IntFieldUpdateOperationsInput | number
+    name?: StringFieldUpdateOperationsInput | string
+    code?: StringFieldUpdateOperationsInput | string
+    developerName?: StringFieldUpdateOperationsInput | string
+    modelType?: StringFieldUpdateOperationsInput | string
+    group?: NullableStringFieldUpdateOperationsInput | string | null
+    statGroup?: NullableStringFieldUpdateOperationsInput | string | null
+    lastSyncedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type SportsMonksTypeUncheckedUpdateManyInput = {
+    id?: IntFieldUpdateOperationsInput | number
+    parentId?: NullableIntFieldUpdateOperationsInput | number | null
+    name?: StringFieldUpdateOperationsInput | string
+    code?: StringFieldUpdateOperationsInput | string
+    developerName?: StringFieldUpdateOperationsInput | string
+    modelType?: StringFieldUpdateOperationsInput | string
+    group?: NullableStringFieldUpdateOperationsInput | string | null
+    statGroup?: NullableStringFieldUpdateOperationsInput | string | null
+    lastSyncedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
   export type StringFilter<$PrismaModel = never> = {
@@ -6685,6 +8200,121 @@ export namespace Prisma {
     createdAt?: SortOrder
   }
 
+  export type IntFilter<$PrismaModel = never> = {
+    equals?: number | IntFieldRefInput<$PrismaModel>
+    in?: number[] | ListIntFieldRefInput<$PrismaModel>
+    notIn?: number[] | ListIntFieldRefInput<$PrismaModel>
+    lt?: number | IntFieldRefInput<$PrismaModel>
+    lte?: number | IntFieldRefInput<$PrismaModel>
+    gt?: number | IntFieldRefInput<$PrismaModel>
+    gte?: number | IntFieldRefInput<$PrismaModel>
+    not?: NestedIntFilter<$PrismaModel> | number
+  }
+
+  export type IntNullableFilter<$PrismaModel = never> = {
+    equals?: number | IntFieldRefInput<$PrismaModel> | null
+    in?: number[] | ListIntFieldRefInput<$PrismaModel> | null
+    notIn?: number[] | ListIntFieldRefInput<$PrismaModel> | null
+    lt?: number | IntFieldRefInput<$PrismaModel>
+    lte?: number | IntFieldRefInput<$PrismaModel>
+    gt?: number | IntFieldRefInput<$PrismaModel>
+    gte?: number | IntFieldRefInput<$PrismaModel>
+    not?: NestedIntNullableFilter<$PrismaModel> | number | null
+  }
+
+  export type SportsMonksTypeNullableScalarRelationFilter = {
+    is?: SportsMonksTypeWhereInput | null
+    isNot?: SportsMonksTypeWhereInput | null
+  }
+
+  export type SportsMonksTypeListRelationFilter = {
+    every?: SportsMonksTypeWhereInput
+    some?: SportsMonksTypeWhereInput
+    none?: SportsMonksTypeWhereInput
+  }
+
+  export type SportsMonksTypeOrderByRelationAggregateInput = {
+    _count?: SortOrder
+  }
+
+  export type SportsMonksTypeCountOrderByAggregateInput = {
+    id?: SortOrder
+    parentId?: SortOrder
+    name?: SortOrder
+    code?: SortOrder
+    developerName?: SortOrder
+    modelType?: SortOrder
+    group?: SortOrder
+    statGroup?: SortOrder
+    lastSyncedAt?: SortOrder
+  }
+
+  export type SportsMonksTypeAvgOrderByAggregateInput = {
+    id?: SortOrder
+    parentId?: SortOrder
+  }
+
+  export type SportsMonksTypeMaxOrderByAggregateInput = {
+    id?: SortOrder
+    parentId?: SortOrder
+    name?: SortOrder
+    code?: SortOrder
+    developerName?: SortOrder
+    modelType?: SortOrder
+    group?: SortOrder
+    statGroup?: SortOrder
+    lastSyncedAt?: SortOrder
+  }
+
+  export type SportsMonksTypeMinOrderByAggregateInput = {
+    id?: SortOrder
+    parentId?: SortOrder
+    name?: SortOrder
+    code?: SortOrder
+    developerName?: SortOrder
+    modelType?: SortOrder
+    group?: SortOrder
+    statGroup?: SortOrder
+    lastSyncedAt?: SortOrder
+  }
+
+  export type SportsMonksTypeSumOrderByAggregateInput = {
+    id?: SortOrder
+    parentId?: SortOrder
+  }
+
+  export type IntWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: number | IntFieldRefInput<$PrismaModel>
+    in?: number[] | ListIntFieldRefInput<$PrismaModel>
+    notIn?: number[] | ListIntFieldRefInput<$PrismaModel>
+    lt?: number | IntFieldRefInput<$PrismaModel>
+    lte?: number | IntFieldRefInput<$PrismaModel>
+    gt?: number | IntFieldRefInput<$PrismaModel>
+    gte?: number | IntFieldRefInput<$PrismaModel>
+    not?: NestedIntWithAggregatesFilter<$PrismaModel> | number
+    _count?: NestedIntFilter<$PrismaModel>
+    _avg?: NestedFloatFilter<$PrismaModel>
+    _sum?: NestedIntFilter<$PrismaModel>
+    _min?: NestedIntFilter<$PrismaModel>
+    _max?: NestedIntFilter<$PrismaModel>
+  }
+
+  export type IntNullableWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: number | IntFieldRefInput<$PrismaModel> | null
+    in?: number[] | ListIntFieldRefInput<$PrismaModel> | null
+    notIn?: number[] | ListIntFieldRefInput<$PrismaModel> | null
+    lt?: number | IntFieldRefInput<$PrismaModel>
+    lte?: number | IntFieldRefInput<$PrismaModel>
+    gt?: number | IntFieldRefInput<$PrismaModel>
+    gte?: number | IntFieldRefInput<$PrismaModel>
+    not?: NestedIntNullableWithAggregatesFilter<$PrismaModel> | number | null
+    _count?: NestedIntNullableFilter<$PrismaModel>
+    _avg?: NestedFloatNullableFilter<$PrismaModel>
+    _sum?: NestedIntNullableFilter<$PrismaModel>
+    _min?: NestedIntNullableFilter<$PrismaModel>
+    _max?: NestedIntNullableFilter<$PrismaModel>
+  }
+
   export type NoteCreateNestedManyWithoutUserInput = {
     create?: XOR<NoteCreateWithoutUserInput, NoteUncheckedCreateWithoutUserInput> | NoteCreateWithoutUserInput[] | NoteUncheckedCreateWithoutUserInput[]
     connectOrCreate?: NoteCreateOrConnectWithoutUserInput | NoteCreateOrConnectWithoutUserInput[]
@@ -6877,6 +8507,80 @@ export namespace Prisma {
     update?: XOR<XOR<UserUpdateToOneWithWhereWithoutPasswordResetsInput, UserUpdateWithoutPasswordResetsInput>, UserUncheckedUpdateWithoutPasswordResetsInput>
   }
 
+  export type SportsMonksTypeCreateNestedOneWithoutChildrenInput = {
+    create?: XOR<SportsMonksTypeCreateWithoutChildrenInput, SportsMonksTypeUncheckedCreateWithoutChildrenInput>
+    connectOrCreate?: SportsMonksTypeCreateOrConnectWithoutChildrenInput
+    connect?: SportsMonksTypeWhereUniqueInput
+  }
+
+  export type SportsMonksTypeCreateNestedManyWithoutParentInput = {
+    create?: XOR<SportsMonksTypeCreateWithoutParentInput, SportsMonksTypeUncheckedCreateWithoutParentInput> | SportsMonksTypeCreateWithoutParentInput[] | SportsMonksTypeUncheckedCreateWithoutParentInput[]
+    connectOrCreate?: SportsMonksTypeCreateOrConnectWithoutParentInput | SportsMonksTypeCreateOrConnectWithoutParentInput[]
+    createMany?: SportsMonksTypeCreateManyParentInputEnvelope
+    connect?: SportsMonksTypeWhereUniqueInput | SportsMonksTypeWhereUniqueInput[]
+  }
+
+  export type SportsMonksTypeUncheckedCreateNestedManyWithoutParentInput = {
+    create?: XOR<SportsMonksTypeCreateWithoutParentInput, SportsMonksTypeUncheckedCreateWithoutParentInput> | SportsMonksTypeCreateWithoutParentInput[] | SportsMonksTypeUncheckedCreateWithoutParentInput[]
+    connectOrCreate?: SportsMonksTypeCreateOrConnectWithoutParentInput | SportsMonksTypeCreateOrConnectWithoutParentInput[]
+    createMany?: SportsMonksTypeCreateManyParentInputEnvelope
+    connect?: SportsMonksTypeWhereUniqueInput | SportsMonksTypeWhereUniqueInput[]
+  }
+
+  export type IntFieldUpdateOperationsInput = {
+    set?: number
+    increment?: number
+    decrement?: number
+    multiply?: number
+    divide?: number
+  }
+
+  export type SportsMonksTypeUpdateOneWithoutChildrenNestedInput = {
+    create?: XOR<SportsMonksTypeCreateWithoutChildrenInput, SportsMonksTypeUncheckedCreateWithoutChildrenInput>
+    connectOrCreate?: SportsMonksTypeCreateOrConnectWithoutChildrenInput
+    upsert?: SportsMonksTypeUpsertWithoutChildrenInput
+    disconnect?: SportsMonksTypeWhereInput | boolean
+    delete?: SportsMonksTypeWhereInput | boolean
+    connect?: SportsMonksTypeWhereUniqueInput
+    update?: XOR<XOR<SportsMonksTypeUpdateToOneWithWhereWithoutChildrenInput, SportsMonksTypeUpdateWithoutChildrenInput>, SportsMonksTypeUncheckedUpdateWithoutChildrenInput>
+  }
+
+  export type SportsMonksTypeUpdateManyWithoutParentNestedInput = {
+    create?: XOR<SportsMonksTypeCreateWithoutParentInput, SportsMonksTypeUncheckedCreateWithoutParentInput> | SportsMonksTypeCreateWithoutParentInput[] | SportsMonksTypeUncheckedCreateWithoutParentInput[]
+    connectOrCreate?: SportsMonksTypeCreateOrConnectWithoutParentInput | SportsMonksTypeCreateOrConnectWithoutParentInput[]
+    upsert?: SportsMonksTypeUpsertWithWhereUniqueWithoutParentInput | SportsMonksTypeUpsertWithWhereUniqueWithoutParentInput[]
+    createMany?: SportsMonksTypeCreateManyParentInputEnvelope
+    set?: SportsMonksTypeWhereUniqueInput | SportsMonksTypeWhereUniqueInput[]
+    disconnect?: SportsMonksTypeWhereUniqueInput | SportsMonksTypeWhereUniqueInput[]
+    delete?: SportsMonksTypeWhereUniqueInput | SportsMonksTypeWhereUniqueInput[]
+    connect?: SportsMonksTypeWhereUniqueInput | SportsMonksTypeWhereUniqueInput[]
+    update?: SportsMonksTypeUpdateWithWhereUniqueWithoutParentInput | SportsMonksTypeUpdateWithWhereUniqueWithoutParentInput[]
+    updateMany?: SportsMonksTypeUpdateManyWithWhereWithoutParentInput | SportsMonksTypeUpdateManyWithWhereWithoutParentInput[]
+    deleteMany?: SportsMonksTypeScalarWhereInput | SportsMonksTypeScalarWhereInput[]
+  }
+
+  export type NullableIntFieldUpdateOperationsInput = {
+    set?: number | null
+    increment?: number
+    decrement?: number
+    multiply?: number
+    divide?: number
+  }
+
+  export type SportsMonksTypeUncheckedUpdateManyWithoutParentNestedInput = {
+    create?: XOR<SportsMonksTypeCreateWithoutParentInput, SportsMonksTypeUncheckedCreateWithoutParentInput> | SportsMonksTypeCreateWithoutParentInput[] | SportsMonksTypeUncheckedCreateWithoutParentInput[]
+    connectOrCreate?: SportsMonksTypeCreateOrConnectWithoutParentInput | SportsMonksTypeCreateOrConnectWithoutParentInput[]
+    upsert?: SportsMonksTypeUpsertWithWhereUniqueWithoutParentInput | SportsMonksTypeUpsertWithWhereUniqueWithoutParentInput[]
+    createMany?: SportsMonksTypeCreateManyParentInputEnvelope
+    set?: SportsMonksTypeWhereUniqueInput | SportsMonksTypeWhereUniqueInput[]
+    disconnect?: SportsMonksTypeWhereUniqueInput | SportsMonksTypeWhereUniqueInput[]
+    delete?: SportsMonksTypeWhereUniqueInput | SportsMonksTypeWhereUniqueInput[]
+    connect?: SportsMonksTypeWhereUniqueInput | SportsMonksTypeWhereUniqueInput[]
+    update?: SportsMonksTypeUpdateWithWhereUniqueWithoutParentInput | SportsMonksTypeUpdateWithWhereUniqueWithoutParentInput[]
+    updateMany?: SportsMonksTypeUpdateManyWithWhereWithoutParentInput | SportsMonksTypeUpdateManyWithWhereWithoutParentInput[]
+    deleteMany?: SportsMonksTypeScalarWhereInput | SportsMonksTypeScalarWhereInput[]
+  }
+
   export type NestedStringFilter<$PrismaModel = never> = {
     equals?: string | StringFieldRefInput<$PrismaModel>
     in?: string[] | ListStringFieldRefInput<$PrismaModel>
@@ -7031,6 +8735,60 @@ export namespace Prisma {
     _count?: NestedIntFilter<$PrismaModel>
     _min?: NestedBoolFilter<$PrismaModel>
     _max?: NestedBoolFilter<$PrismaModel>
+  }
+
+  export type NestedIntWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: number | IntFieldRefInput<$PrismaModel>
+    in?: number[] | ListIntFieldRefInput<$PrismaModel>
+    notIn?: number[] | ListIntFieldRefInput<$PrismaModel>
+    lt?: number | IntFieldRefInput<$PrismaModel>
+    lte?: number | IntFieldRefInput<$PrismaModel>
+    gt?: number | IntFieldRefInput<$PrismaModel>
+    gte?: number | IntFieldRefInput<$PrismaModel>
+    not?: NestedIntWithAggregatesFilter<$PrismaModel> | number
+    _count?: NestedIntFilter<$PrismaModel>
+    _avg?: NestedFloatFilter<$PrismaModel>
+    _sum?: NestedIntFilter<$PrismaModel>
+    _min?: NestedIntFilter<$PrismaModel>
+    _max?: NestedIntFilter<$PrismaModel>
+  }
+
+  export type NestedFloatFilter<$PrismaModel = never> = {
+    equals?: number | FloatFieldRefInput<$PrismaModel>
+    in?: number[] | ListFloatFieldRefInput<$PrismaModel>
+    notIn?: number[] | ListFloatFieldRefInput<$PrismaModel>
+    lt?: number | FloatFieldRefInput<$PrismaModel>
+    lte?: number | FloatFieldRefInput<$PrismaModel>
+    gt?: number | FloatFieldRefInput<$PrismaModel>
+    gte?: number | FloatFieldRefInput<$PrismaModel>
+    not?: NestedFloatFilter<$PrismaModel> | number
+  }
+
+  export type NestedIntNullableWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: number | IntFieldRefInput<$PrismaModel> | null
+    in?: number[] | ListIntFieldRefInput<$PrismaModel> | null
+    notIn?: number[] | ListIntFieldRefInput<$PrismaModel> | null
+    lt?: number | IntFieldRefInput<$PrismaModel>
+    lte?: number | IntFieldRefInput<$PrismaModel>
+    gt?: number | IntFieldRefInput<$PrismaModel>
+    gte?: number | IntFieldRefInput<$PrismaModel>
+    not?: NestedIntNullableWithAggregatesFilter<$PrismaModel> | number | null
+    _count?: NestedIntNullableFilter<$PrismaModel>
+    _avg?: NestedFloatNullableFilter<$PrismaModel>
+    _sum?: NestedIntNullableFilter<$PrismaModel>
+    _min?: NestedIntNullableFilter<$PrismaModel>
+    _max?: NestedIntNullableFilter<$PrismaModel>
+  }
+
+  export type NestedFloatNullableFilter<$PrismaModel = never> = {
+    equals?: number | FloatFieldRefInput<$PrismaModel> | null
+    in?: number[] | ListFloatFieldRefInput<$PrismaModel> | null
+    notIn?: number[] | ListFloatFieldRefInput<$PrismaModel> | null
+    lt?: number | FloatFieldRefInput<$PrismaModel>
+    lte?: number | FloatFieldRefInput<$PrismaModel>
+    gt?: number | FloatFieldRefInput<$PrismaModel>
+    gte?: number | FloatFieldRefInput<$PrismaModel>
+    not?: NestedFloatNullableFilter<$PrismaModel> | number | null
   }
 
   export type NoteCreateWithoutUserInput = {
@@ -7388,6 +9146,135 @@ export namespace Prisma {
     notes?: NoteUncheckedUpdateManyWithoutUserNestedInput
   }
 
+  export type SportsMonksTypeCreateWithoutChildrenInput = {
+    id: number
+    name: string
+    code: string
+    developerName: string
+    modelType: string
+    group?: string | null
+    statGroup?: string | null
+    lastSyncedAt?: Date | string
+    parent?: SportsMonksTypeCreateNestedOneWithoutChildrenInput
+  }
+
+  export type SportsMonksTypeUncheckedCreateWithoutChildrenInput = {
+    id: number
+    parentId?: number | null
+    name: string
+    code: string
+    developerName: string
+    modelType: string
+    group?: string | null
+    statGroup?: string | null
+    lastSyncedAt?: Date | string
+  }
+
+  export type SportsMonksTypeCreateOrConnectWithoutChildrenInput = {
+    where: SportsMonksTypeWhereUniqueInput
+    create: XOR<SportsMonksTypeCreateWithoutChildrenInput, SportsMonksTypeUncheckedCreateWithoutChildrenInput>
+  }
+
+  export type SportsMonksTypeCreateWithoutParentInput = {
+    id: number
+    name: string
+    code: string
+    developerName: string
+    modelType: string
+    group?: string | null
+    statGroup?: string | null
+    lastSyncedAt?: Date | string
+    children?: SportsMonksTypeCreateNestedManyWithoutParentInput
+  }
+
+  export type SportsMonksTypeUncheckedCreateWithoutParentInput = {
+    id: number
+    name: string
+    code: string
+    developerName: string
+    modelType: string
+    group?: string | null
+    statGroup?: string | null
+    lastSyncedAt?: Date | string
+    children?: SportsMonksTypeUncheckedCreateNestedManyWithoutParentInput
+  }
+
+  export type SportsMonksTypeCreateOrConnectWithoutParentInput = {
+    where: SportsMonksTypeWhereUniqueInput
+    create: XOR<SportsMonksTypeCreateWithoutParentInput, SportsMonksTypeUncheckedCreateWithoutParentInput>
+  }
+
+  export type SportsMonksTypeCreateManyParentInputEnvelope = {
+    data: SportsMonksTypeCreateManyParentInput | SportsMonksTypeCreateManyParentInput[]
+    skipDuplicates?: boolean
+  }
+
+  export type SportsMonksTypeUpsertWithoutChildrenInput = {
+    update: XOR<SportsMonksTypeUpdateWithoutChildrenInput, SportsMonksTypeUncheckedUpdateWithoutChildrenInput>
+    create: XOR<SportsMonksTypeCreateWithoutChildrenInput, SportsMonksTypeUncheckedCreateWithoutChildrenInput>
+    where?: SportsMonksTypeWhereInput
+  }
+
+  export type SportsMonksTypeUpdateToOneWithWhereWithoutChildrenInput = {
+    where?: SportsMonksTypeWhereInput
+    data: XOR<SportsMonksTypeUpdateWithoutChildrenInput, SportsMonksTypeUncheckedUpdateWithoutChildrenInput>
+  }
+
+  export type SportsMonksTypeUpdateWithoutChildrenInput = {
+    id?: IntFieldUpdateOperationsInput | number
+    name?: StringFieldUpdateOperationsInput | string
+    code?: StringFieldUpdateOperationsInput | string
+    developerName?: StringFieldUpdateOperationsInput | string
+    modelType?: StringFieldUpdateOperationsInput | string
+    group?: NullableStringFieldUpdateOperationsInput | string | null
+    statGroup?: NullableStringFieldUpdateOperationsInput | string | null
+    lastSyncedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    parent?: SportsMonksTypeUpdateOneWithoutChildrenNestedInput
+  }
+
+  export type SportsMonksTypeUncheckedUpdateWithoutChildrenInput = {
+    id?: IntFieldUpdateOperationsInput | number
+    parentId?: NullableIntFieldUpdateOperationsInput | number | null
+    name?: StringFieldUpdateOperationsInput | string
+    code?: StringFieldUpdateOperationsInput | string
+    developerName?: StringFieldUpdateOperationsInput | string
+    modelType?: StringFieldUpdateOperationsInput | string
+    group?: NullableStringFieldUpdateOperationsInput | string | null
+    statGroup?: NullableStringFieldUpdateOperationsInput | string | null
+    lastSyncedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type SportsMonksTypeUpsertWithWhereUniqueWithoutParentInput = {
+    where: SportsMonksTypeWhereUniqueInput
+    update: XOR<SportsMonksTypeUpdateWithoutParentInput, SportsMonksTypeUncheckedUpdateWithoutParentInput>
+    create: XOR<SportsMonksTypeCreateWithoutParentInput, SportsMonksTypeUncheckedCreateWithoutParentInput>
+  }
+
+  export type SportsMonksTypeUpdateWithWhereUniqueWithoutParentInput = {
+    where: SportsMonksTypeWhereUniqueInput
+    data: XOR<SportsMonksTypeUpdateWithoutParentInput, SportsMonksTypeUncheckedUpdateWithoutParentInput>
+  }
+
+  export type SportsMonksTypeUpdateManyWithWhereWithoutParentInput = {
+    where: SportsMonksTypeScalarWhereInput
+    data: XOR<SportsMonksTypeUpdateManyMutationInput, SportsMonksTypeUncheckedUpdateManyWithoutParentInput>
+  }
+
+  export type SportsMonksTypeScalarWhereInput = {
+    AND?: SportsMonksTypeScalarWhereInput | SportsMonksTypeScalarWhereInput[]
+    OR?: SportsMonksTypeScalarWhereInput[]
+    NOT?: SportsMonksTypeScalarWhereInput | SportsMonksTypeScalarWhereInput[]
+    id?: IntFilter<"SportsMonksType"> | number
+    parentId?: IntNullableFilter<"SportsMonksType"> | number | null
+    name?: StringFilter<"SportsMonksType"> | string
+    code?: StringFilter<"SportsMonksType"> | string
+    developerName?: StringFilter<"SportsMonksType"> | string
+    modelType?: StringFilter<"SportsMonksType"> | string
+    group?: StringNullableFilter<"SportsMonksType"> | string | null
+    statGroup?: StringNullableFilter<"SportsMonksType"> | string | null
+    lastSyncedAt?: DateTimeFilter<"SportsMonksType"> | Date | string
+  }
+
   export type NoteCreateManyUserInput = {
     id?: string
     title: string
@@ -7488,6 +9375,52 @@ export namespace Prisma {
     label?: NullableStringFieldUpdateOperationsInput | string | null
     isPrimary?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type SportsMonksTypeCreateManyParentInput = {
+    id: number
+    name: string
+    code: string
+    developerName: string
+    modelType: string
+    group?: string | null
+    statGroup?: string | null
+    lastSyncedAt?: Date | string
+  }
+
+  export type SportsMonksTypeUpdateWithoutParentInput = {
+    id?: IntFieldUpdateOperationsInput | number
+    name?: StringFieldUpdateOperationsInput | string
+    code?: StringFieldUpdateOperationsInput | string
+    developerName?: StringFieldUpdateOperationsInput | string
+    modelType?: StringFieldUpdateOperationsInput | string
+    group?: NullableStringFieldUpdateOperationsInput | string | null
+    statGroup?: NullableStringFieldUpdateOperationsInput | string | null
+    lastSyncedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    children?: SportsMonksTypeUpdateManyWithoutParentNestedInput
+  }
+
+  export type SportsMonksTypeUncheckedUpdateWithoutParentInput = {
+    id?: IntFieldUpdateOperationsInput | number
+    name?: StringFieldUpdateOperationsInput | string
+    code?: StringFieldUpdateOperationsInput | string
+    developerName?: StringFieldUpdateOperationsInput | string
+    modelType?: StringFieldUpdateOperationsInput | string
+    group?: NullableStringFieldUpdateOperationsInput | string | null
+    statGroup?: NullableStringFieldUpdateOperationsInput | string | null
+    lastSyncedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    children?: SportsMonksTypeUncheckedUpdateManyWithoutParentNestedInput
+  }
+
+  export type SportsMonksTypeUncheckedUpdateManyWithoutParentInput = {
+    id?: IntFieldUpdateOperationsInput | number
+    name?: StringFieldUpdateOperationsInput | string
+    code?: StringFieldUpdateOperationsInput | string
+    developerName?: StringFieldUpdateOperationsInput | string
+    modelType?: StringFieldUpdateOperationsInput | string
+    group?: NullableStringFieldUpdateOperationsInput | string | null
+    statGroup?: NullableStringFieldUpdateOperationsInput | string | null
+    lastSyncedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
 

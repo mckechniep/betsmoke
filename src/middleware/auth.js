@@ -7,6 +7,7 @@
 // ============================================
 
 import jwt from 'jsonwebtoken';
+import prisma from '../db.js';
 
 // ============================================
 // THE MIDDLEWARE FUNCTION
@@ -95,9 +96,60 @@ const authMiddleware = (req, res, next) => {
 };
 
 // ============================================
+// ADMIN MIDDLEWARE
+// ============================================
+// This middleware checks if the authenticated user is an admin.
+// MUST be used AFTER authMiddleware (requires req.user.userId).
+//
+// Usage:
+//   app.post('/admin/something', authMiddleware, adminMiddleware, handler);
+// ============================================
+
+const adminMiddleware = async (req, res, next) => {
+  try {
+    // Get user ID from the auth middleware
+    const userId = req.user?.userId;
+
+    if (!userId) {
+      return res.status(401).json({
+        error: 'Access denied. Not authenticated.'
+      });
+    }
+
+    // Look up the user to check isAdmin flag
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { isAdmin: true }
+    });
+
+    if (!user) {
+      return res.status(401).json({
+        error: 'Access denied. User not found.'
+      });
+    }
+
+    if (!user.isAdmin) {
+      return res.status(403).json({
+        error: 'Access denied. Admin privileges required.'
+      });
+    }
+
+    // User is admin - continue to the route handler
+    next();
+
+  } catch (error) {
+    console.error('Admin check failed:', error.message);
+    return res.status(500).json({
+      error: 'Server error during admin verification.'
+    });
+  }
+};
+
+// ============================================
 // EXPORT THE MIDDLEWARE
 // ============================================
-// We export as default so it can be imported as:
-// import authMiddleware from './middleware/auth.js'
+// Default export: authMiddleware (for backward compatibility)
+// Named export: adminMiddleware (for admin routes)
 
 export default authMiddleware;
+export { adminMiddleware };

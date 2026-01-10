@@ -160,6 +160,18 @@ exports.Prisma.PasswordResetScalarFieldEnum = {
   createdAt: 'createdAt'
 };
 
+exports.Prisma.SportsMonksTypeScalarFieldEnum = {
+  id: 'id',
+  parentId: 'parentId',
+  name: 'name',
+  code: 'code',
+  developerName: 'developerName',
+  modelType: 'modelType',
+  group: 'group',
+  statGroup: 'statGroup',
+  lastSyncedAt: 'lastSyncedAt'
+};
+
 exports.Prisma.SortOrder = {
   asc: 'asc',
   desc: 'desc'
@@ -193,7 +205,8 @@ exports.Prisma.ModelName = {
   User: 'User',
   Note: 'Note',
   NoteLink: 'NoteLink',
-  PasswordReset: 'PasswordReset'
+  PasswordReset: 'PasswordReset',
+  SportsMonksType: 'SportsMonksType'
 };
 
 /**

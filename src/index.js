@@ -19,7 +19,8 @@ import leaguesRoutes from './routes/leagues.js';  // SportsMonks leagues data
 import seasonsRoutes from './routes/seasons.js';  // SportsMonks seasons data
 import topscorersRoutes from './routes/topscorers.js';  // SportsMonks top scorers
 import predictionsRoutes from './routes/predictions.js';  // SportsMonks predictions
-import authMiddleware from './middleware/auth.js';  // Protects routes
+import authMiddleware, { adminMiddleware } from './middleware/auth.js';  // Protects routes
+import { loadTypesCache, getCacheStatus, syncTypesFromAPI } from './services/types.js';  // Types cache
 
 // ============================================
 // CONFIGURATION
@@ -164,14 +165,81 @@ app.get('/me', authMiddleware, async (req, res) => {
 });
 
 // ============================================
+// TYPES CACHE STATUS ROUTE
+// ============================================
+// Check the status of the SportsMonks types cache
+
+app.get('/types/status', async (req, res) => {
+  try {
+    const status = await getCacheStatus();
+    res.json({
+      status: 'ok',
+      cache: status
+    });
+  } catch (error) {
+    res.status(500).json({
+      status: 'error',
+      message: 'Failed to get cache status',
+      error: error.message
+    });
+  }
+});
+
+// ============================================
+// ADMIN ROUTES
+// ============================================
+// These routes require both authentication AND admin privileges.
+// Use: authMiddleware (verify JWT) -> adminMiddleware (verify isAdmin)
+
+// POST /admin/types/sync - Sync types from SportsMonks API
+// Fetches latest types and updates our local database
+app.post('/admin/types/sync', authMiddleware, adminMiddleware, async (req, res) => {
+  try {
+    console.log('[Admin] Types sync requested');
+
+    const result = await syncTypesFromAPI();
+
+    res.json({
+      status: 'ok',
+      message: 'Types synced successfully',
+      result
+    });
+  } catch (error) {
+    console.error('[Admin] Types sync failed:', error.message);
+    res.status(500).json({
+      status: 'error',
+      message: 'Failed to sync types',
+      error: error.message
+    });
+  }
+});
+
+// ============================================
 // START SERVER
 // ============================================
 
-app.listen(PORT, () => {
-  console.log(`🚀 BetSmoke API running on http://localhost:${PORT}`);
-  console.log(`❤️  Health check: http://localhost:${PORT}/health`);
-  console.log(`⚽ Teams search: http://localhost:${PORT}/teams/search/{query}`);
-  console.log(`📅 Fixtures by date: http://localhost:${PORT}/fixtures/date/{YYYY-MM-DD}`);
-  console.log(`🏆 Standings: http://localhost:${PORT}/standings/seasons/{seasonId}`);
-  console.log(`📺 Live scores: http://localhost:${PORT}/livescores`);
-});
+const startServer = async () => {
+  try {
+    // Pre-load the SportsMonks types cache
+    // This ensures fast type lookups from the first request
+    console.log('Loading SportsMonks types cache...');
+    await loadTypesCache();
+
+    // Start the Express server
+    app.listen(PORT, () => {
+      console.log(`BetSmoke API running on http://localhost:${PORT}`);
+      console.log(`Health check: http://localhost:${PORT}/health`);
+      console.log(`Types cache: http://localhost:${PORT}/types/status`);
+      console.log(`Teams search: http://localhost:${PORT}/teams/search/{query}`);
+      console.log(`Fixtures by date: http://localhost:${PORT}/fixtures/date/{YYYY-MM-DD}`);
+      console.log(`Standings: http://localhost:${PORT}/standings/seasons/{seasonId}`);
+      console.log(`Live scores: http://localhost:${PORT}/livescores`);
+    });
+  } catch (error) {
+    console.error('Failed to start server:', error);
+    process.exit(1);
+  }
+};
+
+// Start the server
+startServer();

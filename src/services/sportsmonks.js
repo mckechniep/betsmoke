@@ -193,18 +193,18 @@ async function getFixtureById(fixtureId, options = {}) {
   // Base includes - always included
   // - participants: Teams playing
   // - scores: Match scores
-  // - statistics.type: Team match stats WITH stat type names
+  // - statistics: Team match stats (use types service to look up type names)
   // - lineups: Starting XI and bench
   // - events: Goals, cards, subs
   // - venue: Stadium info
   // - league: League info
   // - season: Season info
   // - state: Match state (scheduled, live, finished)
-  // - weatherReport: Weather conditions for the match
+  // NOTE: We no longer include .type - types are stored locally per SportsMonks best practice
   const includes = [
     'participants',
     'scores',
-    'statistics.type',  // Changed from 'statistics' to include type names
+    'statistics',  // Type names looked up from local database
     'lineups',
     'events',
     'venue',
@@ -223,11 +223,10 @@ async function getFixtureById(fixtureId, options = {}) {
     includes.push('odds.market');
   }
   if (options.includeSidelined) {
-    // Include player info, sideline details (injury reason, expected return),
-    // AND the type info which gives us the specific reason (e.g., "Red Card", "Hamstring Injury")
+    // Include player info and sideline details (injury reason, expected return)
+    // NOTE: Type info (e.g., "Red Card", "Hamstring Injury") is looked up from local database
     includes.push('sidelined.player');
     includes.push('sidelined.sideline');
-    includes.push('sidelined.type');
   }
   
   return makeRequest(endpoint, includes);
@@ -652,11 +651,11 @@ async function getTeamStatsBySeason(teamId, seasonId) {
   // The filter ensures we only get stats for the specified season
   const endpoint = `/teams/${teamId}?filters=teamStatisticSeasons:${seasonId}`;
   
-  // Include statistics with details and type info
+  // Include statistics with details
   // - statistics.details: The actual stat values
-  // - statistics.details.type: The stat type names (e.g., "Scoring Minutes")
+  // NOTE: Type names (e.g., "Scoring Minutes") are looked up from local database
   return makeRequest(endpoint, [
-    'statistics.details.type'
+    'statistics.details'
   ]);
 }
 
@@ -999,11 +998,11 @@ async function getTeamSquadWithStats(seasonId, teamId) {
  */
 async function getFixturePredictions(fixtureId) {
   // API: GET /fixtures/{fixture_id}
-  // We only need predictions.type to get prediction names
   const endpoint = `/fixtures/${fixtureId}`;
-  
-  // Include predictions with their type info (name, code, etc.)
-  return makeRequest(endpoint, ['predictions.type']);
+
+  // Include predictions
+  // NOTE: Type info (name, code, etc.) is looked up from local database
+  return makeRequest(endpoint, ['predictions']);
 }
 
 /**
