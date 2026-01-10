@@ -196,4 +196,13 @@ export const dataApi = {
   getTeamCornerAverages: (teamId, seasonId) => api.get(`/teams/${teamId}/corners/seasons/${seasonId}`),
 };
 
+// ============================================
+// ADMIN API (requires admin privileges)
+// ============================================
+
+export const adminApi = {
+  // Sync SportsMonks types from API to local database
+  syncTypes: (token) => api.postAuth('/admin/types/sync', {}, token),
+};
+
 export default api;

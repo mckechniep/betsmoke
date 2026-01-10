@@ -50,6 +50,7 @@ const sanitizeUser = (user) => {
     oddsFormat: user.oddsFormat,
     timezone: user.timezone,
     hasSecurityQuestion: !!user.securityQuestion,
+    isAdmin: user.isAdmin || false,
     createdAt: user.createdAt
   };
 };
