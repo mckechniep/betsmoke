@@ -394,6 +394,58 @@ POST /notes
 
 ---
 
+## Admin System
+
+### Overview
+Admin users have access to privileged operations like syncing SportsMonks types. Admin status is controlled via the `isAdmin` boolean field on the User model.
+
+### Making a User an Admin
+```bash
+node scripts/promote-admin.js <email>
+```
+
+### Admin Middleware
+The `adminMiddleware` in `src/middleware/auth.js` protects admin routes:
+- Must be used AFTER `authMiddleware` (requires `req.user.userId`)
+- Checks `isAdmin` flag in database
+- Returns 403 if user is not an admin
+
+**Usage in routes:**
+```javascript
+app.post('/admin/something', authMiddleware, adminMiddleware, handler);
+```
+
+### Admin Endpoints
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/admin/types/sync` | Sync SportsMonks types from API to local database |
+
+### Frontend Admin UI
+Admin users see an amber **Admin** button in the navbar (between email and Logout).
+
+**Location:** `frontend/src/components/Navbar.jsx`
+
+**Features:**
+- Only visible when `user.isAdmin === true`
+- Dropdown menu with admin actions
+- "Sync SportsMonks Types" button with:
+  - Spinner animation while syncing
+  - Success message showing count (e.g., "Synced 1275 types (0 new, 1275 updated)")
+  - Error message if sync fails
+
+**API Client:** `frontend/src/api/client.js`
+```javascript
+adminApi.syncTypes(token)  // POST /admin/types/sync
+```
+
+### Important Notes
+- Users must **log out and log back in** after being promoted to admin (to refresh the JWT/user object)
+- Admin status is checked on every admin request (not cached in JWT)
+- The `isAdmin` field is included in the `sanitizeUser` response from login
+
+---
+
 ## Working Style Preferences
 
 ### Development Approach
@@ -437,7 +489,8 @@ Each endpoint implementation should include:
 - ✅ Leagues - List/search competitions (GET /leagues, GET /leagues/:id, GET /leagues/search/:query)
 - ✅ Seasons - Navigate historical data (GET /seasons, GET /seasons/:id, GET /seasons/leagues/:leagueId)
 - ✅ Top Scorers - Player leaderboards (GET /topscorers/seasons/:seasonId)
-- ✅ SportsMonks Types - Local storage of 731 types with in-memory cache (GET /types/status)
+- ✅ SportsMonks Types - Local storage of ~1200+ types with in-memory cache (GET /types/status)
+- ✅ Admin System - isAdmin flag, admin middleware, frontend Admin menu (POST /admin/types/sync)
 
 ### Not Yet Started
 
