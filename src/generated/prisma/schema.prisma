@@ -74,6 +74,13 @@ model User {
   securityAnswer   String? // Hashed answer (like password)
 
   // ============================================
+  // ADMIN ACCESS
+  // ============================================
+  // Admin users can access protected endpoints like /admin/types/sync
+  // Default is false - admins must be manually promoted via database
+  isAdmin Boolean @default(false) @map("is_admin")
+
+  // ============================================
   // RELATIONSHIPS
   // ============================================
   // A user can have many notes

@@ -129,7 +129,8 @@ exports.Prisma.UserScalarFieldEnum = {
   oddsFormat: 'oddsFormat',
   timezone: 'timezone',
   securityQuestion: 'securityQuestion',
-  securityAnswer: 'securityAnswer'
+  securityAnswer: 'securityAnswer',
+  isAdmin: 'isAdmin'
 };
 
 exports.Prisma.NoteScalarFieldEnum = {

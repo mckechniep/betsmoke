@@ -1381,6 +1381,7 @@ export namespace Prisma {
     timezone: string | null
     securityQuestion: string | null
     securityAnswer: string | null
+    isAdmin: boolean | null
   }
 
   export type UserMaxAggregateOutputType = {
@@ -1393,6 +1394,7 @@ export namespace Prisma {
     timezone: string | null
     securityQuestion: string | null
     securityAnswer: string | null
+    isAdmin: boolean | null
   }
 
   export type UserCountAggregateOutputType = {
@@ -1405,6 +1407,7 @@ export namespace Prisma {
     timezone: number
     securityQuestion: number
     securityAnswer: number
+    isAdmin: number
     _all: number
   }
 
@@ -1419,6 +1422,7 @@ export namespace Prisma {
     timezone?: true
     securityQuestion?: true
     securityAnswer?: true
+    isAdmin?: true
   }
 
   export type UserMaxAggregateInputType = {
@@ -1431,6 +1435,7 @@ export namespace Prisma {
     timezone?: true
     securityQuestion?: true
     securityAnswer?: true
+    isAdmin?: true
   }
 
   export type UserCountAggregateInputType = {
@@ -1443,6 +1448,7 @@ export namespace Prisma {
     timezone?: true
     securityQuestion?: true
     securityAnswer?: true
+    isAdmin?: true
     _all?: true
   }
 
@@ -1528,6 +1534,7 @@ export namespace Prisma {
     timezone: string
     securityQuestion: string | null
     securityAnswer: string | null
+    isAdmin: boolean
     _count: UserCountAggregateOutputType | null
     _min: UserMinAggregateOutputType | null
     _max: UserMaxAggregateOutputType | null
@@ -1557,6 +1564,7 @@ export namespace Prisma {
     timezone?: boolean
     securityQuestion?: boolean
     securityAnswer?: boolean
+    isAdmin?: boolean
     notes?: boolean | User$notesArgs<ExtArgs>
     passwordResets?: boolean | User$passwordResetsArgs<ExtArgs>
     _count?: boolean | UserCountOutputTypeDefaultArgs<ExtArgs>
@@ -1572,6 +1580,7 @@ export namespace Prisma {
     timezone?: boolean
     securityQuestion?: boolean
     securityAnswer?: boolean
+    isAdmin?: boolean
   }, ExtArgs["result"]["user"]>
 
   export type UserSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
@@ -1584,6 +1593,7 @@ export namespace Prisma {
     timezone?: boolean
     securityQuestion?: boolean
     securityAnswer?: boolean
+    isAdmin?: boolean
   }, ExtArgs["result"]["user"]>
 
   export type UserSelectScalar = {
@@ -1596,9 +1606,10 @@ export namespace Prisma {
     timezone?: boolean
     securityQuestion?: boolean
     securityAnswer?: boolean
+    isAdmin?: boolean
   }
 
-  export type UserOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "email" | "password" | "createdAt" | "updatedAt" | "oddsFormat" | "timezone" | "securityQuestion" | "securityAnswer", ExtArgs["result"]["user"]>
+  export type UserOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "email" | "password" | "createdAt" | "updatedAt" | "oddsFormat" | "timezone" | "securityQuestion" | "securityAnswer" | "isAdmin", ExtArgs["result"]["user"]>
   export type UserInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     notes?: boolean | User$notesArgs<ExtArgs>
     passwordResets?: boolean | User$passwordResetsArgs<ExtArgs>
@@ -1623,6 +1634,7 @@ export namespace Prisma {
       timezone: string
       securityQuestion: string | null
       securityAnswer: string | null
+      isAdmin: boolean
     }, ExtArgs["result"]["user"]>
     composites: {}
   }
@@ -2057,6 +2069,7 @@ export namespace Prisma {
     readonly timezone: FieldRef<"User", 'String'>
     readonly securityQuestion: FieldRef<"User", 'String'>
     readonly securityAnswer: FieldRef<"User", 'String'>
+    readonly isAdmin: FieldRef<"User", 'Boolean'>
   }
     
 
@@ -6987,7 +7000,8 @@ export namespace Prisma {
     oddsFormat: 'oddsFormat',
     timezone: 'timezone',
     securityQuestion: 'securityQuestion',
-    securityAnswer: 'securityAnswer'
+    securityAnswer: 'securityAnswer',
+    isAdmin: 'isAdmin'
   };
 
   export type UserScalarFieldEnum = (typeof UserScalarFieldEnum)[keyof typeof UserScalarFieldEnum]
@@ -7117,6 +7131,13 @@ export namespace Prisma {
 
 
   /**
+   * Reference to a field of type 'Boolean'
+   */
+  export type BooleanFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Boolean'>
+    
+
+
+  /**
    * Reference to a field of type 'ContextType'
    */
   export type EnumContextTypeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'ContextType'>
@@ -7127,13 +7148,6 @@ export namespace Prisma {
    * Reference to a field of type 'ContextType[]'
    */
   export type ListEnumContextTypeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'ContextType[]'>
-    
-
-
-  /**
-   * Reference to a field of type 'Boolean'
-   */
-  export type BooleanFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Boolean'>
     
 
 
@@ -7181,6 +7195,7 @@ export namespace Prisma {
     timezone?: StringFilter<"User"> | string
     securityQuestion?: StringNullableFilter<"User"> | string | null
     securityAnswer?: StringNullableFilter<"User"> | string | null
+    isAdmin?: BoolFilter<"User"> | boolean
     notes?: NoteListRelationFilter
     passwordResets?: PasswordResetListRelationFilter
   }
@@ -7195,6 +7210,7 @@ export namespace Prisma {
     timezone?: SortOrder
     securityQuestion?: SortOrderInput | SortOrder
     securityAnswer?: SortOrderInput | SortOrder
+    isAdmin?: SortOrder
     notes?: NoteOrderByRelationAggregateInput
     passwordResets?: PasswordResetOrderByRelationAggregateInput
   }
@@ -7212,6 +7228,7 @@ export namespace Prisma {
     timezone?: StringFilter<"User"> | string
     securityQuestion?: StringNullableFilter<"User"> | string | null
     securityAnswer?: StringNullableFilter<"User"> | string | null
+    isAdmin?: BoolFilter<"User"> | boolean
     notes?: NoteListRelationFilter
     passwordResets?: PasswordResetListRelationFilter
   }, "id" | "email">
@@ -7226,6 +7243,7 @@ export namespace Prisma {
     timezone?: SortOrder
     securityQuestion?: SortOrderInput | SortOrder
     securityAnswer?: SortOrderInput | SortOrder
+    isAdmin?: SortOrder
     _count?: UserCountOrderByAggregateInput
     _max?: UserMaxOrderByAggregateInput
     _min?: UserMinOrderByAggregateInput
@@ -7244,6 +7262,7 @@ export namespace Prisma {
     timezone?: StringWithAggregatesFilter<"User"> | string
     securityQuestion?: StringNullableWithAggregatesFilter<"User"> | string | null
     securityAnswer?: StringNullableWithAggregatesFilter<"User"> | string | null
+    isAdmin?: BoolWithAggregatesFilter<"User"> | boolean
   }
 
   export type NoteWhereInput = {
@@ -7525,6 +7544,7 @@ export namespace Prisma {
     timezone?: string
     securityQuestion?: string | null
     securityAnswer?: string | null
+    isAdmin?: boolean
     notes?: NoteCreateNestedManyWithoutUserInput
     passwordResets?: PasswordResetCreateNestedManyWithoutUserInput
   }
@@ -7539,6 +7559,7 @@ export namespace Prisma {
     timezone?: string
     securityQuestion?: string | null
     securityAnswer?: string | null
+    isAdmin?: boolean
     notes?: NoteUncheckedCreateNestedManyWithoutUserInput
     passwordResets?: PasswordResetUncheckedCreateNestedManyWithoutUserInput
   }
@@ -7553,6 +7574,7 @@ export namespace Prisma {
     timezone?: StringFieldUpdateOperationsInput | string
     securityQuestion?: NullableStringFieldUpdateOperationsInput | string | null
     securityAnswer?: NullableStringFieldUpdateOperationsInput | string | null
+    isAdmin?: BoolFieldUpdateOperationsInput | boolean
     notes?: NoteUpdateManyWithoutUserNestedInput
     passwordResets?: PasswordResetUpdateManyWithoutUserNestedInput
   }
@@ -7567,6 +7589,7 @@ export namespace Prisma {
     timezone?: StringFieldUpdateOperationsInput | string
     securityQuestion?: NullableStringFieldUpdateOperationsInput | string | null
     securityAnswer?: NullableStringFieldUpdateOperationsInput | string | null
+    isAdmin?: BoolFieldUpdateOperationsInput | boolean
     notes?: NoteUncheckedUpdateManyWithoutUserNestedInput
     passwordResets?: PasswordResetUncheckedUpdateManyWithoutUserNestedInput
   }
@@ -7581,6 +7604,7 @@ export namespace Prisma {
     timezone?: string
     securityQuestion?: string | null
     securityAnswer?: string | null
+    isAdmin?: boolean
   }
 
   export type UserUpdateManyMutationInput = {
@@ -7593,6 +7617,7 @@ export namespace Prisma {
     timezone?: StringFieldUpdateOperationsInput | string
     securityQuestion?: NullableStringFieldUpdateOperationsInput | string | null
     securityAnswer?: NullableStringFieldUpdateOperationsInput | string | null
+    isAdmin?: BoolFieldUpdateOperationsInput | boolean
   }
 
   export type UserUncheckedUpdateManyInput = {
@@ -7605,6 +7630,7 @@ export namespace Prisma {
     timezone?: StringFieldUpdateOperationsInput | string
     securityQuestion?: NullableStringFieldUpdateOperationsInput | string | null
     securityAnswer?: NullableStringFieldUpdateOperationsInput | string | null
+    isAdmin?: BoolFieldUpdateOperationsInput | boolean
   }
 
   export type NoteCreateInput = {
@@ -7939,6 +7965,11 @@ export namespace Prisma {
     not?: NestedStringNullableFilter<$PrismaModel> | string | null
   }
 
+  export type BoolFilter<$PrismaModel = never> = {
+    equals?: boolean | BooleanFieldRefInput<$PrismaModel>
+    not?: NestedBoolFilter<$PrismaModel> | boolean
+  }
+
   export type NoteListRelationFilter = {
     every?: NoteWhereInput
     some?: NoteWhereInput
@@ -7974,6 +8005,7 @@ export namespace Prisma {
     timezone?: SortOrder
     securityQuestion?: SortOrder
     securityAnswer?: SortOrder
+    isAdmin?: SortOrder
   }
 
   export type UserMaxOrderByAggregateInput = {
@@ -7986,6 +8018,7 @@ export namespace Prisma {
     timezone?: SortOrder
     securityQuestion?: SortOrder
     securityAnswer?: SortOrder
+    isAdmin?: SortOrder
   }
 
   export type UserMinOrderByAggregateInput = {
@@ -7998,6 +8031,7 @@ export namespace Prisma {
     timezone?: SortOrder
     securityQuestion?: SortOrder
     securityAnswer?: SortOrder
+    isAdmin?: SortOrder
   }
 
   export type StringWithAggregatesFilter<$PrismaModel = never> = {
@@ -8060,6 +8094,14 @@ export namespace Prisma {
     _max?: NestedStringNullableFilter<$PrismaModel>
   }
 
+  export type BoolWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: boolean | BooleanFieldRefInput<$PrismaModel>
+    not?: NestedBoolWithAggregatesFilter<$PrismaModel> | boolean
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedBoolFilter<$PrismaModel>
+    _max?: NestedBoolFilter<$PrismaModel>
+  }
+
   export type UserScalarRelationFilter = {
     is?: UserWhereInput
     isNot?: UserWhereInput
@@ -8107,11 +8149,6 @@ export namespace Prisma {
     in?: $Enums.ContextType[] | ListEnumContextTypeFieldRefInput<$PrismaModel>
     notIn?: $Enums.ContextType[] | ListEnumContextTypeFieldRefInput<$PrismaModel>
     not?: NestedEnumContextTypeFilter<$PrismaModel> | $Enums.ContextType
-  }
-
-  export type BoolFilter<$PrismaModel = never> = {
-    equals?: boolean | BooleanFieldRefInput<$PrismaModel>
-    not?: NestedBoolFilter<$PrismaModel> | boolean
   }
 
   export type NoteScalarRelationFilter = {
@@ -8163,14 +8200,6 @@ export namespace Prisma {
     _count?: NestedIntFilter<$PrismaModel>
     _min?: NestedEnumContextTypeFilter<$PrismaModel>
     _max?: NestedEnumContextTypeFilter<$PrismaModel>
-  }
-
-  export type BoolWithAggregatesFilter<$PrismaModel = never> = {
-    equals?: boolean | BooleanFieldRefInput<$PrismaModel>
-    not?: NestedBoolWithAggregatesFilter<$PrismaModel> | boolean
-    _count?: NestedIntFilter<$PrismaModel>
-    _min?: NestedBoolFilter<$PrismaModel>
-    _max?: NestedBoolFilter<$PrismaModel>
   }
 
   export type PasswordResetCountOrderByAggregateInput = {
@@ -8359,6 +8388,10 @@ export namespace Prisma {
     set?: string | null
   }
 
+  export type BoolFieldUpdateOperationsInput = {
+    set?: boolean
+  }
+
   export type NoteUpdateManyWithoutUserNestedInput = {
     create?: XOR<NoteCreateWithoutUserInput, NoteUncheckedCreateWithoutUserInput> | NoteCreateWithoutUserInput[] | NoteUncheckedCreateWithoutUserInput[]
     connectOrCreate?: NoteCreateOrConnectWithoutUserInput | NoteCreateOrConnectWithoutUserInput[]
@@ -8479,10 +8512,6 @@ export namespace Prisma {
 
   export type EnumContextTypeFieldUpdateOperationsInput = {
     set?: $Enums.ContextType
-  }
-
-  export type BoolFieldUpdateOperationsInput = {
-    set?: boolean
   }
 
   export type NoteUpdateOneRequiredWithoutLinksNestedInput = {
@@ -8627,6 +8656,11 @@ export namespace Prisma {
     not?: NestedStringNullableFilter<$PrismaModel> | string | null
   }
 
+  export type NestedBoolFilter<$PrismaModel = never> = {
+    equals?: boolean | BooleanFieldRefInput<$PrismaModel>
+    not?: NestedBoolFilter<$PrismaModel> | boolean
+  }
+
   export type NestedStringWithAggregatesFilter<$PrismaModel = never> = {
     equals?: string | StringFieldRefInput<$PrismaModel>
     in?: string[] | ListStringFieldRefInput<$PrismaModel>
@@ -8707,16 +8741,19 @@ export namespace Prisma {
     not?: NestedIntNullableFilter<$PrismaModel> | number | null
   }
 
+  export type NestedBoolWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: boolean | BooleanFieldRefInput<$PrismaModel>
+    not?: NestedBoolWithAggregatesFilter<$PrismaModel> | boolean
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedBoolFilter<$PrismaModel>
+    _max?: NestedBoolFilter<$PrismaModel>
+  }
+
   export type NestedEnumContextTypeFilter<$PrismaModel = never> = {
     equals?: $Enums.ContextType | EnumContextTypeFieldRefInput<$PrismaModel>
     in?: $Enums.ContextType[] | ListEnumContextTypeFieldRefInput<$PrismaModel>
     notIn?: $Enums.ContextType[] | ListEnumContextTypeFieldRefInput<$PrismaModel>
     not?: NestedEnumContextTypeFilter<$PrismaModel> | $Enums.ContextType
-  }
-
-  export type NestedBoolFilter<$PrismaModel = never> = {
-    equals?: boolean | BooleanFieldRefInput<$PrismaModel>
-    not?: NestedBoolFilter<$PrismaModel> | boolean
   }
 
   export type NestedEnumContextTypeWithAggregatesFilter<$PrismaModel = never> = {
@@ -8727,14 +8764,6 @@ export namespace Prisma {
     _count?: NestedIntFilter<$PrismaModel>
     _min?: NestedEnumContextTypeFilter<$PrismaModel>
     _max?: NestedEnumContextTypeFilter<$PrismaModel>
-  }
-
-  export type NestedBoolWithAggregatesFilter<$PrismaModel = never> = {
-    equals?: boolean | BooleanFieldRefInput<$PrismaModel>
-    not?: NestedBoolWithAggregatesFilter<$PrismaModel> | boolean
-    _count?: NestedIntFilter<$PrismaModel>
-    _min?: NestedBoolFilter<$PrismaModel>
-    _max?: NestedBoolFilter<$PrismaModel>
   }
 
   export type NestedIntWithAggregatesFilter<$PrismaModel = never> = {
@@ -8911,6 +8940,7 @@ export namespace Prisma {
     timezone?: string
     securityQuestion?: string | null
     securityAnswer?: string | null
+    isAdmin?: boolean
     passwordResets?: PasswordResetCreateNestedManyWithoutUserInput
   }
 
@@ -8924,6 +8954,7 @@ export namespace Prisma {
     timezone?: string
     securityQuestion?: string | null
     securityAnswer?: string | null
+    isAdmin?: boolean
     passwordResets?: PasswordResetUncheckedCreateNestedManyWithoutUserInput
   }
 
@@ -8981,6 +9012,7 @@ export namespace Prisma {
     timezone?: StringFieldUpdateOperationsInput | string
     securityQuestion?: NullableStringFieldUpdateOperationsInput | string | null
     securityAnswer?: NullableStringFieldUpdateOperationsInput | string | null
+    isAdmin?: BoolFieldUpdateOperationsInput | boolean
     passwordResets?: PasswordResetUpdateManyWithoutUserNestedInput
   }
 
@@ -8994,6 +9026,7 @@ export namespace Prisma {
     timezone?: StringFieldUpdateOperationsInput | string
     securityQuestion?: NullableStringFieldUpdateOperationsInput | string | null
     securityAnswer?: NullableStringFieldUpdateOperationsInput | string | null
+    isAdmin?: BoolFieldUpdateOperationsInput | boolean
     passwordResets?: PasswordResetUncheckedUpdateManyWithoutUserNestedInput
   }
 
@@ -9088,6 +9121,7 @@ export namespace Prisma {
     timezone?: string
     securityQuestion?: string | null
     securityAnswer?: string | null
+    isAdmin?: boolean
     notes?: NoteCreateNestedManyWithoutUserInput
   }
 
@@ -9101,6 +9135,7 @@ export namespace Prisma {
     timezone?: string
     securityQuestion?: string | null
     securityAnswer?: string | null
+    isAdmin?: boolean
     notes?: NoteUncheckedCreateNestedManyWithoutUserInput
   }
 
@@ -9130,6 +9165,7 @@ export namespace Prisma {
     timezone?: StringFieldUpdateOperationsInput | string
     securityQuestion?: NullableStringFieldUpdateOperationsInput | string | null
     securityAnswer?: NullableStringFieldUpdateOperationsInput | string | null
+    isAdmin?: BoolFieldUpdateOperationsInput | boolean
     notes?: NoteUpdateManyWithoutUserNestedInput
   }
 
@@ -9143,6 +9179,7 @@ export namespace Prisma {
     timezone?: StringFieldUpdateOperationsInput | string
     securityQuestion?: NullableStringFieldUpdateOperationsInput | string | null
     securityAnswer?: NullableStringFieldUpdateOperationsInput | string | null
+    isAdmin?: BoolFieldUpdateOperationsInput | boolean
     notes?: NoteUncheckedUpdateManyWithoutUserNestedInput
   }
 
