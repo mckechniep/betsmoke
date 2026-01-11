@@ -160,32 +160,81 @@ function groupFixturesByDate(fixtures) {
 }
 
 // ============================================
+// HELPER: Get normalized match state
+// ============================================
+// SportsMonks short_name values (lowercase):
+//   "ns" = Not Started
+//   "1h" = First Half
+//   "ht" = Half Time  
+//   "2h" = Second Half
+//   "et" = Extra Time
+//   "pen" = Penalty Shootout (in progress)
+//   "ft" = Full Time (90 mins)
+//   "aet" = After Extra Time
+//   "ftp" = After Penalties (FT_PEN)
+//
+// Returns lowercase short_name, or null if state unknown.
+function getMatchState(fixture) {
+  const stateObj = fixture.state;
+  if (!stateObj) return null;
+  
+  // Use short_name - it's consistent across all endpoints
+  if (stateObj.short_name) {
+    return stateObj.short_name.toLowerCase();
+  }
+  
+  return null;
+}
+
+// ============================================
 // HELPER: Get score display
 // ============================================
 // Only returns a score if the match is LIVE or FINISHED.
-// For upcoming matches (state = 'NS'), returns null so kickoff time is shown.
-// This prevents showing "0 - 0" for matches that haven't started yet.
+// For upcoming matches, returns null so kickoff time is shown instead.
+//
+// Score type_ids (from SportsMonks):
+//   - 1525 = CURRENT (the score to display)
+//   - 1 = 1ST_HALF
+//   - 2 = 2ND_HALF
+//   - 39 = PENALTY_SHOOTOUT
 function getScoreDisplay(fixture) {
-  // First check: Is the match in progress or finished?
-  // If not started ('NS'), don't show a score regardless of what's in the data
-  const matchState = fixture.state?.state;
-  const validStatesForScore = ['1H', '2H', 'HT', 'ET', 'PEN', 'FT', 'AET', 'FT_PEN'];
+  const matchState = getMatchState(fixture);
+  
+  // Valid states where we should show a score
+  // Note: "ftp" = after penalties (FT_PEN), "aet" = after extra time
+  const validStatesForScore = ['1h', '2h', 'ht', 'et', 'pen', 'ft', 'aet', 'ftp'];
   
   if (!matchState || !validStatesForScore.includes(matchState)) {
-    // Match hasn't started or state is unknown - show kickoff time instead
     return null;
   }
   
-  // Match is live or finished - try to get the score
-  const homeScore = fixture.scores?.find(
-    s => s.description === 'CURRENT' && s.score?.participant === 'home'
-  )?.score?.goals;
+  // No scores array = can't show score
+  if (!fixture.scores || fixture.scores.length === 0) {
+    return null;
+  }
   
-  const awayScore = fixture.scores?.find(
-    s => s.description === 'CURRENT' && s.score?.participant === 'away'
-  )?.score?.goals;
+  let homeScore = null;
+  let awayScore = null;
   
-  if (homeScore !== undefined && awayScore !== undefined) {
+  // Method 1: Find by description === 'CURRENT'
+  for (const s of fixture.scores) {
+    if (s.description === 'CURRENT') {
+      if (s.score?.participant === 'home') homeScore = s.score?.goals;
+      if (s.score?.participant === 'away') awayScore = s.score?.goals;
+    }
+  }
+  
+  // Method 2: Find by type_id 1525 (CURRENT) if description didn't work
+  if (homeScore === null || awayScore === null) {
+    for (const s of fixture.scores) {
+      if (s.type_id === 1525) {
+        if (s.score?.participant === 'home') homeScore = s.score?.goals;
+        if (s.score?.participant === 'away') awayScore = s.score?.goals;
+      }
+    }
+  }
+  
+  if (homeScore !== null && awayScore !== null) {
     return `${homeScore} - ${awayScore}`;
   }
   
@@ -237,84 +286,76 @@ function FixtureCard({ fixture }) {
   const awayTeam = fixture.participants?.find(p => p.meta?.location === 'away');
   const score = getScoreDisplay(fixture);
   
-  // Match is finished if it's FT (Full Time), AET (After Extra Time), or FT_PEN (After Penalties)
-  const finishedStates = ['FT', 'AET', 'FT_PEN'];
-  const isFinished = finishedStates.includes(fixture.state?.state);
-  const isAfterExtraTime = fixture.state?.state === 'AET';
-  const isAfterPenalties = fixture.state?.state === 'FT_PEN';
+  // Get normalized match state using our helper
+  const matchState = getMatchState(fixture);
   
-  // Match is live if in first half, second half, half time, extra time, or penalties
-  const isLive = ['1H', '2H', 'HT', 'ET', 'PEN'].includes(fixture.state?.state);
+  // Match is finished if it's FT, AET, or FTP (after penalties)
+  const isFinished = ['ft', 'aet', 'ftp'].includes(matchState);
+  const isAfterExtraTime = matchState === 'aet';
+  const isAfterPenalties = matchState === 'ftp';
+  
+  // Match is live if in progress
+  const isLive = ['1h', '2h', 'ht', 'et', 'pen'].includes(matchState);
   
   // ============================================
-  // DETERMINE WINNER (for AET and FT_PEN matches)
+  // GET PENALTY SCORE (for FT_PEN matches only)
   // ============================================
-  let winner = null; // 'home', 'away', or null
-  let penaltyScore = null; // { home: X, away: Y } for penalty shootouts
+  let penaltyScore = null;
+  let penaltyWinner = null; // 'home' or 'away'
   
-  if (isFinished && (isAfterExtraTime || isAfterPenalties)) {
-    // Get current scores
-    const homeScore = fixture.scores?.find(
-      s => s.description === 'CURRENT' && s.score?.participant === 'home'
-    )?.score?.goals;
+  if (isAfterPenalties) {
+    // Look for PENALTY_SHOOTOUT scores by description
+    let homePenGoals = null;
+    let awayPenGoals = null;
     
-    const awayScore = fixture.scores?.find(
-      s => s.description === 'CURRENT' && s.score?.participant === 'away'
-    )?.score?.goals;
-    
-    // For AET, winner is whoever has more goals
-    if (isAfterExtraTime && homeScore !== undefined && awayScore !== undefined) {
-      if (homeScore > awayScore) winner = 'home';
-      else if (awayScore > homeScore) winner = 'away';
+    const penaltyScoresByDesc = fixture.scores?.filter(s => s.description === 'PENALTY_SHOOTOUT');
+    if (penaltyScoresByDesc && penaltyScoresByDesc.length > 0) {
+      penaltyScoresByDesc.forEach(penScore => {
+        if (penScore.score?.participant === 'home') homePenGoals = penScore.score?.goals;
+        if (penScore.score?.participant === 'away') awayPenGoals = penScore.score?.goals;
+      });
     }
     
-    // For penalties, try to get penalty shootout scores
-    if (isAfterPenalties) {
-      // Look for PENALTY_SHOOTOUT scores (this is what the API actually returns)
-      const penaltyScores = fixture.scores?.filter(s => s.description === 'PENALTY_SHOOTOUT');
-      
-      if (penaltyScores && penaltyScores.length > 0) {
-        // Extract home and away penalty scores
-        let homePenGoals = null;
-        let awayPenGoals = null;
-        
-        penaltyScores.forEach(penScore => {
-          // Structure: { description: 'PENALTY_SHOOTOUT', score: { goals: X, participant: 'home'/'away' } }
-          if (penScore.score?.participant === 'home') {
-            homePenGoals = penScore.score?.goals;
-          } else if (penScore.score?.participant === 'away') {
-            awayPenGoals = penScore.score?.goals;
-          }
+    // Fallback: Try by type_id (type_id for penalty shootout may vary)
+    if (homePenGoals === null || awayPenGoals === null) {
+      // Type ID 39 is often PENALTY_SHOOTOUT
+      const penaltyScoresByType = fixture.scores?.filter(s => s.type_id === 39);
+      if (penaltyScoresByType && penaltyScoresByType.length > 0) {
+        penaltyScoresByType.forEach(penScore => {
+          if (penScore.score?.participant === 'home') homePenGoals = penScore.score?.goals;
+          if (penScore.score?.participant === 'away') awayPenGoals = penScore.score?.goals;
         });
-        
-        if (homePenGoals !== null && awayPenGoals !== null) {
-          penaltyScore = { home: homePenGoals, away: awayPenGoals };
-          if (homePenGoals > awayPenGoals) winner = 'home';
-          else if (awayPenGoals > homePenGoals) winner = 'away';
-        }
       }
-      
-      // Fallback 1: Check result_info field (e.g., "Oxford United won after penalties.")
-      if (!winner && fixture.result_info) {
+    }
+    
+    if (homePenGoals !== null && awayPenGoals !== null) {
+      penaltyScore = { home: homePenGoals, away: awayPenGoals };
+      if (homePenGoals > awayPenGoals) penaltyWinner = 'home';
+      else if (awayPenGoals > homePenGoals) penaltyWinner = 'away';
+    }
+    
+    // Fallback: Check result_info or winner_team_id if no penalty scores found
+    if (!penaltyWinner) {
+      if (fixture.result_info) {
         const resultInfo = fixture.result_info.toLowerCase();
         const homeNameLower = homeTeam?.name?.toLowerCase() || '';
         const awayNameLower = awayTeam?.name?.toLowerCase() || '';
-        
-        // Check for "won" pattern (API uses "won after penalties")
         if (homeNameLower && resultInfo.includes(homeNameLower) && resultInfo.includes('won')) {
-          winner = 'home';
+          penaltyWinner = 'home';
         } else if (awayNameLower && resultInfo.includes(awayNameLower) && resultInfo.includes('won')) {
-          winner = 'away';
+          penaltyWinner = 'away';
         }
       }
-      
-      // Fallback 2: Check winner_team_id if present
-      if (!winner && fixture.winner_team_id) {
-        if (fixture.winner_team_id === homeTeam?.id) winner = 'home';
-        else if (fixture.winner_team_id === awayTeam?.id) winner = 'away';
+      if (!penaltyWinner && fixture.winner_team_id) {
+        if (fixture.winner_team_id === homeTeam?.id) penaltyWinner = 'home';
+        else if (fixture.winner_team_id === awayTeam?.id) penaltyWinner = 'away';
       }
     }
   }
+  
+  // Get winning team name for penalty display
+  const penaltyWinnerName = penaltyWinner === 'home' ? homeTeam?.name : 
+                            penaltyWinner === 'away' ? awayTeam?.name : null;
 
   return (
     <Link
@@ -343,12 +384,10 @@ function FixtureCard({ fixture }) {
       </div>
 
       <div className="flex items-center justify-between">
+        {/* Home Team - no special styling for AET/penalty wins */}
         <div className="flex-1 flex items-center justify-end space-x-3">
-          <span className={`font-medium text-right ${
-            winner === 'home' ? 'text-green-600' : ''
-          }`}>
+          <span className="font-medium text-right">
             {homeTeam?.name || 'Home'}
-            {winner === 'home' && <span className="ml-1 text-xs">✓</span>}
           </span>
           {homeTeam?.image_path && (
             <img
@@ -359,33 +398,38 @@ function FixtureCard({ fixture }) {
           )}
         </div>
 
-        <div className="px-6 text-center min-w-[100px]">
+        {/* Score Section */}
+        <div className="px-6 text-center min-w-[120px]">
           {score ? (
             <div>
               <div className={`text-xl font-bold ${isLive ? 'text-green-600' : ''}`}>
                 {score}
               </div>
-              {/* Show penalty shootout score if available */}
-              {penaltyScore && (
-                <div className="text-xs text-gray-500 font-medium">
-                  ({penaltyScore.home}-{penaltyScore.away} pens)
+              {/* State indicator */}
+              <div className="text-xs text-gray-400 mt-1">
+                {isAfterPenalties ? 'P' : isAfterExtraTime ? 'AET' : isFinished ? 'FT' : isLive ? matchState?.toUpperCase() : 'Scheduled'}
+              </div>
+              {/* Penalty score and winner (only for penalty shootout wins) */}
+              {isAfterPenalties && penaltyScore && (
+                <div className="text-xs text-gray-500 mt-1">
+                  <div className="font-medium">({penaltyScore.home}-{penaltyScore.away})</div>
+                  {penaltyWinnerName && (
+                    <div className="text-gray-600 mt-0.5">{penaltyWinnerName} wins on penalties</div>
+                  )}
                 </div>
               )}
             </div>
           ) : (
-            <div className="text-lg font-medium text-gray-700">
-              {formatTime(fixture.starting_at)}
+            <div>
+              <div className="text-lg font-medium text-gray-700">
+                {formatTime(fixture.starting_at)}
+              </div>
+              <div className="text-xs text-gray-400 mt-1">Scheduled</div>
             </div>
           )}
-          <div className="text-xs text-gray-400 mt-1">
-            {isFinished 
-              ? (isAfterExtraTime ? 'AET' 
-                : isAfterPenalties ? 'FT'
-                : 'FT')
-              : isLive ? fixture.state?.state : 'Scheduled'}
-          </div>
         </div>
 
+        {/* Away Team - no special styling for AET/penalty wins */}
         <div className="flex-1 flex items-center space-x-3">
           {awayTeam?.image_path && (
             <img
@@ -394,10 +438,7 @@ function FixtureCard({ fixture }) {
               className="w-8 h-8 object-contain"
             />
           )}
-          <span className={`font-medium ${
-            winner === 'away' ? 'text-green-600' : ''
-          }`}>
-            {winner === 'away' && <span className="mr-1 text-xs">✓</span>}
+          <span className="font-medium">
             {awayTeam?.name || 'Away'}
           </span>
         </div>
@@ -1485,10 +1526,7 @@ function DefaultFixtures({ fixtures, loading, error, dateRange, timeAgoText, onR
         </div>
         
         <button
-          onClick={() => {
-            console.log('🔘 Refresh button clicked!');
-            onRefresh();
-          }}
+          onClick={onRefresh}
           disabled={loading}
           className="flex items-center space-x-2 px-3 py-1.5 bg-blue-600 text-white 
                      rounded-md text-sm font-medium hover:bg-blue-700 
@@ -1568,7 +1606,6 @@ const Fixtures = () => {
   // FETCH FIXTURES FUNCTION (reusable for refresh)
   // ============================================
   const fetchFixtures = async () => {
-    console.log('🔄 fetchFixtures called!'); // DEBUG LOG
     setLoading(true);
     setError('');
 
@@ -1614,8 +1651,6 @@ const Fixtures = () => {
         }
         return fixture;
       });
-      
-      console.log(`📊 Fixtures: ${filteredFixtures.length}, Live matches found: ${liveFixtures.length}`);
       
       setFixtures(filteredFixtures);
       
