@@ -203,14 +203,118 @@ function daysBetween(startDate, endDate) {
 }
 
 // ============================================
+// HELPER: Get "time ago" text for last updated
+// ============================================
+// Returns "X minutes ago" if under 60 minutes,
+// otherwise "X hours ago" (rounded to nearest hour)
+function getTimeAgoText(timestamp) {
+  if (!timestamp) return '';
+  
+  const now = new Date();
+  const diffMs = now - timestamp;
+  const diffMinutes = Math.floor(diffMs / (1000 * 60));
+  
+  // Less than 1 minute = "just now"
+  if (diffMinutes < 1) {
+    return 'just now';
+  }
+  
+  // Less than 60 minutes = "X minutes ago"
+  if (diffMinutes < 60) {
+    return `${diffMinutes} minute${diffMinutes === 1 ? '' : 's'} ago`;
+  }
+  
+  // 60+ minutes = round to nearest hour
+  const diffHours = Math.round(diffMinutes / 60);
+  return `${diffHours} hour${diffHours === 1 ? '' : 's'} ago`;
+}
+
+// ============================================
 // FIXTURE CARD COMPONENT
 // ============================================
 function FixtureCard({ fixture }) {
   const homeTeam = fixture.participants?.find(p => p.meta?.location === 'home');
   const awayTeam = fixture.participants?.find(p => p.meta?.location === 'away');
   const score = getScoreDisplay(fixture);
-  const isFinished = fixture.state?.state === 'FT';
+  
+  // Match is finished if it's FT (Full Time), AET (After Extra Time), or FT_PEN (After Penalties)
+  const finishedStates = ['FT', 'AET', 'FT_PEN'];
+  const isFinished = finishedStates.includes(fixture.state?.state);
+  const isAfterExtraTime = fixture.state?.state === 'AET';
+  const isAfterPenalties = fixture.state?.state === 'FT_PEN';
+  
+  // Match is live if in first half, second half, half time, extra time, or penalties
   const isLive = ['1H', '2H', 'HT', 'ET', 'PEN'].includes(fixture.state?.state);
+  
+  // ============================================
+  // DETERMINE WINNER (for AET and FT_PEN matches)
+  // ============================================
+  let winner = null; // 'home', 'away', or null
+  let penaltyScore = null; // { home: X, away: Y } for penalty shootouts
+  
+  if (isFinished && (isAfterExtraTime || isAfterPenalties)) {
+    // Get current scores
+    const homeScore = fixture.scores?.find(
+      s => s.description === 'CURRENT' && s.score?.participant === 'home'
+    )?.score?.goals;
+    
+    const awayScore = fixture.scores?.find(
+      s => s.description === 'CURRENT' && s.score?.participant === 'away'
+    )?.score?.goals;
+    
+    // For AET, winner is whoever has more goals
+    if (isAfterExtraTime && homeScore !== undefined && awayScore !== undefined) {
+      if (homeScore > awayScore) winner = 'home';
+      else if (awayScore > homeScore) winner = 'away';
+    }
+    
+    // For penalties, try to get penalty shootout scores
+    if (isAfterPenalties) {
+      // Look for PENALTY_SHOOTOUT scores (this is what the API actually returns)
+      const penaltyScores = fixture.scores?.filter(s => s.description === 'PENALTY_SHOOTOUT');
+      
+      if (penaltyScores && penaltyScores.length > 0) {
+        // Extract home and away penalty scores
+        let homePenGoals = null;
+        let awayPenGoals = null;
+        
+        penaltyScores.forEach(penScore => {
+          // Structure: { description: 'PENALTY_SHOOTOUT', score: { goals: X, participant: 'home'/'away' } }
+          if (penScore.score?.participant === 'home') {
+            homePenGoals = penScore.score?.goals;
+          } else if (penScore.score?.participant === 'away') {
+            awayPenGoals = penScore.score?.goals;
+          }
+        });
+        
+        if (homePenGoals !== null && awayPenGoals !== null) {
+          penaltyScore = { home: homePenGoals, away: awayPenGoals };
+          if (homePenGoals > awayPenGoals) winner = 'home';
+          else if (awayPenGoals > homePenGoals) winner = 'away';
+        }
+      }
+      
+      // Fallback 1: Check result_info field (e.g., "Oxford United won after penalties.")
+      if (!winner && fixture.result_info) {
+        const resultInfo = fixture.result_info.toLowerCase();
+        const homeNameLower = homeTeam?.name?.toLowerCase() || '';
+        const awayNameLower = awayTeam?.name?.toLowerCase() || '';
+        
+        // Check for "won" pattern (API uses "won after penalties")
+        if (homeNameLower && resultInfo.includes(homeNameLower) && resultInfo.includes('won')) {
+          winner = 'home';
+        } else if (awayNameLower && resultInfo.includes(awayNameLower) && resultInfo.includes('won')) {
+          winner = 'away';
+        }
+      }
+      
+      // Fallback 2: Check winner_team_id if present
+      if (!winner && fixture.winner_team_id) {
+        if (fixture.winner_team_id === homeTeam?.id) winner = 'home';
+        else if (fixture.winner_team_id === awayTeam?.id) winner = 'away';
+      }
+    }
+  }
 
   return (
     <Link
@@ -240,8 +344,11 @@ function FixtureCard({ fixture }) {
 
       <div className="flex items-center justify-between">
         <div className="flex-1 flex items-center justify-end space-x-3">
-          <span className="font-medium text-right">
+          <span className={`font-medium text-right ${
+            winner === 'home' ? 'text-green-600' : ''
+          }`}>
             {homeTeam?.name || 'Home'}
+            {winner === 'home' && <span className="ml-1 text-xs">✓</span>}
           </span>
           {homeTeam?.image_path && (
             <img
@@ -254,8 +361,16 @@ function FixtureCard({ fixture }) {
 
         <div className="px-6 text-center min-w-[100px]">
           {score ? (
-            <div className={`text-xl font-bold ${isLive ? 'text-green-600' : ''}`}>
-              {score}
+            <div>
+              <div className={`text-xl font-bold ${isLive ? 'text-green-600' : ''}`}>
+                {score}
+              </div>
+              {/* Show penalty shootout score if available */}
+              {penaltyScore && (
+                <div className="text-xs text-gray-500 font-medium">
+                  ({penaltyScore.home}-{penaltyScore.away} pens)
+                </div>
+              )}
             </div>
           ) : (
             <div className="text-lg font-medium text-gray-700">
@@ -263,7 +378,11 @@ function FixtureCard({ fixture }) {
             </div>
           )}
           <div className="text-xs text-gray-400 mt-1">
-            {isFinished ? 'Full Time' : isLive ? fixture.state?.state : 'Scheduled'}
+            {isFinished 
+              ? (isAfterExtraTime ? 'AET' 
+                : isAfterPenalties ? 'FT'
+                : 'FT')
+              : isLive ? fixture.state?.state : 'Scheduled'}
           </div>
         </div>
 
@@ -275,7 +394,10 @@ function FixtureCard({ fixture }) {
               className="w-8 h-8 object-contain"
             />
           )}
-          <span className="font-medium">
+          <span className={`font-medium ${
+            winner === 'away' ? 'text-green-600' : ''
+          }`}>
+            {winner === 'away' && <span className="mr-1 text-xs">✓</span>}
             {awayTeam?.name || 'Away'}
           </span>
         </div>
@@ -413,7 +535,7 @@ function TeamAutocomplete({ selectedTeam, onSelectTeam, disabled }) {
 
       {selectedTeam && (
         <div className="mt-1 text-xs text-green-600 flex items-center space-x-1">
-          <span>✓ Selected:</span>
+          <span>Selected:</span>
           <span className="font-medium">{selectedTeam.name}</span>
           {selectedTeam.image_path && (
             <img 
@@ -468,8 +590,15 @@ function TeamAutocomplete({ selectedTeam, onSelectTeam, disabled }) {
 // SEARCH PANEL COMPONENT
 // ============================================
 function SearchPanel({ onSearchResults, onClearSearch, isSearchActive }) {
-  // Search mode: 'team' or 'date'
+  // Search mode: 'team', 'competition', or 'date'
   const [searchMode, setSearchMode] = useState('team');
+  
+  // Competition search state
+  const [selectedCompetition, setSelectedCompetition] = useState(null);
+  const [competitionSearchType, setCompetitionSearchType] = useState('upcoming'); // 'upcoming' or 'dateRange'
+  const [competitionStartDate, setCompetitionStartDate] = useState('');
+  const [competitionEndDate, setCompetitionEndDate] = useState('');
+  const [competitionSearchLoading, setCompetitionSearchLoading] = useState(false);
   
   // Team search state
   const [selectedTeam, setSelectedTeam] = useState(null);
@@ -500,6 +629,9 @@ function SearchPanel({ onSearchResults, onClearSearch, isSearchActive }) {
   
   const generalDateRangeDays = dateRangeStart && dateRangeEnd ? daysBetween(dateRangeStart, dateRangeEnd) : 0;
   const isGeneralDateRangeValid = generalDateRangeDays > 0 && generalDateRangeDays <= MAX_DATE_RANGE_DAYS;
+  
+  const competitionDateRangeDays = competitionStartDate && competitionEndDate ? daysBetween(competitionStartDate, competitionEndDate) : 0;
+  const isCompetitionDateRangeValid = competitionDateRangeDays > 0 && competitionDateRangeDays <= MAX_DATE_RANGE_DAYS;
 
   // ============================================
   // SEARCH BY TEAM
@@ -575,6 +707,72 @@ function SearchPanel({ onSearchResults, onClearSearch, isSearchActive }) {
     } finally {
       setTeamSearchLoading(false);
       setLoadingProgress('');
+    }
+  };
+
+  // ============================================
+  // SEARCH BY COMPETITION
+  // ============================================
+  const handleCompetitionSearch = async (e) => {
+    e.preventDefault();
+    
+    if (!selectedCompetition) {
+      setSearchError('Please select a competition.');
+      return;
+    }
+    
+    setCompetitionSearchLoading(true);
+    setSearchError('');
+    
+    try {
+      let fixturesStartDate, fixturesEndDate, isHistorical = false;
+      
+      if (competitionSearchType === 'upcoming') {
+        // Show next 30 days of fixtures for this competition
+        const today = new Date();
+        const futureDate = new Date(today);
+        futureDate.setDate(today.getDate() + 30);
+        fixturesStartDate = today.toISOString().split('T')[0];
+        fixturesEndDate = futureDate.toISOString().split('T')[0];
+      } else {
+        // Custom date range
+        if (!isCompetitionDateRangeValid) {
+          setSearchError(`Please select a valid date range (max ${MAX_DATE_RANGE_DAYS} days).`);
+          setCompetitionSearchLoading(false);
+          return;
+        }
+        fixturesStartDate = competitionStartDate;
+        fixturesEndDate = competitionEndDate;
+        isHistorical = new Date(competitionEndDate) < new Date();
+      }
+      
+      const data = await dataApi.getFixturesByDateRange(fixturesStartDate, fixturesEndDate);
+      
+      // Filter to only the selected competition
+      let filteredFixtures = (data.fixtures || []).filter(
+        fixture => fixture.league_id === selectedCompetition
+      );
+      
+      filteredFixtures.sort((a, b) => 
+        new Date(a.starting_at) - new Date(b.starting_at)
+      );
+      
+      onSearchResults({
+        type: 'competition',
+        query: ALLOWED_LEAGUES[selectedCompetition],
+        competitionId: selectedCompetition,
+        isHistorical,
+        dateRange: competitionSearchType === 'dateRange' 
+          ? { startDate: competitionStartDate, endDate: competitionEndDate } 
+          : null,
+        fixtures: filteredFixtures
+      });
+      
+    } catch (err) {
+      console.error('Competition search failed:', err);
+      setSearchError(err.message || 'Search failed. Please try again.');
+    } finally {
+      setCompetitionSearchLoading(false);
     }
   };
 
@@ -664,6 +862,10 @@ function SearchPanel({ onSearchResults, onClearSearch, isSearchActive }) {
     setTeamEndDate('');
     setDateRangeStart('');
     setDateRangeEnd('');
+    setSelectedCompetition(null);
+    setCompetitionStartDate('');
+    setCompetitionEndDate('');
+    setCompetitionSearchType('upcoming');
     setSearchError('');
     setSearchType('upcoming');
     setDateSearchType('single');
@@ -701,6 +903,16 @@ function SearchPanel({ onSearchResults, onClearSearch, isSearchActive }) {
             }`}
         >
           🏟️ By Team
+        </button>
+        <button
+          onClick={() => setSearchMode('competition')}
+          className={`px-4 py-2 rounded-md text-sm font-medium transition-colors
+            ${searchMode === 'competition'
+              ? 'bg-blue-600 text-white'
+              : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+            }`}
+        >
+          🏆 By Competition
         </button>
         <button
           onClick={() => setSearchMode('date')}
@@ -859,6 +1071,130 @@ function SearchPanel({ onSearchResults, onClearSearch, isSearchActive }) {
       )}
 
       {/* ============================================ */}
+      {/* COMPETITION SEARCH MODE */}
+      {/* ============================================ */}
+      {searchMode === 'competition' && (
+        <div className="space-y-4">
+          {/* Competition Selection */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Select Competition
+            </label>
+            <div className="grid grid-cols-3 gap-2">
+              {Object.entries(ALLOWED_LEAGUES).map(([id, name]) => (
+                <button
+                  key={id}
+                  type="button"
+                  onClick={() => setSelectedCompetition(parseInt(id))}
+                  disabled={competitionSearchLoading}
+                  className={`px-3 py-3 rounded-md text-sm font-medium transition-colors border-2
+                    ${selectedCompetition === parseInt(id)
+                      ? 'bg-blue-600 text-white border-blue-600'
+                      : 'bg-white text-gray-700 border-gray-200 hover:border-blue-300 hover:bg-blue-50'
+                    }
+                    ${competitionSearchLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                >
+                  {id === '8' && '⚽ '}
+                  {id === '24' && '🏆 '}
+                  {id === '27' && '🏆 '}
+                  {name}
+                </button>
+              ))}
+            </div>
+          </div>
+          
+          {/* Search Type Options */}
+          <div className="flex flex-wrap gap-3">
+            <label className="flex items-center space-x-2 cursor-pointer">
+              <input
+                type="radio"
+                name="competitionSearchType"
+                value="upcoming"
+                checked={competitionSearchType === 'upcoming'}
+                onChange={() => setCompetitionSearchType('upcoming')}
+                className="text-blue-600 focus:ring-blue-500"
+                disabled={competitionSearchLoading}
+              />
+              <span className="text-sm text-gray-700">Upcoming (next 30 days)</span>
+            </label>
+            
+            <label className="flex items-center space-x-2 cursor-pointer">
+              <input
+                type="radio"
+                name="competitionSearchType"
+                value="dateRange"
+                checked={competitionSearchType === 'dateRange'}
+                onChange={() => setCompetitionSearchType('dateRange')}
+                className="text-blue-600 focus:ring-blue-500"
+                disabled={competitionSearchLoading}
+              />
+              <span className="text-sm text-gray-700">Custom Date Range (max {MAX_DATE_RANGE_DAYS} days)</span>
+            </label>
+          </div>
+          
+          {/* Date Range Inputs (for custom range) */}
+          {competitionSearchType === 'dateRange' && (
+            <div className="space-y-2">
+              <div className="flex space-x-4">
+                <div className="flex-1">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Start Date
+                  </label>
+                  <input
+                    type="date"
+                    value={competitionStartDate}
+                    onChange={(e) => setCompetitionStartDate(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md
+                               focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    disabled={competitionSearchLoading}
+                  />
+                </div>
+                <div className="flex-1">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    End Date
+                  </label>
+                  <input
+                    type="date"
+                    value={competitionEndDate}
+                    onChange={(e) => setCompetitionEndDate(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md
+                               focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    disabled={competitionSearchLoading}
+                  />
+                </div>
+              </div>
+              
+              {competitionStartDate && competitionEndDate && (
+                <div className={`text-sm ${isCompetitionDateRangeValid ? 'text-gray-600' : 'text-red-600'}`}>
+                  {isCompetitionDateRangeValid 
+                    ? `📅 ${competitionDateRangeDays} days selected`
+                    : competitionDateRangeDays > MAX_DATE_RANGE_DAYS
+                      ? `⚠️ ${competitionDateRangeDays} days selected (max ${MAX_DATE_RANGE_DAYS} days allowed)`
+                      : '⚠️ End date must be after start date'
+                  }
+                </div>
+              )}
+            </div>
+          )}
+          
+          {/* Search Button */}
+          <button
+            onClick={handleCompetitionSearch}
+            disabled={
+              !selectedCompetition || 
+              competitionSearchLoading || 
+              (competitionSearchType === 'dateRange' && !isCompetitionDateRangeValid)
+            }
+            className="w-full px-6 py-2 bg-blue-600 text-white rounded-md font-medium
+                       hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed
+                       transition-colors"
+          >
+            {competitionSearchLoading ? 'Searching...' : 'Search Fixtures'}
+          </button>
+        </div>
+      )}
+
+      {/* ============================================ */}
       {/* DATE SEARCH MODE */}
       {/* ============================================ */}
       {searchMode === 'date' && (
@@ -983,9 +1319,11 @@ function SearchPanel({ onSearchResults, onClearSearch, isSearchActive }) {
       <p className="mt-3 text-xs text-gray-500">
         {searchMode === 'team'
           ? 'Start typing to see matching teams. Select a team, then choose how to search.'
-          : dateSearchType === 'single'
-            ? 'Select a date to view all Premier League, FA Cup, and Carabao Cup fixtures.'
-            : `Select a date range (up to ${MAX_DATE_RANGE_DAYS} days) to view fixtures across multiple days.`
+          : searchMode === 'competition'
+            ? 'Select a competition to view upcoming fixtures or search by date range.'
+            : dateSearchType === 'single'
+              ? 'Select a date to view all Premier League, FA Cup, and Carabao Cup fixtures.'
+              : `Select a date range (up to ${MAX_DATE_RANGE_DAYS} days) to view fixtures across multiple days.`
         }
       </p>
     </div>
@@ -996,7 +1334,7 @@ function SearchPanel({ onSearchResults, onClearSearch, isSearchActive }) {
 // SEARCH RESULTS COMPONENT
 // ============================================
 function SearchResults({ searchData, onClear }) {
-  const { type, query, fixtures, isHistorical, season, teamId, dateRange, startDate, endDate, isRange } = searchData;
+  const { type, query, fixtures, isHistorical, season, teamId, competitionId, dateRange, startDate, endDate, isRange } = searchData;
   
   const groupedFixtures = groupFixturesByDate(fixtures);
   
@@ -1005,6 +1343,12 @@ function SearchResults({ searchData, onClear }) {
       if (season) {
         return `${query} - ${season} Season`;
       }
+      if (dateRange) {
+        return `${query} (${formatShortDate(dateRange.startDate)} - ${formatShortDate(dateRange.endDate)})`;
+      }
+      return `Upcoming: ${query}`;
+    }
+    if (type === 'competition') {
       if (dateRange) {
         return `${query} (${formatShortDate(dateRange.startDate)} - ${formatShortDate(dateRange.endDate)})`;
       }
@@ -1052,7 +1396,9 @@ function SearchResults({ searchData, onClear }) {
           <p className="text-gray-500">
             {type === 'team'
               ? `No Premier League, FA Cup, or Carabao Cup fixtures found for ${query} in this time period.`
-              : 'No fixtures scheduled for the selected date(s).'
+              : type === 'competition'
+                ? `No ${query} fixtures found in this time period.`
+                : 'No fixtures scheduled for the selected date(s).'
             }
           </p>
         </div>
@@ -1093,14 +1439,14 @@ function SearchResults({ searchData, onClear }) {
 // ============================================
 // DEFAULT FIXTURES COMPONENT
 // ============================================
-function DefaultFixtures({ fixtures, loading, error, dateRange }) {
+function DefaultFixtures({ fixtures, loading, error, dateRange, timeAgoText, onRefresh }) {
   const groupedFixtures = groupFixturesByDate(fixtures);
 
   return (
     <div>
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-xl font-bold text-gray-900">
-          📅 Upcoming Fixtures
+          📅 Fixture List
         </h2>
         
         {dateRange.startDate && dateRange.endDate && (
@@ -1110,6 +1456,56 @@ function DefaultFixtures({ fixtures, loading, error, dateRange }) {
             <div>{formatDate(dateRange.endDate)}</div>
           </div>
         )}
+      </div>
+
+      {/* ============================================ */}
+      {/* LEGEND - Live Match Indicator */}
+      {/* ============================================ */}
+      <div className="text-xs text-gray-500 flex items-center space-x-4 mb-2">
+        <div className="flex items-center space-x-1">
+          <div className="w-3 h-3 bg-green-500 rounded"></div>
+          <span>Live Match</span>
+        </div>
+        <div className="flex items-center space-x-1">
+          <div className="w-3 h-3 bg-gray-400 rounded"></div>
+          <span>Finished</span>
+        </div>
+      </div>
+
+      {/* ============================================ */}
+      {/* REFRESH BUTTON + LAST UPDATED INDICATOR */}
+      {/* ============================================ */}
+      <div className="flex items-center justify-between mb-4 bg-gray-50 rounded-lg px-4 py-2">
+        <div className="text-sm text-gray-500">
+          {timeAgoText && (
+            <span>
+              🕒 Last updated: <span className="font-medium">{timeAgoText}</span>
+            </span>
+          )}
+        </div>
+        
+        <button
+          onClick={() => {
+            console.log('🔘 Refresh button clicked!');
+            onRefresh();
+          }}
+          disabled={loading}
+          className="flex items-center space-x-2 px-3 py-1.5 bg-blue-600 text-white 
+                     rounded-md text-sm font-medium hover:bg-blue-700 
+                     disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+        >
+          {loading ? (
+            <>
+              <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+              <span>Refreshing...</span>
+            </>
+          ) : (
+            <>
+              <span>🔄</span>
+              <span>Refresh</span>
+            </>
+          )}
+        </button>
       </div>
 
       {error && (
@@ -1152,15 +1548,6 @@ function DefaultFixtures({ fixtures, loading, error, dateRange }) {
           ))}
         </div>
       )}
-
-      {groupedFixtures.length > 0 && (
-        <div className="text-xs text-gray-500 flex items-center space-x-4 pt-4 border-t mt-6">
-          <div className="flex items-center space-x-1">
-            <div className="w-3 h-3 bg-green-500 rounded"></div>
-            <span>Live Match</span>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
@@ -1174,34 +1561,102 @@ const Fixtures = () => {
   const [error, setError] = useState('');
   const [dateRange, setDateRange] = useState({ startDate: '', endDate: '' });
   const [searchResults, setSearchResults] = useState(null);
+  const [lastUpdated, setLastUpdated] = useState(null); // Track when data was last fetched
+  const [timeAgoText, setTimeAgoText] = useState('');   // Display text for "X minutes ago"
 
+  // ============================================
+  // FETCH FIXTURES FUNCTION (reusable for refresh)
+  // ============================================
+  const fetchFixtures = async () => {
+    console.log('🔄 fetchFixtures called!'); // DEBUG LOG
+    setLoading(true);
+    setError('');
+
+    const { startDate, endDate } = getDateRange();
+    setDateRange({ startDate, endDate });
+
+    try {
+      // Fetch fixtures by date range AND live scores in parallel
+      // The fixtures/between endpoint gives us the schedule,
+      // but livescores endpoint gives us real-time match states
+      const [fixturesData, livescoresData] = await Promise.all([
+        dataApi.getFixturesByDateRange(startDate, endDate),
+        dataApi.getLivescores()
+      ]);
+      
+      // Filter to our allowed leagues
+      let filteredFixtures = (fixturesData.fixtures || []).filter(
+        fixture => ALLOWED_LEAGUE_IDS.includes(fixture.league_id)
+      );
+      
+      // Get live fixtures from our allowed leagues
+      const liveFixtures = (livescoresData.fixtures || []).filter(
+        fixture => ALLOWED_LEAGUE_IDS.includes(fixture.league_id)
+      );
+      
+      // Create a map of live fixture IDs to their live data
+      const liveFixtureMap = new Map();
+      liveFixtures.forEach(liveFixture => {
+        liveFixtureMap.set(liveFixture.id, liveFixture);
+      });
+      
+      // Merge live data into fixtures
+      // If a fixture is currently live, replace it with the live version
+      filteredFixtures = filteredFixtures.map(fixture => {
+        const liveVersion = liveFixtureMap.get(fixture.id);
+        if (liveVersion) {
+          // Merge: keep scheduled fixture data but update with live state/scores
+          return {
+            ...fixture,
+            state: liveVersion.state,
+            scores: liveVersion.scores,
+          };
+        }
+        return fixture;
+      });
+      
+      console.log(`📊 Fixtures: ${filteredFixtures.length}, Live matches found: ${liveFixtures.length}`);
+      
+      setFixtures(filteredFixtures);
+      
+      // Update the "last updated" timestamp
+      const now = new Date();
+      setLastUpdated(now);
+      setTimeAgoText(getTimeAgoText(now));
+    } catch (err) {
+      console.error('Failed to fetch fixtures:', err);
+      setError(err.message || 'Failed to load fixtures');
+      setFixtures([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // ============================================
+  // INITIAL LOAD
+  // ============================================
   useEffect(() => {
-    const fetchFixtures = async () => {
-      setLoading(true);
-      setError('');
-
-      const { startDate, endDate } = getDateRange();
-      setDateRange({ startDate, endDate });
-
-      try {
-        const data = await dataApi.getFixturesByDateRange(startDate, endDate);
-        
-        const filteredFixtures = (data.fixtures || []).filter(
-          fixture => ALLOWED_LEAGUE_IDS.includes(fixture.league_id)
-        );
-        
-        setFixtures(filteredFixtures);
-      } catch (err) {
-        console.error('Failed to fetch fixtures:', err);
-        setError(err.message || 'Failed to load fixtures');
-        setFixtures([]);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchFixtures();
   }, []);
+
+  // ============================================
+  // UPDATE "TIME AGO" TEXT EVERY MINUTE
+  // ============================================
+  // This keeps the "Last updated: X minutes ago" text current
+  // without making new API calls
+  useEffect(() => {
+    if (!lastUpdated) return;
+    
+    // Update immediately
+    setTimeAgoText(getTimeAgoText(lastUpdated));
+    
+    // Then update every 60 seconds
+    const interval = setInterval(() => {
+      setTimeAgoText(getTimeAgoText(lastUpdated));
+    }, 60000); // 60 seconds
+    
+    return () => clearInterval(interval);
+  }, [lastUpdated]);
 
   const handleSearchResults = (results) => {
     setSearchResults(results);
@@ -1238,6 +1693,8 @@ const Fixtures = () => {
           loading={loading}
           error={error}
           dateRange={dateRange}
+          timeAgoText={timeAgoText}
+          onRefresh={() => fetchFixtures()}
         />
       )}
     </div>

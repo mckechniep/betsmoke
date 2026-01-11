@@ -358,6 +358,93 @@ const enrichStatsWithTypes = async (stats) => {
   return stats;
 };
 
+/**
+ * Enrich an array of events with type names.
+ * Events include goals, cards, substitutions, etc.
+ *
+ * SportsMonks Event Type IDs (for reference):
+ *   14 = Goal
+ *   15 = Own Goal
+ *   16 = Penalty (scored)
+ *   17 = Missed Penalty
+ *   18 = Substitution
+ *   19 = Yellow Card
+ *   20 = Red Card
+ *   21 = Yellow-Red Card (second yellow)
+ *   22 = Penalty Shootout Miss
+ *   23 = Penalty Shootout Goal
+ *   10 = VAR
+ *
+ * @param {object[]} events - Array of event objects with type_id
+ * @returns {Promise<object[]>} - The same array with typeName added to each
+ *
+ * @example
+ * const events = [{ type_id: 14, minute: 45, player_name: "Salah" }];
+ * await enrichEventsWithTypes(events);
+ * // events[0] is now: { type_id: 14, minute: 45, player_name: "Salah", typeName: "Goal" }
+ */
+const enrichEventsWithTypes = async (events) => {
+  if (!Array.isArray(events)) return events;
+
+  await ensureCacheLoaded();
+
+  for (const event of events) {
+    if (event?.type_id) {
+      event.typeName = typesById.get(event.type_id)?.name || `Unknown (${event.type_id})`;
+    }
+  }
+
+  return events;
+};
+
+/**
+ * Enrich a complete fixture object with type names for:
+ * - statistics (match stats like corners, possession)
+ * - events (goals, cards, substitutions)
+ * - sidelined players (injury/suspension types)
+ *
+ * This is a convenience function that enriches all type_id fields
+ * in a fixture response so the frontend doesn't need hardcoded mappings.
+ *
+ * @param {object} fixture - A fixture object from SportsMonks API
+ * @returns {Promise<object>} - The same fixture with typeName added throughout
+ */
+const enrichFixtureWithTypes = async (fixture) => {
+  if (!fixture) return fixture;
+
+  await ensureCacheLoaded();
+
+  // Enrich statistics (if present)
+  if (Array.isArray(fixture.statistics)) {
+    for (const stat of fixture.statistics) {
+      if (stat?.type_id) {
+        stat.typeName = typesById.get(stat.type_id)?.name || `Unknown (${stat.type_id})`;
+      }
+    }
+  }
+
+  // Enrich events (if present)
+  if (Array.isArray(fixture.events)) {
+    for (const event of fixture.events) {
+      if (event?.type_id) {
+        event.typeName = typesById.get(event.type_id)?.name || `Unknown (${event.type_id})`;
+      }
+    }
+  }
+
+  // Enrich sidelined players (if present)
+  // Sidelined entries have a 'type' object with type_id for injury/suspension reason
+  if (Array.isArray(fixture.sidelined)) {
+    for (const entry of fixture.sidelined) {
+      if (entry?.type_id) {
+        entry.typeName = typesById.get(entry.type_id)?.name || `Unknown (${entry.type_id})`;
+      }
+    }
+  }
+
+  return fixture;
+};
+
 // ============================================
 // EXPORTS
 // ============================================
@@ -382,5 +469,7 @@ export {
 
   // Enrichment helpers
   enrichStatWithType,
-  enrichStatsWithTypes
+  enrichStatsWithTypes,
+  enrichEventsWithTypes,
+  enrichFixtureWithTypes  // <-- Convenience function for full fixture enrichment
 };

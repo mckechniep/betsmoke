@@ -26,6 +26,11 @@ import {
   getStagesBySeason
 } from '../services/sportsmonks.js';
 
+// Import the types enrichment service
+// This adds human-readable type names (e.g., "Goal", "Corners") to API data
+// so the frontend doesn't need hardcoded type_id mappings
+import { enrichFixtureWithTypes } from '../services/types.js';
+
 // Create a router
 const router = express.Router();
 
@@ -463,6 +468,16 @@ router.get('/:id', async (req, res) => {
         error: `Fixture with ID ${fixtureId} not found`
       });
     }
+    
+    // ============================================
+    // ENRICH WITH TYPE NAMES
+    // ============================================
+    // Add human-readable type names to:
+    // - statistics (e.g., type_id: 34 → typeName: "Corners")
+    // - events (e.g., type_id: 14 → typeName: "Goal")
+    // - sidelined (e.g., type_id: 535 → typeName: "Hamstring Injury")
+    // This uses our local database cache instead of extra API calls.
+    await enrichFixtureWithTypes(result.data);
     
     // Return the fixture
     res.json({

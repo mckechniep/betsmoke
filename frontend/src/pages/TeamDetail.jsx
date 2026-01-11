@@ -1816,150 +1816,173 @@ function CornersSection({ teamId }) {
       )}
 
       {/* Stats Display */}
-      {!loading && !error && hasData && (
-        <div>
-          {/* Main Stats Grid - Overall */}
-          <div className="grid grid-cols-3 gap-4">
-            {/* Total Corners */}
-            <div className="bg-orange-50 rounded-lg p-4 border border-orange-200 text-center">
-              <div className="text-xs text-orange-600 font-semibold mb-1">TOTAL</div>
-              <div className="text-3xl font-bold text-orange-700">
-                {cornersData.total}
+      {!loading && !error && hasData && (() => {
+        // ============================================
+        // DATA QUALITY CHECK (runs early to determine what to show)
+        // ============================================
+        // Compare our calculated game count vs official game count
+        // If they don't match, the historical fixture data is incomplete
+        const calculatedGames = cornerAvg?.corners?.overall?.games ?? 0;
+        const officialGames = cornersData.gamesPlayed;
+        
+        // Data is complete if we found stats for at least 80% of matches
+        const completenessRatio = officialGames > 0 
+          ? calculatedGames / officialGames 
+          : 0;
+        const isDataComplete = completenessRatio >= 0.8;
+        
+        // Also check if the average seems realistic (PL teams get 3-8 corners/game)
+        const isAverageRealistic = cornersData.average >= 2.0;
+        
+        // Determine if we should show full stats or just a warning
+        const showFullStats = isDataComplete && isAverageRealistic;
+        
+        // ============================================
+        // INCOMPLETE DATA - Show warning only
+        // ============================================
+        if (!showFullStats && !cornerAvgLoading) {
+          return (
+            <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 text-center">
+              <div className="text-amber-600 text-sm font-medium mb-1">
+                ⚠️ Incomplete Historical Data
               </div>
-              <div className="text-xs text-gray-500 mt-1">corners won</div>
+              <p className="text-xs text-amber-700">
+                Detailed corner statistics are not available for this historical season.
+                {calculatedGames > 0 && !isDataComplete && (
+                  <span> (Found data for {calculatedGames} of {officialGames} matches)</span>
+                )}
+              </p>
+            </div>
+          );
+        }
+        
+        // ============================================
+        // COMPLETE DATA - Show full stats
+        // ============================================
+        return (
+          <div>
+            {/* Main Stats Grid - Overall */}
+            <div className="grid grid-cols-3 gap-4">
+              {/* Total Corners */}
+              <div className="bg-orange-50 rounded-lg p-4 border border-orange-200 text-center">
+                <div className="text-xs text-orange-600 font-semibold mb-1">TOTAL</div>
+                <div className="text-3xl font-bold text-orange-700">
+                  {cornersData.total}
+                </div>
+                <div className="text-xs text-gray-500 mt-1">corners won</div>
+              </div>
+
+              {/* Average Per Game */}
+              <div className="bg-blue-50 rounded-lg p-4 border border-blue-200 text-center">
+                <div className="text-xs text-blue-600 font-semibold mb-1">AVERAGE</div>
+                <div className="text-3xl font-bold text-blue-700">
+                  {cornersData.average ?? '-'}
+                </div>
+                <div className="text-xs text-gray-500 mt-1">per game</div>
+              </div>
+
+              {/* Games Played */}
+              <div className="bg-gray-50 rounded-lg p-4 border border-gray-200 text-center">
+                <div className="text-xs text-gray-600 font-semibold mb-1">GAMES</div>
+                <div className="text-3xl font-bold text-gray-700">
+                  {cornersData.gamesPlayed}
+                </div>
+                <div className="text-xs text-gray-500 mt-1">played</div>
+              </div>
             </div>
 
-            {/* Average Per Game */}
-            <div className="bg-blue-50 rounded-lg p-4 border border-blue-200 text-center">
-              <div className="text-xs text-blue-600 font-semibold mb-1">AVERAGE</div>
-              <div className="text-3xl font-bold text-blue-700">
-                {cornersData.average ?? '-'}
+            {/* ============================================ */}
+            {/* HOME / AWAY BREAKDOWN */}
+            {/* ============================================ */}
+            {cornerAvgLoading ? (
+              <div className="mt-6 pt-4 border-t border-gray-100">
+                <div className="text-center py-4 text-gray-400 text-sm">
+                  <div className="animate-pulse">Loading home/away breakdown...</div>
+                </div>
               </div>
-              <div className="text-xs text-gray-500 mt-1">per game</div>
-            </div>
+            ) : cornerAvg?.corners ? (
+              <div className="mt-6 pt-4 border-t border-gray-100">
+                <h3 className="text-sm font-semibold text-gray-700 mb-3">
+                  📊 Home vs Away Breakdown
+                </h3>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  {/* Home Corners */}
+                  <div className="bg-green-50 rounded-lg p-4 border border-green-200">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-xs font-semibold text-green-700">🏠 HOME</span>
+                      <span className="text-xs text-gray-500">
+                        {cornerAvg.corners.home.games} games
+                      </span>
+                    </div>
+                    <div className="flex items-baseline justify-between">
+                      <div>
+                        <span className="text-2xl font-bold text-green-700">
+                          {cornerAvg.corners.home.total}
+                        </span>
+                        <span className="text-sm text-gray-500 ml-1">corners</span>
+                      </div>
+                      <div className="text-right">
+                        <span className="text-lg font-bold text-green-600">
+                          {cornerAvg.corners.home.average}
+                        </span>
+                        <span className="text-xs text-gray-500 ml-1">avg</span>
+                      </div>
+                    </div>
+                  </div>
 
-            {/* Games Played */}
-            <div className="bg-gray-50 rounded-lg p-4 border border-gray-200 text-center">
-              <div className="text-xs text-gray-600 font-semibold mb-1">GAMES</div>
-              <div className="text-3xl font-bold text-gray-700">
-                {cornersData.gamesPlayed}
+                  {/* Away Corners */}
+                  <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-xs font-semibold text-blue-700">✈️ AWAY</span>
+                      <span className="text-xs text-gray-500">
+                        {cornerAvg.corners.away.games} games
+                      </span>
+                    </div>
+                    <div className="flex items-baseline justify-between">
+                      <div>
+                        <span className="text-2xl font-bold text-blue-700">
+                          {cornerAvg.corners.away.total}
+                        </span>
+                        <span className="text-sm text-gray-500 ml-1">corners</span>
+                      </div>
+                      <div className="text-right">
+                        <span className="text-lg font-bold text-blue-600">
+                          {cornerAvg.corners.away.average}
+                        </span>
+                        <span className="text-xs text-gray-500 ml-1">avg</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Home vs Away Comparison Insight */}
+                {cornerAvg.corners.home.average !== cornerAvg.corners.away.average && (
+                  <div className="mt-3 text-center">
+                    <span className={`text-xs px-3 py-1 rounded-full ${
+                      cornerAvg.corners.home.average > cornerAvg.corners.away.average
+                        ? 'bg-green-100 text-green-700'
+                        : 'bg-blue-100 text-blue-700'
+                    }`}>
+                      {cornerAvg.corners.home.average > cornerAvg.corners.away.average
+                        ? `+${(cornerAvg.corners.home.average - cornerAvg.corners.away.average).toFixed(1)} more corners at home`
+                        : `+${(cornerAvg.corners.away.average - cornerAvg.corners.home.average).toFixed(1)} more corners away`
+                      }
+                    </span>
+                  </div>
+                )}
+
+                {/* Cache indicator */}
+                {cornerAvg.fromCache && (
+                  <div className="text-xs text-gray-400 text-right mt-2">
+                    📦 Cached data
+                  </div>
+                )}
               </div>
-              <div className="text-xs text-gray-500 mt-1">played</div>
-            </div>
+            ) : null}
           </div>
-
-          {/* ============================================ */}
-          {/* HOME / AWAY BREAKDOWN */}
-          {/* ============================================ */}
-          {/* Uses our cached corner averages endpoint */}
-          {cornerAvgLoading ? (
-            <div className="mt-6 pt-4 border-t border-gray-100">
-              <div className="text-center py-4 text-gray-400 text-sm">
-                <div className="animate-pulse">Loading home/away breakdown...</div>
-              </div>
-            </div>
-          ) : cornerAvg?.corners ? (
-            <div className="mt-6 pt-4 border-t border-gray-100">
-              <h3 className="text-sm font-semibold text-gray-700 mb-3">
-                📊 Home vs Away Breakdown
-              </h3>
-              
-              <div className="grid grid-cols-2 gap-4">
-                {/* Home Corners */}
-                <div className="bg-green-50 rounded-lg p-4 border border-green-200">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-xs font-semibold text-green-700">🏠 HOME</span>
-                    <span className="text-xs text-gray-500">
-                      {cornerAvg.corners.home.games} games
-                    </span>
-                  </div>
-                  <div className="flex items-baseline justify-between">
-                    <div>
-                      <span className="text-2xl font-bold text-green-700">
-                        {cornerAvg.corners.home.total}
-                      </span>
-                      <span className="text-sm text-gray-500 ml-1">corners</span>
-                    </div>
-                    <div className="text-right">
-                      <span className="text-lg font-bold text-green-600">
-                        {cornerAvg.corners.home.average}
-                      </span>
-                      <span className="text-xs text-gray-500 ml-1">avg</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Away Corners */}
-                <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-xs font-semibold text-blue-700">✈️ AWAY</span>
-                    <span className="text-xs text-gray-500">
-                      {cornerAvg.corners.away.games} games
-                    </span>
-                  </div>
-                  <div className="flex items-baseline justify-between">
-                    <div>
-                      <span className="text-2xl font-bold text-blue-700">
-                        {cornerAvg.corners.away.total}
-                      </span>
-                      <span className="text-sm text-gray-500 ml-1">corners</span>
-                    </div>
-                    <div className="text-right">
-                      <span className="text-lg font-bold text-blue-600">
-                        {cornerAvg.corners.away.average}
-                      </span>
-                      <span className="text-xs text-gray-500 ml-1">avg</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Home vs Away Comparison Insight */}
-              {cornerAvg.corners.home.average !== cornerAvg.corners.away.average && (
-                <div className="mt-3 text-center">
-                  <span className={`text-xs px-3 py-1 rounded-full ${
-                    cornerAvg.corners.home.average > cornerAvg.corners.away.average
-                      ? 'bg-green-100 text-green-700'
-                      : 'bg-blue-100 text-blue-700'
-                  }`}>
-                    {cornerAvg.corners.home.average > cornerAvg.corners.away.average
-                      ? `+${(cornerAvg.corners.home.average - cornerAvg.corners.away.average).toFixed(1)} more corners at home`
-                      : `+${(cornerAvg.corners.away.average - cornerAvg.corners.home.average).toFixed(1)} more corners away`
-                    }
-                  </span>
-                </div>
-              )}
-
-              {/* Cache indicator */}
-              {cornerAvg.fromCache && (
-                <div className="text-xs text-gray-400 text-right mt-2">
-                  📦 Cached data
-                </div>
-              )}
-            </div>
-          ) : null}
-
-          {/* Betting Insight */}
-          <div className="mt-6 pt-4 border-t border-gray-100">
-            <p className="text-xs text-gray-500">
-              📊 <strong>Betting Insight:</strong> 
-              {cornersData.average && (
-                <span>
-                  This team averages <strong>{cornersData.average}</strong> corners per game overall.
-                  {cornerAvg?.corners && (
-                    <span>
-                      {' '}At home: <strong>{cornerAvg.corners.home.average}</strong>, 
-                      away: <strong>{cornerAvg.corners.away.average}</strong>.
-                    </span>
-                  )}
-                  {cornersData.average >= 6 && ' They win a lot of corners - consider Over corners bets.'}
-                  {cornersData.average < 4 && ' They tend to win fewer corners - consider Under corners bets.'}
-                </span>
-              )}
-            </p>
-          </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* No Data State */}
       {!loading && !error && !hasData && (

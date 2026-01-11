@@ -2714,28 +2714,98 @@ const FixtureDetail = () => {
         )}
 
         {/* Match Events (if finished or live) */}
+        {/* ============================================
+            EVENT TYPE DISPLAY
+            ============================================
+            The backend now enriches events with `typeName` from our
+            local SportsMonks types database. This means we don't need
+            hardcoded type_id mappings anymore!
+            
+            Common event types (for reference):
+              14 = Goal
+              15 = Own Goal  
+              16 = Penalty (scored)
+              17 = Missed Penalty
+              18 = Substitution
+              19 = Yellow Card
+              20 = Red Card
+              21 = Yellow-Red Card (second yellow)
+              22 = Penalty Shootout Miss
+              23 = Penalty Shootout Goal
+            ============================================ */}
         {fixture.events && fixture.events.length > 0 && (
           <AccordionSection title="Match Events" icon="⚽" defaultOpen={isFinished || isLive}>
             <div className="space-y-2">
               {fixture.events
                 .sort((a, b) => (a.minute || 0) - (b.minute || 0))
-                .map((event, idx) => (
-                  <div key={idx} className="flex items-center space-x-3 text-sm">
-                    <span className="w-8 text-gray-500">{event.minute}'</span>
-                    <span>
-                      {event.type?.name || event.type_id === 14 ? '⚽ Goal' : 
-                       event.type_id === 18 ? '🟨 Yellow' : 
-                       event.type_id === 19 ? '🟥 Red' :
-                       event.type_id === 20 ? '🔄 Sub' : '📋'}
-                    </span>
-                    <span>{event.player_name || 'Player'}</span>
-                  </div>
-                ))}
+                .map((event, idx) => {
+                  // ============================================
+                  // GET EVENT ICON BASED ON TYPE
+                  // ============================================
+                  // Use the enriched typeName from backend, with fallback
+                  // to type.name (if API included it) or type_id lookup
+                  const eventTypeName = (
+                    event.typeName ||           // From backend enrichment (preferred)
+                    event.type?.name ||         // From API include (fallback)
+                    `Type ${event.type_id}`     // Last resort
+                  ).toLowerCase();
+                  
+                  // Map type name to emoji icon
+                  let eventIcon = '📋'; // Default
+                  if (eventTypeName.includes('goal') && !eventTypeName.includes('own')) {
+                    eventIcon = '⚽';
+                  } else if (eventTypeName.includes('own goal')) {
+                    eventIcon = '⚽🔴'; // Own goal indicator
+                  } else if (eventTypeName.includes('penalty') && !eventTypeName.includes('miss')) {
+                    eventIcon = '⚽🎯'; // Penalty scored
+                  } else if (eventTypeName.includes('missed penalty') || eventTypeName.includes('penalty miss')) {
+                    eventIcon = '❌🎯'; // Missed penalty
+                  } else if (eventTypeName.includes('yellow') && eventTypeName.includes('red')) {
+                    eventIcon = '🟨🟥'; // Second yellow = red
+                  } else if (eventTypeName.includes('yellow')) {
+                    eventIcon = '🟨';
+                  } else if (eventTypeName.includes('red')) {
+                    eventIcon = '🟥';
+                  } else if (eventTypeName.includes('substitution') || eventTypeName.includes('sub')) {
+                    eventIcon = '🔄';
+                  } else if (eventTypeName.includes('var')) {
+                    eventIcon = '📺'; // VAR decision
+                  }
+                  
+                  // Format display name (capitalize first letter)
+                  const displayName = event.typeName || event.type?.name || 'Event';
+                  
+                  return (
+                    <div key={idx} className="flex items-center space-x-3 text-sm">
+                      <span className="w-8 text-gray-500">{event.minute}'</span>
+                      <span className="w-8">{eventIcon}</span>
+                      <span className="text-gray-600 w-24 text-xs">{displayName}</span>
+                      <span className="font-medium">{event.player_name || 'Player'}</span>
+                    </div>
+                  );
+                })}
             </div>
           </AccordionSection>
         )}
 
         {/* Statistics */}
+        {/* ============================================
+            MATCH STATISTICS DISPLAY
+            ============================================
+            The backend now enriches statistics with `typeName` from our
+            local SportsMonks types database. This means we get proper
+            names like "Corners", "Shots On Target", etc. instead of
+            cryptic "Stat 34" fallbacks.
+            
+            Common statistic types (for reference):
+              34 = Corners
+              41 = Shots Off Target
+              42 = Shots Total
+              45 = Ball Possession
+              52 = Goals
+              56 = Fouls
+              86 = Shots On Target
+            ============================================ */}
         {fixture.statistics && fixture.statistics.length > 0 && (
           <AccordionSection title="Match Statistics" icon="📈">
             <div className="space-y-3">
@@ -2751,7 +2821,9 @@ const FixtureDetail = () => {
                   if (!statsByType[typeId]) {
                     statsByType[typeId] = {
                       typeId,
-                      typeName: stat.type?.name || `Stat ${typeId}`,
+                      // Use enriched typeName from backend (preferred),
+                      // fall back to API include, then type_id as last resort
+                      typeName: stat.typeName || stat.type?.name || `Stat ${typeId}`,
                       home: null,
                       away: null
                     };

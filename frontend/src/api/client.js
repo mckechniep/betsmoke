@@ -24,6 +24,9 @@ const request = async (method, path, data = null, token = null) => {
   const config = {
     method,
     headers,
+    // Prevent browser from returning cached responses (304)
+    // This ensures we always get fresh data from the server
+    cache: 'no-store',
   };
 
   // Add body for POST/PUT/PATCH requests

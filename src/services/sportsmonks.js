@@ -255,12 +255,19 @@ async function getFixturesByDate(date, options = {}) {
   const endpoint = `/fixtures/date/${date}`;
   
   // Base includes
+  // - participants: Team names and logos
+  // - scores: Match scores (including penalties if applicable)
+  // - venue: Stadium info
+  // - league: League name
+  // - season: Season info
+  // - state: Match state (scheduled, live, finished, AET, FT_PEN, etc.)
   const includes = [
     'participants',
     'scores',
     'venue',
     'league',
-    'season'
+    'season',
+    'state'
   ];
   
   // Optional includes
@@ -807,8 +814,9 @@ async function getLivescores() {
   // API: GET /livescores
   const endpoint = '/livescores';
 
-  // Include participants (teams), scores, league info
-  return makeRequest(endpoint, ['participants', 'scores', 'league']);
+  // Include participants (teams), scores, league info, and STATE
+  // State is critical - it tells us if match is in 1H, 2H, HT, ET, FT, etc.
+  return makeRequest(endpoint, ['participants', 'scores', 'league', 'state']);
 }
 
 /**
