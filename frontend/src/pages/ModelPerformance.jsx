@@ -1,9 +1,17 @@
 // ============================================
 // MODEL PERFORMANCE PAGE
 // ============================================
-// Displays SportsMonks AI prediction model performance/accuracy.
+// Displays AI prediction model performance/accuracy.
 // Users can select a competition (Premier League, FA Cup, Carabao Cup)
 // to see how accurate the prediction model is for that league.
+//
+// The main table shows:
+// - Historical Log Loss (baseline using league averages)
+// - Model Log Loss (AI's actual performance)
+// - Improvement % (how much better AI is vs baseline)
+// - Rating (High/Good/Medium/Poor based on improvement)
+// - Accuracy (hit ratio)
+// - Trend (improving/declining/stable)
 // ============================================
 
 import { useState, useEffect } from 'react';
@@ -14,16 +22,12 @@ import { dataApi } from '../api/client';
 // ============================================
 
 // Available competitions with their SportsMonks league IDs
-// Image URLs follow pattern: https://cdn.sportmonks.com/images/soccer/leagues/{id}/{id}.png
-// Colors match the Competitions page for consistency across the app
 const COMPETITIONS = [
   { 
     id: 8, 
     name: 'Premier League', 
-    // TODO: Replace fallback emoji with better fallback (e.g., text initials like 'PL')
     fallbackIcon: '🏆',
     imagePath: 'https://cdn.sportmonks.com/images/soccer/leagues/8/8.png',
-    // Gradient colors for selector button (matches Competitions page)
     gradientFrom: 'from-purple-600',
     gradientTo: 'to-purple-800',
     hoverFrom: 'hover:from-purple-700',
@@ -32,10 +36,8 @@ const COMPETITIONS = [
   { 
     id: 24, 
     name: 'FA Cup', 
-    // TODO: Replace fallback emoji with better fallback (e.g., text initials like 'FA')
     fallbackIcon: '🏅',
     imagePath: 'https://cdn.sportmonks.com/images/soccer/leagues/24/24.png',
-    // Gradient colors for selector button (matches Competitions page)
     gradientFrom: 'from-red-600',
     gradientTo: 'to-red-800',
     hoverFrom: 'hover:from-red-700',
@@ -44,10 +46,8 @@ const COMPETITIONS = [
   { 
     id: 27, 
     name: 'Carabao Cup', 
-    // TODO: Replace fallback emoji with better fallback (e.g., text initials like 'CC')
     fallbackIcon: '🥤',
     imagePath: 'https://cdn.sportmonks.com/images/soccer/leagues/27/27.png',
-    // Gradient colors for selector button (matches Competitions page)
     gradientFrom: 'from-green-600',
     gradientTo: 'to-green-800',
     hoverFrom: 'hover:from-green-700',
@@ -56,7 +56,6 @@ const COMPETITIONS = [
 ];
 
 // Type IDs from the API response
-// These correspond to different metrics SportsMonks provides
 const TYPE_IDS = {
   HISTORICAL_LOG_LOSS: 241,  // Benchmark: log loss using only historical averages
   ACCURACY: 242,              // Model hit ratio (% of correct predictions)
@@ -83,22 +82,11 @@ const MARKET_LABELS = {
 };
 
 // ============================================
-// RANDOM CHANCE BY MARKET
+// RANDOM CHANCE BY MARKET (for Additional Analysis section)
 // ============================================
-// This is the probability of guessing correctly by pure chance.
-// It depends on how many possible outcomes each market has.
-//
-// Formula: Random Chance = 1 / Number of Outcomes
-// ============================================
-
 const RANDOM_CHANCE = {
-  // 3 outcomes: Home Win, Draw, Away Win → 1/3 = 33.3%
   fulltime_result: 0.333,
-  
-  // 2 outcomes: Yes or No → 1/2 = 50%
   both_teams_to_score: 0.50,
-  
-  // 2 outcomes: Over or Under → 1/2 = 50%
   over_under_1_5: 0.50,
   over_under_2_5: 0.50,
   over_under_3_5: 0.50,
@@ -106,35 +94,23 @@ const RANDOM_CHANCE = {
   home_over_under_1_5: 0.50,
   away_over_under_0_5: 0.50,
   away_over_under_1_5: 0.50,
-  
-  // ~20+ possible scorelines (0-0, 1-0, 0-1, 1-1, 2-0, 2-1, etc.) → ~5%
   correct_score: 0.05,
-  
-  // 9 outcomes: HH, HD, HA, DH, DD, DA, AH, AD, AA → 1/9 = 11.1%
   ht_ft: 0.111,
-  
-  // 3 outcomes: Home First, Away First, No Goals → 1/3 = 33.3%
   team_to_score_first: 0.333,
-  
-  // 3 outcomes: Home Win, Draw, Away Win (at half time) → 1/3 = 33.3%
   fulltime_result_1st_half: 0.333,
 };
 
 // Order markets by category for better display
 const MARKET_ORDER = [
-  // Main markets
   'fulltime_result',
   'both_teams_to_score',
-  // Goals markets
   'over_under_1_5',
   'over_under_2_5',
   'over_under_3_5',
-  // Team-specific goals
   'home_over_under_0_5',
   'home_over_under_1_5',
   'away_over_under_0_5',
   'away_over_under_1_5',
-  // Other markets
   'team_to_score_first',
   'fulltime_result_1st_half',
   'ht_ft',
@@ -147,7 +123,6 @@ const MARKET_ORDER = [
 
 /**
  * Rating Badge - Shows performance rating with color coding
- * high = green, good = blue, medium = yellow, poor = red
  */
 const RatingBadge = ({ rating }) => {
   const styles = {
@@ -168,7 +143,6 @@ const RatingBadge = ({ rating }) => {
 
 /**
  * Trend Arrow - Shows trend direction with colored arrow
- * up = green ↑, down = red ↓, unchanged = gray →
  */
 const TrendArrow = ({ trend }) => {
   if (trend === 'up') {
@@ -181,54 +155,23 @@ const TrendArrow = ({ trend }) => {
 };
 
 /**
- * Accuracy Bar - Shows accuracy as a percentage with visual progress bar
+ * Improvement Badge - Shows improvement percentage with color coding
+ * Color is based on the actual rating from the API, not our own thresholds
  */
-const AccuracyBar = ({ accuracy }) => {
-  const percent = Math.round(accuracy * 100);
+const ImprovementBadge = ({ improvement, rating }) => {
+  // Round to 1 decimal place for display
+  const roundedImprovement = Math.round(improvement * 10) / 10;
   
-  // Color based on raw accuracy (for visual reference)
-  let barColor = 'bg-gray-400';
-  if (percent >= 70) {
-    barColor = 'bg-green-500';
-  } else if (percent >= 50) {
-    barColor = 'bg-blue-500';
-  } else if (percent >= 30) {
-    barColor = 'bg-yellow-500';
-  }
+  // Color based on the ACTUAL rating from SportsMonks (so they always match)
+  const colorByRating = {
+    high: 'bg-green-100 text-green-700',
+    good: 'bg-blue-100 text-blue-700',
+    medium: 'bg-yellow-100 text-yellow-700',
+    poor: 'bg-red-100 text-red-700',
+  };
   
-  return (
-    <div className="flex items-center gap-2">
-      <span className="text-sm font-semibold w-12 text-right">{percent}%</span>
-      <div className="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
-        <div 
-          className={`h-full ${barColor} transition-all duration-300`}
-          style={{ width: `${percent}%` }}
-        />
-      </div>
-    </div>
-  );
-};
-
-/**
- * Edge Badge - Shows edge over random chance
- * This is the KEY metric that determines the rating!
- */
-const EdgeBadge = ({ edge }) => {
-  // Edge is in percentage points (e.g., +15 means 15% better than random)
-  const edgePercent = Math.round(edge * 100);
-  
-  // Color based on edge value
-  let colorClass = 'bg-red-100 text-red-700';      // Poor edge (< 5%)
-  if (edgePercent >= 15) {
-    colorClass = 'bg-green-100 text-green-700';     // Excellent edge (15%+)
-  } else if (edgePercent >= 10) {
-    colorClass = 'bg-blue-100 text-blue-700';       // Good edge (10-14%)
-  } else if (edgePercent >= 5) {
-    colorClass = 'bg-yellow-100 text-yellow-700';   // Medium edge (5-9%)
-  }
-  
-  // Format with + sign for positive values
-  const formatted = edgePercent >= 0 ? `+${edgePercent}%` : `${edgePercent}%`;
+  const colorClass = colorByRating[rating] || 'bg-gray-100 text-gray-700';
+  const formatted = roundedImprovement >= 0 ? `+${roundedImprovement.toFixed(1)}%` : `${roundedImprovement.toFixed(1)}%`;
   
   return (
     <span className={`px-2 py-1 text-xs font-bold rounded ${colorClass}`}>
@@ -239,7 +182,6 @@ const EdgeBadge = ({ edge }) => {
 
 /**
  * Sortable Header - Clickable column header with sort indicator
- * Shows ▲ or ▼ arrow when actively sorted
  */
 const SortableHeader = ({ label, column, currentSort, currentDirection, onSort, className = '' }) => {
   const isActive = currentSort === column;
@@ -264,85 +206,39 @@ const SortableHeader = ({ label, column, currentSort, currentDirection, onSort, 
 };
 
 /**
- * Expandable Section - Click to expand/collapse content
- * Used in the "AI Predictions: How it Works" explanation
- */
-const ExpandableSection = ({ title, isExpanded, onToggle, children }) => {
-  return (
-    <div className="border border-blue-200 rounded-lg overflow-hidden">
-      {/* Clickable Header */}
-      <button
-        onClick={onToggle}
-        className="w-full px-4 py-3 bg-white/70 hover:bg-white/90 flex items-center justify-between text-left transition-colors"
-      >
-        <span className="font-medium text-blue-800">{title}</span>
-        <span className="text-blue-600 text-lg">
-          {isExpanded ? '▼' : '▶'}
-        </span>
-      </button>
-      
-      {/* Collapsible Content */}
-      {isExpanded && (
-        <div className="px-4 py-3 bg-white/50 border-t border-blue-200">
-          {children}
-        </div>
-      )}
-    </div>
-  );
-};
-
-/**
- * Competition Logo - Displays official SportsMonks league logo with emoji fallback
- * 
- * Uses the SportsMonks CDN image URL stored in the competition object.
- * If the image fails to load (network error, 404, etc.), falls back to emoji.
- * 
- * @param {Object} competition - Competition object with imagePath and fallbackIcon
- * @param {string} size - 'sm' (24px) for buttons, 'md' (32px) for headers
- * @param {boolean} withBackground - If true, wraps logo in white circular background (matches Competitions page)
+ * Competition Logo - Displays official league logo with emoji fallback
  */
 const CompetitionLogo = ({ competition, size = 'md', withBackground = false }) => {
-  // Track whether the image failed to load
   const [imageError, setImageError] = useState(false);
   
-  // Size classes for the logo image itself
-  // sm = selector buttons, md = section headers
   const imageSizeClasses = {
-    sm: 'w-6 h-6',   // 24px - compact, for selector buttons
-    md: 'w-8 h-8',   // 32px - prominent, for headers
+    sm: 'w-6 h-6',
+    md: 'w-8 h-8',
   };
   
-  // Size classes for the white circular background container
-  // Slightly larger than the image to provide padding
   const containerSizeClasses = {
-    sm: 'w-8 h-8',   // 32px container for 24px image
-    md: 'w-10 h-10', // 40px container for 32px image
+    sm: 'w-8 h-8',
+    md: 'w-10 h-10',
   };
   
   const imageClass = imageSizeClasses[size] || imageSizeClasses.md;
   const containerClass = containerSizeClasses[size] || containerSizeClasses.md;
   
-  // Build the logo element (either image or fallback emoji)
   let logoElement;
   
   if (imageError || !competition.imagePath) {
-    // Fallback: show emoji
     logoElement = <span className="text-xl">{competition.fallbackIcon}</span>;
   } else {
-    // Primary: show SportsMonks CDN image
     logoElement = (
       <img
         src={competition.imagePath}
         alt={`${competition.name} logo`}
         className={`${imageClass} object-contain`}
-        // If image fails to load, trigger fallback
         onError={() => setImageError(true)}
       />
     );
   }
   
-  // If withBackground is true, wrap in white circular container
-  // This matches the style used on the Competitions page
   if (withBackground) {
     return (
       <div className={`${containerClass} bg-white rounded-full flex items-center justify-center flex-shrink-0 p-1`}>
@@ -351,8 +247,31 @@ const CompetitionLogo = ({ competition, size = 'md', withBackground = false }) =
     );
   }
   
-  // Without background, just return the logo element
   return logoElement;
+};
+
+/**
+ * Edge Badge - Shows edge over random chance (for Additional Analysis)
+ */
+const EdgeBadge = ({ edge }) => {
+  const edgePercent = Math.round(edge * 100);
+  
+  let colorClass = 'bg-red-100 text-red-700';
+  if (edgePercent >= 15) {
+    colorClass = 'bg-green-100 text-green-700';
+  } else if (edgePercent >= 10) {
+    colorClass = 'bg-blue-100 text-blue-700';
+  } else if (edgePercent >= 5) {
+    colorClass = 'bg-yellow-100 text-yellow-700';
+  }
+  
+  const formatted = edgePercent >= 0 ? `+${edgePercent}%` : `${edgePercent}%`;
+  
+  return (
+    <span className={`px-2 py-1 text-xs font-bold rounded ${colorClass}`}>
+      {formatted}
+    </span>
+  );
 };
 
 // ============================================
@@ -369,31 +288,18 @@ const ModelPerformance = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   
-  // Sorting state for main accuracy table
-  // sortColumn: which column to sort by ('accuracy', 'edge', 'rating', 'trend', or null for default)
-  // sortDirection: 'asc' (ascending) or 'desc' (descending)
-  const [sortColumn, setSortColumn] = useState(null);
+  // Sorting state - default to rating descending (High first)
+  const [sortColumn, setSortColumn] = useState('rating');
   const [sortDirection, setSortDirection] = useState('desc');
-  
-  // Sorting state for log loss comparison table (separate from main table)
-  const [logLossSortColumn, setLogLossSortColumn] = useState(null);
-  const [logLossSortDirection, setLogLossSortDirection] = useState('desc');
-  
-  // Expandable sections state
-  const [expandedSections, setExpandedSections] = useState({
-    logLossComparison: false,  // For the log loss comparison table
-  });
 
   // ============================================
   // FETCH DATA WHEN COMPETITION CHANGES
   // ============================================
   
   useEffect(() => {
-    // Reset sort when competition changes (both tables)
-    setSortColumn(null);
+    // Reset sort when competition changes
+    setSortColumn('rating');
     setSortDirection('desc');
-    setLogLossSortColumn(null);
-    setLogLossSortDirection('desc');
     fetchPredictability();
   }, [selectedLeagueId]);
 
@@ -438,74 +344,44 @@ const ModelPerformance = () => {
     return competition?.name || 'Unknown';
   };
   
-  // Note: getCompetitionIcon was removed - now using CompetitionLogo component instead
-  
-  // Calculate edge over random chance
-  const calculateEdge = (marketKey, accuracy) => {
-    const randomChance = RANDOM_CHANCE[marketKey] || 0.5;
-    return accuracy - randomChance;
-  };
-  
-  // Calculate how much better the model's log loss is vs historical benchmark
-  // Lower log loss = better, so we calculate: (|historical| - |model|) / |historical| * 100
-  // Returns a percentage (e.g., 10.5 means "10.5% better than historical")
-  const calculateLogLossImprovement = (marketKey) => {
+  // Calculate improvement: how much better model is vs historical baseline
+  // Formula: (|historical| - |model|) / |historical| * 100
+  const calculateImprovement = (marketKey) => {
     if (!historicalLogLoss || !modelLogLoss) return null;
     const historical = historicalLogLoss[marketKey];
     const model = modelLogLoss[marketKey];
     if (historical === undefined || model === undefined) return null;
     
-    // Both values are negative (log loss). Less negative = better.
-    // Improvement = how much closer to 0 the model is vs historical
     const improvement = (Math.abs(historical) - Math.abs(model)) / Math.abs(historical) * 100;
     return improvement;
+  };
+  
+  // Calculate edge over random chance (for Additional Analysis section)
+  const calculateEdge = (marketKey, accuracy) => {
+    const randomChance = RANDOM_CHANCE[marketKey] || 0.5;
+    return accuracy - randomChance;
   };
   
   // ============================================
   // SORTING LOGIC
   // ============================================
   
-  // Toggle expandable section (for AI Predictions explanation)
-  const toggleSection = (section) => {
-    setExpandedSections(prev => ({
-      ...prev,
-      [section]: !prev[section],
-    }));
-  };
-  
-  // Handle column header click - toggle sort
   const handleSort = (column) => {
     if (sortColumn === column) {
-      // Same column clicked - toggle direction
       setSortDirection(sortDirection === 'desc' ? 'asc' : 'desc');
     } else {
-      // New column clicked - set to descending (highest first)
       setSortColumn(column);
       setSortDirection('desc');
     }
   };
   
-  // Handle column header click for log loss table - toggle sort
-  const handleLogLossSort = (column) => {
-    if (logLossSortColumn === column) {
-      // Same column clicked - toggle direction
-      setLogLossSortDirection(logLossSortDirection === 'desc' ? 'asc' : 'desc');
-    } else {
-      // New column clicked - set to descending (highest first)
-      setLogLossSortColumn(column);
-      setLogLossSortDirection('desc');
-    }
-  };
-  
   // Convert rating string to number for sorting
-  // high = 4, good = 3, medium = 2, poor = 1
   const ratingToNumber = (rating) => {
     const values = { high: 4, good: 3, medium: 2, poor: 1 };
     return values[rating] || 0;
   };
   
   // Convert trend string to number for sorting
-  // up = 3, unchanged = 2, down = 1
   const trendToNumber = (trend) => {
     const values = { up: 3, unchanged: 2, down: 1 };
     return values[trend] || 0;
@@ -513,27 +389,43 @@ const ModelPerformance = () => {
   
   // Get sorted market keys based on current sort settings
   const getSortedMarkets = () => {
-    // If no sort column selected, return default order
-    if (!sortColumn || !accuracyData) return MARKET_ORDER;
+    // Only include markets that have all required data
+    const validMarkets = MARKET_ORDER.filter(key => 
+      historicalLogLoss?.[key] !== undefined && 
+      modelLogLoss?.[key] !== undefined &&
+      accuracyData?.[key] !== undefined
+    );
     
-    // Create a copy to sort
-    const sortable = [...MARKET_ORDER].filter(key => accuracyData[key] !== undefined);
+    // If no sort column, return valid markets in default order
+    if (!sortColumn) return validMarkets;
+    
+    const sortable = [...validMarkets];
     
     sortable.sort((a, b) => {
       let aValue, bValue;
       
       switch (sortColumn) {
-        case 'accuracy':
-          aValue = accuracyData[a] || 0;
-          bValue = accuracyData[b] || 0;
+        case 'historical':
+          // Less negative = better, so sort by raw value
+          aValue = historicalLogLoss[a] || 0;
+          bValue = historicalLogLoss[b] || 0;
           break;
-        case 'edge':
-          aValue = calculateEdge(a, accuracyData[a] || 0);
-          bValue = calculateEdge(b, accuracyData[b] || 0);
+        case 'model':
+          // Less negative = better, so sort by raw value
+          aValue = modelLogLoss[a] || 0;
+          bValue = modelLogLoss[b] || 0;
+          break;
+        case 'improvement':
+          aValue = calculateImprovement(a) || 0;
+          bValue = calculateImprovement(b) || 0;
           break;
         case 'rating':
           aValue = ratingToNumber(ratingData?.[a]);
           bValue = ratingToNumber(ratingData?.[b]);
+          break;
+        case 'accuracy':
+          aValue = accuracyData[a] || 0;
+          bValue = accuracyData[b] || 0;
           break;
         case 'trend':
           aValue = trendToNumber(trendData?.[a]);
@@ -543,61 +435,10 @@ const ModelPerformance = () => {
           return 0;
       }
       
-      // Sort based on direction
       if (sortDirection === 'desc') {
-        return bValue - aValue; // Highest first
+        return bValue - aValue;
       } else {
-        return aValue - bValue; // Lowest first
-      }
-    });
-    
-    return sortable;
-  };
-  
-  // Get sorted market keys for log loss table based on current sort settings
-  const getSortedLogLossMarkets = () => {
-    // Only include markets that have both historical and model log loss data
-    const validMarkets = MARKET_ORDER.filter(key => 
-      historicalLogLoss?.[key] !== undefined && modelLogLoss?.[key] !== undefined
-    );
-    
-    // If no sort column selected, return default order
-    if (!logLossSortColumn) return validMarkets;
-    
-    // Create a copy to sort
-    const sortable = [...validMarkets];
-    
-    sortable.sort((a, b) => {
-      let aValue, bValue;
-      
-      switch (logLossSortColumn) {
-        case 'historical':
-          // Log loss values are negative, more negative = worse
-          aValue = historicalLogLoss[a] || 0;
-          bValue = historicalLogLoss[b] || 0;
-          break;
-        case 'model':
-          // Log loss values are negative, more negative = worse
-          aValue = modelLogLoss[a] || 0;
-          bValue = modelLogLoss[b] || 0;
-          break;
-        case 'improvement':
-          aValue = calculateLogLossImprovement(a) || 0;
-          bValue = calculateLogLossImprovement(b) || 0;
-          break;
-        case 'rating':
-          aValue = ratingToNumber(ratingData?.[a]);
-          bValue = ratingToNumber(ratingData?.[b]);
-          break;
-        default:
-          return 0;
-      }
-      
-      // Sort based on direction
-      if (logLossSortDirection === 'desc') {
-        return bValue - aValue; // Highest first
-      } else {
-        return aValue - bValue; // Lowest first
+        return aValue - bValue;
       }
     });
     
@@ -614,22 +455,13 @@ const ModelPerformance = () => {
       {/* HEADER */}
       {/* ============================================ */}
       <div>
-        {/* Page Title */}
-        <h1 className="text-2xl font-bold text-gray-900">Prediction Model Performance</h1>
-        
-        {/* Subtitle - brief one-liner about what this page shows */}
+        <h1 className="text-2xl font-bold text-gray-900">AI Prediction Model Performance</h1>
         <p className="text-sm text-gray-500 mt-1 font-semibold">
-          See how accurate the AI Predictions Model is for each competition.
+          See how accurate the AI predictions are for each competition and market.
         </p>
-        
-        {/* Intro Paragraph - explains the purpose and what users will find */}
         <p className="text-sm text-gray-600 mt-3 max-w-3xl">
           The performance of our AI Prediction Model is continuously monitored by tracking 
-          historical outcomes and objective quality metrics.
-        </p>
-        <p className="text-sm text-gray-600 mt-2 max-w-3xl">
-          On this page, we share prediction history and performance data so you can evaluate 
-          the Model's accuracy and consistency by leagues and competitions.
+          historical outcomes and objective quality metrics over the last 100 matches.
         </p>
       </div>
 
@@ -642,7 +474,6 @@ const ModelPerformance = () => {
         </label>
         <div className="flex flex-wrap gap-3">
           {COMPETITIONS.map((competition) => {
-            // Check if this competition is currently selected
             const isSelected = selectedLeagueId === competition.id;
             
             return (
@@ -653,19 +484,15 @@ const ModelPerformance = () => {
                   bg-gradient-to-r ${competition.gradientFrom} ${competition.gradientTo} 
                   ${competition.hoverFrom} ${competition.hoverTo}
                   text-white shadow-md hover:shadow-lg
-                  ${
-                    isSelected
-                      // Selected: add ring to indicate active state
-                      ? 'ring-2 ring-offset-2 ring-gray-400'
-                      // Not selected: slightly more transparent
-                      : 'opacity-90 hover:opacity-100'
+                  ${isSelected
+                    ? 'ring-2 ring-offset-2 ring-gray-400'
+                    : 'opacity-90 hover:opacity-100'
                   }`}
               >
-                {/* Official SportsMonks league logo in white circular background */}
                 <CompetitionLogo 
                   competition={competition} 
                   size="sm" 
-                  withBackground={true}  // Always show white bg for consistency
+                  withBackground={true}
                 />
                 {competition.name}
               </button>
@@ -694,51 +521,65 @@ const ModelPerformance = () => {
       )}
 
       {/* ============================================ */}
-      {/* DATA DISPLAY */}
+      {/* MAIN UNIFIED TABLE */}
       {/* ============================================ */}
-      {!loading && !error && accuracyData && (
+      {!loading && !error && historicalLogLoss && modelLogLoss && (
         <div className="bg-white rounded-lg shadow-md overflow-hidden">
           {/* Header */}
           <div className="bg-gray-900 text-white px-6 py-4">
             <h2 className="text-lg font-semibold flex items-center gap-3">
-              {/* Official SportsMonks league logo in white circular background */}
               <CompetitionLogo 
                 competition={COMPETITIONS.find(c => c.id === selectedLeagueId)} 
                 size="md" 
-                withBackground={true}  // White bg for visibility on dark header
+                withBackground={true}
               />
-              {getCompetitionName(selectedLeagueId)} - Model Accuracy
+              {getCompetitionName(selectedLeagueId)} - Model Performance
             </h2>
           </div>
           
-          {/* Legend */}
-          <div className="px-6 py-3 bg-gray-50 border-b border-gray-200">
-            <div className="flex flex-wrap gap-4 text-xs">
-              <div className="flex items-center gap-2">
-                <span className="font-medium text-gray-600">Trend:</span>
-                <span className="flex items-center gap-1"><TrendArrow trend="up" /> Improving</span>
-                <span className="flex items-center gap-1"><TrendArrow trend="down" /> Declining</span>
-                <span className="flex items-center gap-1"><TrendArrow trend="unchanged" /> Stable</span>
-              </div>
-            </div>
-          </div>
+
           
           {/* Table */}
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead className="bg-gray-50 border-b border-gray-200">
                 <tr>
+                  {/* Market - not sortable */}
                   <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                     Market
                   </th>
+                  
+                  {/* Historical Log Loss */}
                   <SortableHeader
-                    label="Model Accuracy"
-                    column="accuracy"
+                    label="Historical Log Loss"
+                    column="historical"
                     currentSort={sortColumn}
                     currentDirection={sortDirection}
                     onSort={handleSort}
-                    className="text-left w-48"
+                    className="text-center whitespace-nowrap pl-8"
                   />
+                  
+                  {/* Model Log Loss */}
+                  <SortableHeader
+                    label="Model Log Loss"
+                    column="model"
+                    currentSort={sortColumn}
+                    currentDirection={sortDirection}
+                    onSort={handleSort}
+                    className="text-center whitespace-nowrap"
+                  />
+                  
+                  {/* Improvement */}
+                  <SortableHeader
+                    label="Improvement"
+                    column="improvement"
+                    currentSort={sortColumn}
+                    currentDirection={sortDirection}
+                    onSort={handleSort}
+                    className="text-center w-28"
+                  />
+                  
+                  {/* Rating */}
                   <SortableHeader
                     label="Rating"
                     column="rating"
@@ -747,6 +588,18 @@ const ModelPerformance = () => {
                     onSort={handleSort}
                     className="text-center w-20"
                   />
+                  
+                  {/* Accuracy */}
+                  <SortableHeader
+                    label="Accuracy"
+                    column="accuracy"
+                    currentSort={sortColumn}
+                    currentDirection={sortDirection}
+                    onSort={handleSort}
+                    className="text-center w-24"
+                  />
+                  
+                  {/* Trend */}
                   <SortableHeader
                     label="Trend"
                     column="trend"
@@ -755,27 +608,16 @@ const ModelPerformance = () => {
                     onSort={handleSort}
                     className="text-center w-16"
                   />
-                  <th className="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider w-20">
-                    Random
-                  </th>
-                  <SortableHeader
-                    label="Edge"
-                    column="edge"
-                    currentSort={sortColumn}
-                    currentDirection={sortDirection}
-                    onSort={handleSort}
-                    className="text-center w-24"
-                  />
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
                 {getSortedMarkets().map((marketKey) => {
-                  // Skip if no data for this market
-                  if (accuracyData[marketKey] === undefined) return null;
-                  
-                  const accuracy = accuracyData[marketKey];
-                  const randomChance = RANDOM_CHANCE[marketKey] || 0.5;
-                  const edge = calculateEdge(marketKey, accuracy);
+                  const historical = historicalLogLoss[marketKey];
+                  const model = modelLogLoss[marketKey];
+                  const improvement = calculateImprovement(marketKey);
+                  const rating = ratingData?.[marketKey];
+                  const accuracy = accuracyData?.[marketKey];
+                  const trend = trendData?.[marketKey];
                   
                   return (
                     <tr key={marketKey} className="hover:bg-gray-50 transition-colors">
@@ -786,34 +628,111 @@ const ModelPerformance = () => {
                         </span>
                       </td>
                       
-                      {/* Accuracy Bar */}
-                      <td className="px-4 py-4">
-                        <AccuracyBar accuracy={accuracy} />
+                      {/* Historical Log Loss (rounded to 2 decimals) */}
+                      <td className="px-4 py-4 text-center">
+                        <span className="text-sm text-gray-600 font-mono">
+                          {historical.toFixed(2)}
+                        </span>
+                      </td>
+                      
+                      {/* Model Log Loss (rounded to 2 decimals) */}
+                      <td className="px-4 py-4 text-center">
+                        <span className="text-sm text-gray-900 font-mono font-semibold">
+                          {model.toFixed(2)}
+                        </span>
+                      </td>
+                      
+                      {/* Improvement Badge */}
+                      <td className="px-4 py-4 text-center">
+                        {improvement !== null && rating && (
+                          <ImprovementBadge improvement={improvement} rating={rating} />
+                        )}
                       </td>
                       
                       {/* Rating Badge */}
                       <td className="px-4 py-4 text-center">
-                        {ratingData && ratingData[marketKey] && (
-                          <RatingBadge rating={ratingData[marketKey]} />
-                        )}
+                        {rating && <RatingBadge rating={rating} />}
+                      </td>
+                      
+                      {/* Accuracy */}
+                      <td className="px-4 py-4 text-center">
+                        <span className="text-sm font-semibold text-gray-700">
+                          {Math.round(accuracy * 100)}%
+                        </span>
                       </td>
                       
                       {/* Trend Arrow */}
                       <td className="px-4 py-4 text-center text-xl">
-                        {trendData && trendData[marketKey] && (
-                          <TrendArrow trend={trendData[marketKey]} />
-                        )}
+                        {trend && <TrendArrow trend={trend} />}
                       </td>
-                      
-                      {/* Random Chance */}
-                      <td className="px-4 py-4 text-center">
-                        <span className="text-sm text-gray-500">
-                          {Math.round(randomChance * 100)}%
-                        </span>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* ============================================ */}
+      {/* UNDERSTANDING AI PREDICTION MODEL PERFORMANCE */}
+      {/* ============================================ */}
+      {!loading && !error && historicalLogLoss && modelLogLoss && (
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <h3 className="font-semibold text-blue-900 mb-2">📊 Understanding AI Prediction Model Performance</h3>
+          <div className="text-sm text-blue-800 space-y-3">
+            <p>
+              This section details how we evaluate the AI Prediction Model's performance. It introduces 
+              the Log‑Loss metric (also known as Logarithmic Loss or Cross‑Entropy Loss) and explains 
+              how it works alongside additional performance measures to assess how reliable, well‑calibrated, 
+              and consistent the model is across different competitions and betting markets.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* ============================================ */}
+      {/* ADDITIONAL ANALYSIS (Random & Edge) */}
+      {/* ============================================ */}
+      {!loading && !error && accuracyData && (
+        <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+          <h3 className="font-semibold text-gray-900 mb-2">🎯 Additional Analysis: Edge Over Random Chance</h3>
+          <p className="text-sm text-gray-600 mb-4">
+            This section shows how much better the model performs compared to pure random guessing. 
+            "Random" is the probability of guessing correctly by chance alone, while "Edge" shows 
+            how many percentage points better the model's accuracy is.
+          </p>
+          
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-gray-300">
+                  <th className="text-left py-2 pr-4 text-gray-700 font-semibold">Market</th>
+                  <th className="text-center py-2 px-4 text-gray-700 font-semibold">Model Accuracy</th>
+                  <th className="text-center py-2 px-4 text-gray-700 font-semibold">Random Chance</th>
+                  <th className="text-center py-2 pl-4 text-gray-700 font-semibold">Edge</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200">
+                {MARKET_ORDER.map((marketKey) => {
+                  const accuracy = accuracyData[marketKey];
+                  if (accuracy === undefined) return null;
+                  
+                  const randomChance = RANDOM_CHANCE[marketKey] || 0.5;
+                  const edge = calculateEdge(marketKey, accuracy);
+                  
+                  return (
+                    <tr key={marketKey} className="hover:bg-gray-100">
+                      <td className="py-2 pr-4 text-gray-800">
+                        {MARKET_LABELS[marketKey] || marketKey}
                       </td>
-                      
-                      {/* Edge over Random */}
-                      <td className="px-4 py-4 text-center">
+                      <td className="py-2 px-4 text-center font-semibold text-gray-700">
+                        {Math.round(accuracy * 100)}%
+                      </td>
+                      <td className="py-2 px-4 text-center text-gray-500">
+                        {Math.round(randomChance * 100)}%
+                      </td>
+                      <td className="py-2 pl-4 text-center">
                         <EdgeBadge edge={edge} />
                       </td>
                     </tr>
@@ -826,239 +745,9 @@ const ModelPerformance = () => {
       )}
 
       {/* ============================================ */}
-      {/* EVALUATING MODEL PERFORMANCE CARD */}
-      {/* ============================================ */}
-      {!loading && !error && accuracyData && (
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-          <h3 className="font-semibold text-blue-900 mb-2">📊 Understanding SportsMonks AI Predictions</h3>
-          <div className="text-sm text-blue-800 space-y-3">
-            
-            {/* The four metrics explained */}
-            <div className="bg-white/50 rounded p-3">
-              <p className="font-medium mb-2">SportsMonks provides four key metrics:</p>
-              <ul className="list-disc list-inside space-y-2 text-blue-700">
-                <li>
-                  <strong>Hit Ratio (Accuracy)</strong> — The percentage of correct predictions over the last 100 matches. 
-                  Random guessing would score ~33% for match results.
-                </li>
-                <li>
-                  <strong>Log Loss</strong> — Measures prediction confidence and accuracy. 
-                  The closer to 0, the better. Random prediction scores about -1.09.
-                </li>
-                <li>
-                  <strong>Rating</strong> — A simple word rating (poor/medium/good/high) based on how well the model's 
-                  log loss compares to a historical benchmark.
-                </li>
-                <li>
-                  <strong>Trend</strong> — Shows if the model's log loss has improved (↑), declined (↓), or stayed 
-                  the same (→) over the last 50 matches.
-                </li>
-              </ul>
-            </div>
-            
-            {/* Rating thresholds */}
-            <div className="bg-white/50 rounded p-3">
-              <p className="font-medium mb-2">Rating thresholds (for Match Result market):</p>
-              <ul className="list-disc list-inside space-y-1 text-blue-700">
-                <li><strong>High</strong> — Log loss better than -0.98</li>
-                <li><strong>Good</strong> — Log loss better than -1.02</li>
-                <li><strong>Medium</strong> — Log loss between -1.07 and -1.02</li>
-                <li><strong>Poor</strong> — Log loss worse than -1.07 (close to random's -1.09)</li>
-              </ul>
-              <p className="text-blue-600 text-xs mt-2 italic">
-                Note: Thresholds may vary slightly for different markets.
-              </p>
-            </div>
-            
-            {/* Callout: Why doesn't higher accuracy mean better rating */}
-            <div className="bg-yellow-100 border-l-4 border-yellow-500 rounded p-3 flex gap-3">
-              <span className="text-yellow-600 text-xl">⭐</span>
-              <div>
-                <p className="font-semibold text-yellow-800 mb-1">
-                  Why doesn't higher accuracy always mean a better rating?
-                </p>
-                <p className="text-yellow-700 text-sm">
-                  The rating is based on <strong>log loss</strong>, not hit ratio. Log loss measures how confident 
-                  and well-calibrated the predictions are, not just whether they're right or wrong. A model that's 
-                  60% accurate but very confident when wrong will have worse log loss than one that's 55% accurate 
-                  but appropriately uncertain.
-                </p>
-              </div>
-            </div>
-            
-            {/* Expandable Log Loss Comparison */}
-            {historicalLogLoss && modelLogLoss && (
-              <div className="mt-3">
-                <ExpandableSection
-                  title="View Log Loss Comparison Data"
-                  isExpanded={expandedSections.logLossComparison}
-                  onToggle={() => toggleSection('logLossComparison')}
-                >
-                  <p className="text-blue-700 text-xs mb-3">
-                    <strong>Historical Log Loss</strong> is the benchmark — what you'd expect from predictions based purely on 
-                    historical averages. <strong>Model Log Loss</strong> is the AI's actual performance. 
-                    Lower values (closer to 0) = better predictions.
-                  </p>
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-xs">
-                      <thead>
-                        <tr className="border-b border-blue-200">
-                          {/* Market column - not sortable */}
-                          <th className="text-left py-2 pr-2 text-blue-800">Market</th>
-                          
-                          {/* Historical - sortable */}
-                          <th 
-                            onClick={() => handleLogLossSort('historical')}
-                            className="text-right py-2 px-2 text-blue-800 cursor-pointer hover:bg-blue-100/50 transition-colors select-none"
-                          >
-                            <div className="flex items-center justify-end gap-1">
-                              <span>Historical</span>
-                              <span className="text-blue-400">
-                                {logLossSortColumn === 'historical' ? (
-                                  logLossSortDirection === 'desc' ? '▼' : '▲'
-                                ) : (
-                                  <span className="opacity-30">▼</span>
-                                )}
-                              </span>
-                            </div>
-                          </th>
-                          
-                          {/* Model - sortable */}
-                          <th 
-                            onClick={() => handleLogLossSort('model')}
-                            className="text-right py-2 px-2 text-blue-800 cursor-pointer hover:bg-blue-100/50 transition-colors select-none"
-                          >
-                            <div className="flex items-center justify-end gap-1">
-                              <span>Model</span>
-                              <span className="text-blue-400">
-                                {logLossSortColumn === 'model' ? (
-                                  logLossSortDirection === 'desc' ? '▼' : '▲'
-                                ) : (
-                                  <span className="opacity-30">▼</span>
-                                )}
-                              </span>
-                            </div>
-                          </th>
-                          
-                          {/* Improvement - sortable */}
-                          <th 
-                            onClick={() => handleLogLossSort('improvement')}
-                            className="text-right py-2 px-2 text-blue-800 cursor-pointer hover:bg-blue-100/50 transition-colors select-none"
-                          >
-                            <div className="flex items-center justify-end gap-1">
-                              <span>Improvement</span>
-                              <span className="text-blue-400">
-                                {logLossSortColumn === 'improvement' ? (
-                                  logLossSortDirection === 'desc' ? '▼' : '▲'
-                                ) : (
-                                  <span className="opacity-30">▼</span>
-                                )}
-                              </span>
-                            </div>
-                          </th>
-                          
-                          {/* Rating - sortable */}
-                          <th 
-                            onClick={() => handleLogLossSort('rating')}
-                            className="text-center py-2 pl-2 text-blue-800 cursor-pointer hover:bg-blue-100/50 transition-colors select-none"
-                          >
-                            <div className="flex items-center justify-center gap-1">
-                              <span>Rating</span>
-                              <span className="text-blue-400">
-                                {logLossSortColumn === 'rating' ? (
-                                  logLossSortDirection === 'desc' ? '▼' : '▲'
-                                ) : (
-                                  <span className="opacity-30">▼</span>
-                                )}
-                              </span>
-                            </div>
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-blue-100">
-                        {getSortedLogLossMarkets().map((marketKey) => {
-                          const historical = historicalLogLoss[marketKey];
-                          const model = modelLogLoss[marketKey];
-                          const improvement = calculateLogLossImprovement(marketKey);
-                          const rating = ratingData?.[marketKey];
-                          
-                          return (
-                            <tr key={marketKey} className="hover:bg-blue-50/50">
-                              <td className="py-1.5 pr-2 text-blue-700">
-                                {MARKET_LABELS[marketKey] || marketKey}
-                              </td>
-                              <td className="py-1.5 px-2 text-right text-blue-600 font-mono">
-                                {historical.toFixed(4)}
-                              </td>
-                              <td className="py-1.5 px-2 text-right text-blue-600 font-mono">
-                                {model.toFixed(4)}
-                              </td>
-                              <td className="py-1.5 px-2 text-right">
-                                <span className={`font-semibold ${
-                                  improvement > 0 ? 'text-green-600' : 'text-red-600'
-                                }`}>
-                                  {improvement >= 0 ? '+' : ''}{improvement?.toFixed(1)}%
-                                </span>
-                              </td>
-                              <td className="py-1.5 pl-2 text-center">
-                                {rating && <RatingBadge rating={rating} />}
-                              </td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
-                  </div>
-                  <p className="text-blue-600 text-xs mt-3 italic">
-                    Note: Improvement shows how much better (closer to 0) the model's log loss is compared to the historical benchmark.
-                  </p>
-                </ExpandableSection>
-              </div>
-            )}
-            
-            <p className="text-blue-600 text-xs mt-2">
-              Source: <a href="https://docs.sportmonks.com/football/endpoints-and-entities/endpoints/predictability/get-predictability-by-league-id" 
-                target="_blank" rel="noopener noreferrer" className="underline hover:text-blue-800">
-                SportsMonks Predictability API Documentation
-              </a>
-            </p>
-          </div>
-        </div>
-      )}
-
-      {/* ============================================ */}
-      {/* RANDOM AND EDGE EXPLANATION CARD */}
-      {/* ============================================ */}
-      {!loading && !error && accuracyData && (
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-          <h3 className="font-semibold text-blue-900 mb-2">🎯 Understanding "Random" and "Edge"</h3>
-          <div className="text-sm text-blue-800 space-y-3">
-            <p>
-              The <strong>Random</strong> and <strong>Edge</strong> columns are our own calculations (not from SportsMonks) 
-              to help you understand the model's value:
-            </p>
-            <ul className="list-disc list-inside space-y-1 text-blue-700">
-              <li>
-                <strong>Random</strong> — The probability of guessing correctly by pure chance 
-                (e.g., 33% for a 3-way market like Match Result).
-              </li>
-              <li>
-                <strong>Edge</strong> — Model Accuracy minus Random Chance. A +14% edge means the model is 
-                14 percentage points more likely to be correct than random guessing.
-              </li>
-            </ul>
-            <p className="text-blue-600 text-xs mt-2 bg-white/50 rounded p-2">
-              <strong>Note:</strong> Edge measures improvement over random chance, while SportsMonks' Rating 
-              measures log loss performance against a historical benchmark. These are different comparisons!
-            </p>
-          </div>
-        </div>
-      )}
-
-      {/* ============================================ */}
       {/* NO DATA STATE */}
       {/* ============================================ */}
-      {!loading && !error && !accuracyData && (
+      {!loading && !error && !historicalLogLoss && (
         <div className="text-center py-12 bg-white rounded-lg shadow-md">
           <p className="text-gray-500 text-lg">No prediction data available</p>
           <p className="text-gray-400 text-sm mt-1">

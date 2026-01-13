@@ -38,6 +38,7 @@ router.get('/seasons/:seasonId', async (req, res) => {
     const result = await getStandingsBySeason(seasonId);
 
     // Return the standings
+    // Note: Some older seasons (e.g., 2005/2006) may not have standings data in SportsMonks
     res.json({
       message: `Standings for season ${seasonId}`,
       seasonId: parseInt(seasonId),

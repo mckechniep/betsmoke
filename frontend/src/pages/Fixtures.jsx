@@ -279,6 +279,65 @@ function getTimeAgoText(timestamp) {
 }
 
 // ============================================
+// FIXTURE LEGEND COMPONENT
+// ============================================
+// Shows the color key for Live and Finished matches.
+// Reusable across DefaultFixtures and SearchResults.
+function FixtureLegend() {
+  return (
+    <div className="text-xs text-gray-500 flex items-center space-x-4 mb-2">
+      <div className="flex items-center space-x-1">
+        <div className="w-3 h-3 bg-green-500 rounded"></div>
+        <span>Live Match</span>
+      </div>
+      <div className="flex items-center space-x-1">
+        <div className="w-3 h-3 bg-gray-400 rounded"></div>
+        <span>Finished</span>
+      </div>
+    </div>
+  );
+}
+
+// ============================================
+// REFRESH BAR COMPONENT
+// ============================================
+// Shows "Last Updated" timestamp and a Refresh button.
+// Reusable across DefaultFixtures and SearchResults.
+function RefreshBar({ timeAgoText, loading, onRefresh }) {
+  return (
+    <div className="flex items-center justify-between mb-4 bg-gray-50 rounded-lg px-4 py-2">
+      <div className="text-sm text-gray-500">
+        {timeAgoText && (
+          <span>
+            🕒 Last updated: <span className="font-medium">{timeAgoText}</span>
+          </span>
+        )}
+      </div>
+      
+      <button
+        onClick={onRefresh}
+        disabled={loading}
+        className="flex items-center space-x-2 px-3 py-1.5 bg-blue-600 text-white 
+                   rounded-md text-sm font-medium hover:bg-blue-700 
+                   disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+      >
+        {loading ? (
+          <>
+            <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+            <span>Refreshing...</span>
+          </>
+        ) : (
+          <>
+            <span>🔄</span>
+            <span>Refresh</span>
+          </>
+        )}
+      </button>
+    </div>
+  );
+}
+
+// ============================================
 // FIXTURE CARD COMPONENT
 // ============================================
 function FixtureCard({ fixture }) {
@@ -1374,10 +1433,20 @@ function SearchPanel({ onSearchResults, onClearSearch, isSearchActive }) {
 // ============================================
 // SEARCH RESULTS COMPONENT
 // ============================================
-function SearchResults({ searchData, onClear }) {
+// Props:
+//   - searchData: The search results object
+//   - onClear: Function to clear search and return to default view
+//   - loading: Whether a refresh is in progress
+//   - timeAgoText: "X minutes ago" text for last updated
+//   - onRefresh: Function to refresh the search results
+function SearchResults({ searchData, onClear, loading, timeAgoText, onRefresh }) {
   const { type, query, fixtures, isHistorical, season, teamId, competitionId, dateRange, startDate, endDate, isRange } = searchData;
   
   const groupedFixtures = groupFixturesByDate(fixtures);
+  
+  // Determine if we should show the refresh button
+  // Show refresh if the search could contain live matches (not purely historical)
+  const showRefresh = !isHistorical;
   
   const getHeaderText = () => {
     if (type === 'team') {
@@ -1428,6 +1497,18 @@ function SearchResults({ searchData, onClear }) {
         </button>
       </div>
 
+      {/* Legend - always show */}
+      <FixtureLegend />
+      
+      {/* Refresh bar - only show for non-historical searches */}
+      {showRefresh && (
+        <RefreshBar 
+          timeAgoText={timeAgoText} 
+          loading={loading} 
+          onRefresh={onRefresh} 
+        />
+      )}
+
       {fixtures.length === 0 ? (
         <div className="bg-gray-50 rounded-lg p-8 text-center">
           <div className="text-gray-400 text-5xl mb-4">🔍</div>
@@ -1464,15 +1545,6 @@ function SearchResults({ searchData, onClear }) {
           ))}
         </div>
       )}
-
-      {isHistorical && fixtures.length > 0 && (
-        <div className="mt-6 text-xs text-gray-500 flex items-center space-x-4 pt-4 border-t">
-          <div className="flex items-center space-x-1">
-            <div className="w-3 h-3 bg-gray-400 rounded"></div>
-            <span>Completed Match</span>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
@@ -1499,52 +1571,13 @@ function DefaultFixtures({ fixtures, loading, error, dateRange, timeAgoText, onR
         )}
       </div>
 
-      {/* ============================================ */}
-      {/* LEGEND - Live Match Indicator */}
-      {/* ============================================ */}
-      <div className="text-xs text-gray-500 flex items-center space-x-4 mb-2">
-        <div className="flex items-center space-x-1">
-          <div className="w-3 h-3 bg-green-500 rounded"></div>
-          <span>Live Match</span>
-        </div>
-        <div className="flex items-center space-x-1">
-          <div className="w-3 h-3 bg-gray-400 rounded"></div>
-          <span>Finished</span>
-        </div>
-      </div>
-
-      {/* ============================================ */}
-      {/* REFRESH BUTTON + LAST UPDATED INDICATOR */}
-      {/* ============================================ */}
-      <div className="flex items-center justify-between mb-4 bg-gray-50 rounded-lg px-4 py-2">
-        <div className="text-sm text-gray-500">
-          {timeAgoText && (
-            <span>
-              🕒 Last updated: <span className="font-medium">{timeAgoText}</span>
-            </span>
-          )}
-        </div>
-        
-        <button
-          onClick={onRefresh}
-          disabled={loading}
-          className="flex items-center space-x-2 px-3 py-1.5 bg-blue-600 text-white 
-                     rounded-md text-sm font-medium hover:bg-blue-700 
-                     disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
-        >
-          {loading ? (
-            <>
-              <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
-              <span>Refreshing...</span>
-            </>
-          ) : (
-            <>
-              <span>🔄</span>
-              <span>Refresh</span>
-            </>
-          )}
-        </button>
-      </div>
+      {/* Legend and Refresh - using reusable components */}
+      <FixtureLegend />
+      <RefreshBar 
+        timeAgoText={timeAgoText} 
+        loading={loading} 
+        onRefresh={onRefresh} 
+      />
 
       {error && (
         <div className="bg-red-50 text-red-600 p-4 rounded-md">
@@ -1594,16 +1627,26 @@ function DefaultFixtures({ fixtures, loading, error, dateRange, timeAgoText, onR
 // FIXTURES COMPONENT (MAIN)
 // ============================================
 const Fixtures = () => {
+  // ============================================
+  // STATE: Default Fixtures View
+  // ============================================
   const [fixtures, setFixtures] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [dateRange, setDateRange] = useState({ startDate: '', endDate: '' });
-  const [searchResults, setSearchResults] = useState(null);
-  const [lastUpdated, setLastUpdated] = useState(null); // Track when data was last fetched
-  const [timeAgoText, setTimeAgoText] = useState('');   // Display text for "X minutes ago"
+  const [lastUpdated, setLastUpdated] = useState(null);
+  const [timeAgoText, setTimeAgoText] = useState('');
 
   // ============================================
-  // FETCH FIXTURES FUNCTION (reusable for refresh)
+  // STATE: Search Results View
+  // ============================================
+  const [searchResults, setSearchResults] = useState(null);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [searchLastUpdated, setSearchLastUpdated] = useState(null);
+  const [searchTimeAgoText, setSearchTimeAgoText] = useState('');
+
+  // ============================================
+  // FETCH DEFAULT FIXTURES (reusable for refresh)
   // ============================================
   const fetchFixtures = async () => {
     setLoading(true);
@@ -1614,8 +1657,6 @@ const Fixtures = () => {
 
     try {
       // Fetch fixtures by date range AND live scores in parallel
-      // The fixtures/between endpoint gives us the schedule,
-      // but livescores endpoint gives us real-time match states
       const [fixturesData, livescoresData] = await Promise.all([
         dataApi.getFixturesByDateRange(startDate, endDate),
         dataApi.getLivescores()
@@ -1638,11 +1679,9 @@ const Fixtures = () => {
       });
       
       // Merge live data into fixtures
-      // If a fixture is currently live, replace it with the live version
       filteredFixtures = filteredFixtures.map(fixture => {
         const liveVersion = liveFixtureMap.get(fixture.id);
         if (liveVersion) {
-          // Merge: keep scheduled fixture data but update with live state/scores
           return {
             ...fixture,
             state: liveVersion.state,
@@ -1668,6 +1707,140 @@ const Fixtures = () => {
   };
 
   // ============================================
+  // REFRESH SEARCH RESULTS
+  // ============================================
+  // Re-fetches the same search with live data merged in.
+  // Uses the stored searchResults to know what to re-fetch.
+  const refreshSearchResults = async () => {
+    if (!searchResults) return;
+    
+    setSearchLoading(true);
+    
+    try {
+      const { type, teamId, competitionId, dateRange: searchDateRange, query, startDate, endDate, isRange } = searchResults;
+      
+      let fixturesStartDate, fixturesEndDate;
+      let newFixtures = [];
+      
+      // ============================================
+      // Determine date range based on search type
+      // ============================================
+      if (type === 'team') {
+        // Team search - use the original date range
+        if (searchDateRange) {
+          fixturesStartDate = searchDateRange.startDate;
+          fixturesEndDate = searchDateRange.endDate;
+        } else {
+          // Upcoming search (next 100 days)
+          const today = new Date();
+          const futureDate = new Date(today);
+          futureDate.setDate(today.getDate() + 100);
+          fixturesStartDate = today.toISOString().split('T')[0];
+          fixturesEndDate = futureDate.toISOString().split('T')[0];
+        }
+        
+        // Fetch team fixtures
+        const fixturesData = await dataApi.getTeamFixturesByDateRange(
+          fixturesStartDate,
+          fixturesEndDate,
+          teamId
+        );
+        
+        newFixtures = (fixturesData.fixtures || []).filter(
+          fixture => ALLOWED_LEAGUE_IDS.includes(fixture.league_id)
+        );
+        
+      } else if (type === 'competition') {
+        // Competition search
+        if (searchDateRange) {
+          fixturesStartDate = searchDateRange.startDate;
+          fixturesEndDate = searchDateRange.endDate;
+        } else {
+          // Upcoming (next 30 days)
+          const today = new Date();
+          const futureDate = new Date(today);
+          futureDate.setDate(today.getDate() + 30);
+          fixturesStartDate = today.toISOString().split('T')[0];
+          fixturesEndDate = futureDate.toISOString().split('T')[0];
+        }
+        
+        const data = await dataApi.getFixturesByDateRange(fixturesStartDate, fixturesEndDate);
+        newFixtures = (data.fixtures || []).filter(
+          fixture => fixture.league_id === competitionId
+        );
+        
+      } else if (type === 'date') {
+        // Single date search
+        fixturesStartDate = query;
+        fixturesEndDate = query;
+        
+        const data = await dataApi.getFixturesByDate(query);
+        newFixtures = (data.fixtures || []).filter(
+          fixture => ALLOWED_LEAGUE_IDS.includes(fixture.league_id)
+        );
+        
+      } else if (type === 'dateRange' || isRange) {
+        // Date range search
+        fixturesStartDate = startDate;
+        fixturesEndDate = endDate;
+        
+        const data = await dataApi.getFixturesByDateRange(startDate, endDate);
+        newFixtures = (data.fixtures || []).filter(
+          fixture => ALLOWED_LEAGUE_IDS.includes(fixture.league_id)
+        );
+      }
+      
+      // ============================================
+      // Fetch live scores and merge
+      // ============================================
+      const livescoresData = await dataApi.getLivescores();
+      const liveFixtures = (livescoresData.fixtures || []).filter(
+        fixture => ALLOWED_LEAGUE_IDS.includes(fixture.league_id)
+      );
+      
+      const liveFixtureMap = new Map();
+      liveFixtures.forEach(liveFixture => {
+        liveFixtureMap.set(liveFixture.id, liveFixture);
+      });
+      
+      // Merge live data into fixtures
+      newFixtures = newFixtures.map(fixture => {
+        const liveVersion = liveFixtureMap.get(fixture.id);
+        if (liveVersion) {
+          return {
+            ...fixture,
+            state: liveVersion.state,
+            scores: liveVersion.scores,
+          };
+        }
+        return fixture;
+      });
+      
+      // Sort by date
+      newFixtures.sort((a, b) => 
+        new Date(a.starting_at) - new Date(b.starting_at)
+      );
+      
+      // Update search results with new fixtures (keep all other metadata)
+      setSearchResults(prev => ({
+        ...prev,
+        fixtures: newFixtures
+      }));
+      
+      // Update timestamp
+      const now = new Date();
+      setSearchLastUpdated(now);
+      setSearchTimeAgoText(getTimeAgoText(now));
+      
+    } catch (err) {
+      console.error('Failed to refresh search results:', err);
+      // Don't clear results on error, just log it
+    } finally {
+      setSearchLoading(false);
+    }
+  };
+
+  // ============================================
   // INITIAL LOAD
   // ============================================
   useEffect(() => {
@@ -1677,29 +1850,54 @@ const Fixtures = () => {
   // ============================================
   // UPDATE "TIME AGO" TEXT EVERY MINUTE
   // ============================================
-  // This keeps the "Last updated: X minutes ago" text current
-  // without making new API calls
   useEffect(() => {
     if (!lastUpdated) return;
     
-    // Update immediately
     setTimeAgoText(getTimeAgoText(lastUpdated));
     
-    // Then update every 60 seconds
     const interval = setInterval(() => {
       setTimeAgoText(getTimeAgoText(lastUpdated));
-    }, 60000); // 60 seconds
+    }, 60000);
     
     return () => clearInterval(interval);
   }, [lastUpdated]);
 
+  // ============================================
+  // UPDATE SEARCH "TIME AGO" TEXT EVERY MINUTE
+  // ============================================
+  useEffect(() => {
+    if (!searchLastUpdated) return;
+    
+    setSearchTimeAgoText(getTimeAgoText(searchLastUpdated));
+    
+    const interval = setInterval(() => {
+      setSearchTimeAgoText(getTimeAgoText(searchLastUpdated));
+    }, 60000);
+    
+    return () => clearInterval(interval);
+  }, [searchLastUpdated]);
+
+  // ============================================
+  // HANDLE SEARCH RESULTS FROM SearchPanel
+  // ============================================
   const handleSearchResults = (results) => {
     setSearchResults(results);
+    
+    // Set initial timestamp for search results
+    const now = new Date();
+    setSearchLastUpdated(now);
+    setSearchTimeAgoText(getTimeAgoText(now));
+    
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  // ============================================
+  // CLEAR SEARCH AND RETURN TO DEFAULT VIEW
+  // ============================================
   const handleClearSearch = () => {
     setSearchResults(null);
+    setSearchLastUpdated(null);
+    setSearchTimeAgoText('');
   };
 
   return (
@@ -1721,6 +1919,9 @@ const Fixtures = () => {
         <SearchResults 
           searchData={searchResults}
           onClear={handleClearSearch}
+          loading={searchLoading}
+          timeAgoText={searchTimeAgoText}
+          onRefresh={refreshSearchResults}
         />
       ) : (
         <DefaultFixtures
