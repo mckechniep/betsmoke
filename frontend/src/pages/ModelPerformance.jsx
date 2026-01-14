@@ -8,8 +8,8 @@
 // The main table shows:
 // - Historical Log Loss (baseline using league averages)
 // - Model Log Loss (AI's actual performance)
-// - Improvement % (how much better AI is vs baseline)
-// - Rating (High/Good/Medium/Poor based on improvement)
+// - Differential % (how much better/worse AI is vs baseline)
+// - Rating (High/Good/Medium/Poor based on differential)
 // - Accuracy (hit ratio)
 // - Trend (improving/declining/stable)
 // ============================================
@@ -155,12 +155,12 @@ const TrendArrow = ({ trend }) => {
 };
 
 /**
- * Improvement Badge - Shows improvement percentage with color coding
+ * Differential Badge - Shows differential percentage with color coding
  * Color is based on the actual rating from the API, not our own thresholds
  */
-const ImprovementBadge = ({ improvement, rating }) => {
+const DifferentialBadge = ({ differential, rating }) => {
   // Round to 1 decimal place for display
-  const roundedImprovement = Math.round(improvement * 10) / 10;
+  const roundedDifferential = Math.round(differential * 10) / 10;
   
   // Color based on the ACTUAL rating from SportsMonks (so they always match)
   const colorByRating = {
@@ -171,7 +171,7 @@ const ImprovementBadge = ({ improvement, rating }) => {
   };
   
   const colorClass = colorByRating[rating] || 'bg-gray-100 text-gray-700';
-  const formatted = roundedImprovement >= 0 ? `+${roundedImprovement.toFixed(1)}%` : `${roundedImprovement.toFixed(1)}%`;
+  const formatted = roundedDifferential >= 0 ? `+${roundedDifferential.toFixed(1)}%` : `${roundedDifferential.toFixed(1)}%`;
   
   return (
     <span className={`px-2 py-1 text-xs font-bold rounded ${colorClass}`}>
@@ -251,6 +251,44 @@ const CompetitionLogo = ({ competition, size = 'md', withBackground = false }) =
 };
 
 /**
+ * AccordionItem - Collapsible section with title and expandable content
+ * Used in the "Understanding AI Prediction Model Performance" section
+ * 
+ * Props:
+ *   - title: The clickable header text
+ *   - children: Content shown when expanded
+ *   - defaultOpen: Whether to start expanded (default: false)
+ */
+const AccordionItem = ({ title, children, defaultOpen = false }) => {
+  const [isOpen, setIsOpen] = useState(defaultOpen);
+  
+  return (
+    <div className="border-b border-blue-200 last:border-b-0">
+      {/* Clickable Header */}
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className="w-full flex items-center justify-between py-3 px-1 text-left hover:bg-blue-100/50 transition-colors rounded"
+      >
+        <span className="font-medium text-blue-900">{title}</span>
+        {/* Chevron that rotates when open */}
+        <span 
+          className={`text-blue-600 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}
+        >
+          ▼
+        </span>
+      </button>
+      
+      {/* Collapsible Content - only renders when open */}
+      {isOpen && (
+        <div className="pb-4 px-1 text-sm text-blue-800 space-y-2">
+          {children}
+        </div>
+      )}
+    </div>
+  );
+};
+
+/**
  * Edge Badge - Shows edge over random chance (for Additional Analysis)
  */
 const EdgeBadge = ({ edge }) => {
@@ -291,33 +329,42 @@ const ModelPerformance = () => {
   // Sorting state - default to rating descending (High first)
   const [sortColumn, setSortColumn] = useState('rating');
   const [sortDirection, setSortDirection] = useState('desc');
+  
+  // Sorting state for the Edge table (separate from main table)
+  const [edgeSortColumn, setEdgeSortColumn] = useState('edge');
+  const [edgeSortDirection, setEdgeSortDirection] = useState('desc');
 
   // ============================================
   // FETCH DATA WHEN COMPETITION CHANGES
   // ============================================
   
   useEffect(() => {
-    // Reset sort when competition changes
+    // Define fetch function inside useEffect to avoid dependency warning
+    const fetchPredictability = async () => {
+      setLoading(true);
+      setError('');
+      
+      try {
+        const result = await dataApi.getPredictability(selectedLeagueId);
+        console.log('Predictability response:', result);
+        setPredictabilityData(result.data);
+      } catch (err) {
+        console.error('Failed to fetch predictability:', err);
+        setError(err.message || 'Failed to load prediction model performance');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    // Reset sort when competition changes (both tables)
     setSortColumn('rating');
     setSortDirection('desc');
+    setEdgeSortColumn('edge');
+    setEdgeSortDirection('desc');
+    
+    // Fetch the data
     fetchPredictability();
   }, [selectedLeagueId]);
-
-  const fetchPredictability = async () => {
-    setLoading(true);
-    setError('');
-    
-    try {
-      const result = await dataApi.getPredictability(selectedLeagueId);
-      console.log('Predictability response:', result);
-      setPredictabilityData(result.data);
-    } catch (err) {
-      console.error('Failed to fetch predictability:', err);
-      setError(err.message || 'Failed to load prediction model performance');
-    } finally {
-      setLoading(false);
-    }
-  };
 
   // ============================================
   // PARSE DATA BY TYPE
@@ -344,16 +391,16 @@ const ModelPerformance = () => {
     return competition?.name || 'Unknown';
   };
   
-  // Calculate improvement: how much better model is vs historical baseline
+  // Calculate differential: how much better/worse model is vs historical baseline
   // Formula: (|historical| - |model|) / |historical| * 100
-  const calculateImprovement = (marketKey) => {
+  const calculateDifferential = (marketKey) => {
     if (!historicalLogLoss || !modelLogLoss) return null;
     const historical = historicalLogLoss[marketKey];
     const model = modelLogLoss[marketKey];
     if (historical === undefined || model === undefined) return null;
     
-    const improvement = (Math.abs(historical) - Math.abs(model)) / Math.abs(historical) * 100;
-    return improvement;
+    const differential = (Math.abs(historical) - Math.abs(model)) / Math.abs(historical) * 100;
+    return differential;
   };
   
   // Calculate edge over random chance (for Additional Analysis section)
@@ -415,13 +462,26 @@ const ModelPerformance = () => {
           aValue = modelLogLoss[a] || 0;
           bValue = modelLogLoss[b] || 0;
           break;
-        case 'improvement':
-          aValue = calculateImprovement(a) || 0;
-          bValue = calculateImprovement(b) || 0;
+        case 'differential':
+          aValue = calculateDifferential(a) || 0;
+          bValue = calculateDifferential(b) || 0;
           break;
         case 'rating':
+          // Primary sort: rating (High > Good > Medium > Poor)
           aValue = ratingToNumber(ratingData?.[a]);
           bValue = ratingToNumber(ratingData?.[b]);
+          
+          // Secondary sort: if ratings are equal, sort by differential
+          if (aValue === bValue) {
+            const aDiff = calculateDifferential(a) || 0;
+            const bDiff = calculateDifferential(b) || 0;
+            // Apply same sort direction to the tiebreaker
+            if (sortDirection === 'desc') {
+              return bDiff - aDiff;
+            } else {
+              return aDiff - bDiff;
+            }
+          }
           break;
         case 'accuracy':
           aValue = accuracyData[a] || 0;
@@ -444,6 +504,68 @@ const ModelPerformance = () => {
     
     return sortable;
   };
+  
+  // ============================================
+  // EDGE TABLE SORTING LOGIC
+  // ============================================
+  
+  // Handle sort for Edge table (separate from main table)
+  const handleEdgeSort = (column) => {
+    if (edgeSortColumn === column) {
+      // Toggle direction if clicking same column
+      setEdgeSortDirection(edgeSortDirection === 'desc' ? 'asc' : 'desc');
+    } else {
+      // New column - default to descending
+      setEdgeSortColumn(column);
+      setEdgeSortDirection('desc');
+    }
+  };
+  
+  // Get sorted market keys for the Edge table
+  const getSortedEdgeMarkets = () => {
+    // Only include markets that have accuracy data
+    const validMarkets = MARKET_ORDER.filter(key => 
+      accuracyData?.[key] !== undefined
+    );
+    
+    // If no sort column, return in default order
+    if (!edgeSortColumn) return validMarkets;
+    
+    const sortable = [...validMarkets];
+    
+    sortable.sort((a, b) => {
+      let aValue, bValue;
+      
+      switch (edgeSortColumn) {
+        case 'edgeAccuracy':
+          // Model accuracy (higher = better)
+          aValue = accuracyData[a] || 0;
+          bValue = accuracyData[b] || 0;
+          break;
+        case 'edgeRandom':
+          // Random chance baseline
+          aValue = RANDOM_CHANCE[a] || 0.5;
+          bValue = RANDOM_CHANCE[b] || 0.5;
+          break;
+        case 'edge':
+          // Edge = accuracy - random chance (can be negative)
+          aValue = calculateEdge(a, accuracyData[a]);
+          bValue = calculateEdge(b, accuracyData[b]);
+          break;
+        default:
+          return 0;
+      }
+      
+      // Apply sort direction
+      if (edgeSortDirection === 'desc') {
+        return bValue - aValue;
+      } else {
+        return aValue - bValue;
+      }
+    });
+    
+    return sortable;
+  };
 
   // ============================================
   // RENDER
@@ -455,8 +577,8 @@ const ModelPerformance = () => {
       {/* HEADER */}
       {/* ============================================ */}
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">AI Prediction Model Performance</h1>
-        <p className="text-sm text-gray-500 mt-1 font-semibold">
+        <h1 className="text-2xl font-bold text-gray-900 mb-4">AI Prediction Model Performance</h1>
+        <p className="text-sm text-gray-500 font-semibold">
           See how accurate the AI predictions are for each competition and market.
         </p>
         <p className="text-sm text-gray-600 mt-3 max-w-3xl">
@@ -569,10 +691,10 @@ const ModelPerformance = () => {
                     className="text-center whitespace-nowrap"
                   />
                   
-                  {/* Improvement */}
+                  {/* Differential */}
                   <SortableHeader
-                    label="Improvement"
-                    column="improvement"
+                    label="Differential"
+                    column="differential"
                     currentSort={sortColumn}
                     currentDirection={sortDirection}
                     onSort={handleSort}
@@ -614,7 +736,7 @@ const ModelPerformance = () => {
                 {getSortedMarkets().map((marketKey) => {
                   const historical = historicalLogLoss[marketKey];
                   const model = modelLogLoss[marketKey];
-                  const improvement = calculateImprovement(marketKey);
+                  const differential = calculateDifferential(marketKey);
                   const rating = ratingData?.[marketKey];
                   const accuracy = accuracyData?.[marketKey];
                   const trend = trendData?.[marketKey];
@@ -642,10 +764,10 @@ const ModelPerformance = () => {
                         </span>
                       </td>
                       
-                      {/* Improvement Badge */}
+                      {/* Differential Badge */}
                       <td className="px-4 py-4 text-center">
-                        {improvement !== null && rating && (
-                          <ImprovementBadge improvement={improvement} rating={rating} />
+                        {differential !== null && rating && (
+                          <DifferentialBadge differential={differential} rating={rating} />
                         )}
                       </td>
                       
@@ -679,15 +801,296 @@ const ModelPerformance = () => {
       {/* ============================================ */}
       {!loading && !error && historicalLogLoss && modelLogLoss && (
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-          <h3 className="font-semibold text-blue-900 mb-2">📊 Understanding AI Prediction Model Performance</h3>
-          <div className="text-sm text-blue-800 space-y-3">
+          <h3 className="text-lg font-semibold text-blue-900 mb-4">📊 Understanding AI Prediction Model Performance</h3>
+          
+          {/* Intro paragraph */}
+          <div className="text-sm text-blue-800 space-y-3 mb-4">
             <p>
-              This section details how we evaluate the AI Prediction Model's performance. It introduces 
-              the Log‑Loss metric (also known as Logarithmic Loss or Cross‑Entropy Loss) and explains 
+              This section details how we evaluate the AI Prediction Model's performance.
+            </p>
+            <p>
+              It introduces the Log‑Loss metric (also known as Logarithmic Loss or Cross‑Entropy Loss) and explains 
               how it works alongside additional performance measures to assess how reliable, well‑calibrated, 
               and consistent the model is across different competitions and betting markets.
             </p>
+            <p className="text-blue-600 italic">
+              Click any topic below to learn more.
+            </p>
           </div>
+          
+          {/* Accordion sections */}
+          <div className="space-y-0">
+            
+            {/* 1. What is Log Loss? */}
+            <AccordionItem title="What is Log Loss?">
+              <ul className="list-disc list-inside space-y-1 ml-1">
+                <li>Log loss measures <strong>how confident</strong> the model was, and whether that confidence was <strong>justified</strong></li>
+                <li>It <strong>punishes the model for being confidently wrong</strong></li>
+                <li>Values are always negative, and <strong>closer to 0 is better</strong></li>
+              </ul>
+            </AccordionItem>
+            
+            {/* 2. Historical Log Loss */}
+            <AccordionItem title="Historical Log Loss">
+              <ul className="list-disc list-inside space-y-1 ml-1">
+                <li>Historical log loss is calculated using only <strong>league-wide historical averages</strong> — no AI, no machine learning algorithms, no unique data inputs</li>
+                <li>It's the <strong>baseline</strong> we compare Model Log Loss against</li>
+                <li>Calculated over the <strong>last 100 matches</strong> in the competition</li>
+              </ul>
+            </AccordionItem>
+            
+            {/* 3. Model Log Loss */}
+            <AccordionItem title="Model Log Loss">
+              <ul className="list-disc list-inside space-y-1 ml-1">
+                <li>Model log loss is the AI's <strong>actual performance</strong> using machine learning algorithms and unique data inputs</li>
+                <li>If Model Log Loss is <strong>closer to 0</strong> than Historical Log Loss, the AI is adding value</li>
+                <li>Calculated over the <strong>same 100 matches</strong> as Historical Log Loss</li>
+              </ul>
+            </AccordionItem>
+            
+            {/* 4. Differential */}
+            <AccordionItem title="Differential">
+              <ul className="list-disc list-inside space-y-1 ml-1">
+                <li>This shows <strong>how much better or worse</strong> the AI is compared to the baseline, expressed as a percentage</li>
+                <li>A positive value (e.g. +8%) means the AI is performing <strong>better</strong> than the baseline; a negative value means it's performing <strong>worse</strong></li>
+              </ul>
+            </AccordionItem>
+            
+            {/* 5. Rating */}
+            <AccordionItem title="Rating">
+              <ul className="list-disc list-inside space-y-1 ml-1">
+                <li>SportsMonks assigns a <strong>rating</strong> based on the difference (Differential) between the Model Log Loss and the Historical Log Loss</li>
+                <li>Essentially SportsMonks is grading the model's actual performance versus the baseline</li>
+              </ul>
+              <div className="bg-blue-100 p-3 rounded mt-2 w-fit">
+                <ul className="list-none space-y-1">
+                  <li><span className="text-green-700 font-semibold">High</span> — 8% or more</li>
+                  <li><span className="text-blue-700 font-semibold">Good</span> — 5% to 8%</li>
+                  <li><span className="text-yellow-700 font-semibold">Medium</span> — 3% to 5%</li>
+                  <li><span className="text-red-700 font-semibold">Poor</span> — Under 3%</li>
+                </ul>
+              </div>
+              <p className="bg-blue-100 p-2 rounded mt-2">
+                <strong>Note:</strong> A Medium rating doesn't mean the model is performing poorly, it 
+                simply means the model's prediction accuracy is only slightly better than the baseline
+              </p>
+            </AccordionItem>
+            
+            {/* 6. Accuracy */}
+            <AccordionItem title="Accuracy">
+              <ul className="list-disc list-inside space-y-1 ml-1">
+                <li><strong>Accuracy</strong>, also sometimes referred to as the hit ratio, evaluates "what percentage of the model's predictions were correct?"</li>
+                <li>It's a simple metric that tells us the number of times the model predicted the particular market correctly for the <strong>last 100 matches</strong> of the league (or competition)</li>
+              </ul>
+            </AccordionItem>
+            
+            {/* 7. Trend */}
+            <AccordionItem title="Trend">
+              <p>
+                The trend shows whether the model's performance is <strong>improving, declining, or stable</strong> over the most recent 50 matches
+              </p>
+              <div className="bg-blue-100 p-3 rounded mt-2 w-fit">
+                <ul className="list-none space-y-1">
+                  <li><span className="text-green-600 font-bold text-xl">↑</span> — Improving</li>
+                  <li><span className="text-red-600 font-bold text-xl">↓</span> — Declining</li>
+                  <li><span className="text-gray-500 font-bold text-xl">→</span> — Stable</li>
+                </ul>
+              </div>
+              <p className="bg-blue-100 p-2 rounded mt-2">
+                <strong>Note:</strong> An upward trend suggests the model is adapting well to 
+                current conditions; a downward trend might indicate changing patterns the model hasn't 
+                caught up with yet
+              </p>
+            </AccordionItem>
+            
+          </div>
+          
+          {/* Putting It All Together - Standalone callout box */}
+          <div className="bg-blue-200 rounded-lg p-4 mt-4">
+            <h4 className="font-semibold text-blue-900 mb-3">💡 Putting It All Together</h4>
+            <ul className="list-disc list-inside space-y-2 ml-1 text-sm text-blue-800">
+              <li><strong>Rating</strong> gives you a quick-glance assessment of model quality for each market — start here to identify the strongest predictions</li>
+              <li><strong>Differential</strong> shows the actual percentage improvement — useful when comparing markets with the same rating</li>
+              <li><strong>Accuracy</strong> is easy to understand (% correct), but remember: a model can have high accuracy and still be poorly calibrated</li>
+              <li><strong>Trend</strong> tells you if the model is improving or declining — a "High" rating with a declining trend may warrant caution</li>
+            </ul>
+            <div className="bg-white p-3 rounded mt-3">
+              <p className="text-sm text-gray-700">
+                <strong>In practice:</strong> Focus on markets with <span className="text-green-600 font-semibold">High</span> or <span className="text-blue-600 font-semibold">Good</span> ratings 
+                and stable or improving trends for the most reliable predictions.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ============================================ */}
+      {/* TECHNICAL DEEP DIVE (For the nerds!) */}
+      {/* ============================================ */}
+      {!loading && !error && historicalLogLoss && modelLogLoss && (
+        <div className="bg-gray-900 text-gray-100 rounded-lg p-6">
+          <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
+            <span>🔬</span> Technical Deep Dive
+          </h3>
+          <p className="text-gray-400 text-sm mb-6">
+            For those who want the full statistical picture. Here's the math and theory behind the metrics.
+          </p>
+          
+          {/* Log Loss Formula */}
+          <div className="mb-6">
+            <h4 className="text-lg font-semibold text-blue-400 mb-2">Log Loss (Cross-Entropy Loss)</h4>
+            <div className="bg-gray-800 p-4 rounded-lg font-mono text-sm mb-3">
+              <p className="text-yellow-300">Log Loss = -1/N × Σ [y × log(p) + (1-y) × log(1-p)]</p>
+              <p className="text-gray-500 mt-2">Where:</p>
+              <ul className="text-gray-400 ml-4 space-y-1">
+                <li>N = number of predictions</li>
+                <li>y = actual outcome (1 if event occurred, 0 if not)</li>
+                <li>p = predicted probability of the event</li>
+              </ul>
+            </div>
+            <p className="text-gray-300 text-sm">
+              Log Loss quantifies the <strong className="text-white">distance</strong> between predicted 
+              probability distributions and actual outcomes. Unlike accuracy (which only cares about 
+              right/wrong), log loss penalizes predictions based on how far off the probability was.
+            </p>
+            <p className="text-gray-300 text-sm mt-2">
+              A prediction of 0.99 for an event that doesn't happen incurs a much larger penalty than 
+              a prediction of 0.51 for the same wrong outcome. This makes log loss ideal for evaluating 
+              <strong className="text-white">calibration</strong> — whether a model's confidence levels 
+              are trustworthy.
+            </p>
+          </div>
+          
+          {/* Why Negative Values */}
+          <div className="mb-6">
+            <h4 className="text-lg font-semibold text-blue-400 mb-2">Why Are the Values Negative?</h4>
+            <p className="text-gray-300 text-sm">
+              The logarithm of any probability (0 &lt; p &lt; 1) is always negative. For example:
+            </p>
+            <div className="bg-gray-800 p-3 rounded-lg font-mono text-sm my-2">
+              <p>log(0.5) = -0.693</p>
+              <p>log(0.8) = -0.223</p>
+              <p>log(0.99) = -0.010</p>
+            </div>
+            <p className="text-gray-300 text-sm">
+              When we sum these and multiply by -1/N, we get a negative value. <strong className="text-white">Less negative = better</strong> because it means higher probabilities were assigned to correct outcomes.
+            </p>
+          </div>
+          
+          {/* Historical Log Loss Calculation */}
+          <div className="mb-6">
+            <h4 className="text-lg font-semibold text-blue-400 mb-2">Historical Log Loss Calculation</h4>
+            <p className="text-gray-300 text-sm mb-2">
+              The historical log loss represents a <strong className="text-white">naive baseline</strong> using 
+              only league-wide frequencies. For a 1X2 market:
+            </p>
+            <div className="bg-gray-800 p-4 rounded-lg font-mono text-sm mb-3">
+              <p className="text-gray-400">// Example: Premier League historical frequencies</p>
+              <p>P(Home Win) ≈ 0.45</p>
+              <p>P(Draw) ≈ 0.26</p>
+              <p>P(Away Win) ≈ 0.29</p>
+              <p className="text-gray-500 mt-2">// Baseline predicts these same probabilities for EVERY match</p>
+            </div>
+            <p className="text-gray-300 text-sm">
+              This baseline ignores all context — team form, home/away records, injuries, head-to-head. 
+              If the AI model can't beat this baseline, it's not adding value.
+            </p>
+          </div>
+          
+          {/* Differential Formula */}
+          <div className="mb-6">
+            <h4 className="text-lg font-semibold text-blue-400 mb-2">Differential Percentage</h4>
+            <div className="bg-gray-800 p-4 rounded-lg font-mono text-sm mb-3">
+              <p className="text-yellow-300">Differential % = (|Historical LL| - |Model LL|) / |Historical LL| × 100</p>
+              <p className="text-gray-500 mt-2">Example:</p>
+              <p className="text-gray-400">Historical LL = -0.65</p>
+              <p className="text-gray-400">Model LL = -0.60</p>
+              <p className="text-green-400">Differential = (0.65 - 0.60) / 0.65 × 100 = +7.7%</p>
+            </div>
+            <p className="text-gray-300 text-sm">
+              We use absolute values because both numbers are negative. A positive differential means 
+              the model's log loss is closer to zero (better) than the historical baseline. A negative 
+              differential means the model is underperforming the baseline.
+            </p>
+          </div>
+          
+          {/* Rating Thresholds */}
+          <div className="mb-6">
+            <h4 className="text-lg font-semibold text-blue-400 mb-2">Rating Threshold Breakdown</h4>
+            <p className="text-gray-300 text-sm mb-2">
+              SportsMonks assigns ratings based on how much the model's log loss improves over the 
+              historical baseline. These thresholds reflect how difficult it is to consistently beat the baseline:
+            </p>
+            <div className="bg-gray-800 p-4 rounded-lg text-sm">
+              <table className="w-full">
+                <thead>
+                  <tr className="text-gray-400 border-b border-gray-700">
+                    <th className="text-left py-2">Rating</th>
+                    <th className="text-left py-2">Differential</th>
+                    <th className="text-left py-2">Interpretation</th>
+                  </tr>
+                </thead>
+                <tbody className="text-gray-300">
+                  <tr className="border-b border-gray-800">
+                    <td className="py-2 text-green-400 font-semibold">High</td>
+                    <td className="py-2">≥ 8%</td>
+                    <td className="py-2">Excellent predictive edge; model adds significant value</td>
+                  </tr>
+                  <tr className="border-b border-gray-800">
+                    <td className="py-2 text-blue-400 font-semibold">Good</td>
+                    <td className="py-2">5% – 8%</td>
+                    <td className="py-2">Solid performance; meaningful improvement over baseline</td>
+                  </tr>
+                  <tr className="border-b border-gray-800">
+                    <td className="py-2 text-yellow-400 font-semibold">Medium</td>
+                    <td className="py-2">3% – 5%</td>
+                    <td className="py-2">Modest edge; model helps but baseline is competitive</td>
+                  </tr>
+                  <tr>
+                    <td className="py-2 text-red-400 font-semibold">Poor</td>
+                    <td className="py-2">&lt; 3%</td>
+                    <td className="py-2">Minimal advantage; consider relying on other factors</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+          
+          {/* Why Log Loss Over Accuracy */}
+          <div className="mb-6">
+            <h4 className="text-lg font-semibold text-blue-400 mb-2">Why Log Loss Instead of Just Accuracy?</h4>
+            <p className="text-gray-300 text-sm mb-2">
+              Consider two models predicting 100 coin flips:
+            </p>
+            <div className="bg-gray-800 p-4 rounded-lg text-sm mb-3">
+              <p className="text-gray-400 mb-2"><strong className="text-white">Model A:</strong> Always predicts 51% heads</p>
+              <p className="text-gray-400 mb-2"><strong className="text-white">Model B:</strong> Predicts 90% heads when confident, 10% when not</p>
+              <p className="text-gray-500 mt-3">Both might achieve ~50% accuracy on a fair coin, but:</p>
+              <p className="text-green-400">Model A: Lower log loss (well-calibrated uncertainty)</p>
+              <p className="text-red-400">Model B: Higher log loss (overconfident and wrong)</p>
+            </div>
+            <p className="text-gray-300 text-sm">
+              For betting, calibration matters enormously. A model that says "60% confident" should 
+              be right about 60% of the time at that confidence level. Log loss captures this; raw 
+              accuracy doesn't.
+            </p>
+          </div>
+          
+          {/* Trend Calculation */}
+          <div>
+            <h4 className="text-lg font-semibold text-blue-400 mb-2">Trend Calculation</h4>
+            <p className="text-gray-300 text-sm">
+              The trend compares the model's log loss over the <strong className="text-white">most recent 50 matches</strong> 
+              against the prior period. If the recent log loss is meaningfully lower (better), the trend 
+              is <span className="text-green-400">↑ Up</span>. If higher (worse), it's <span className="text-red-400">↓ Down</span>. 
+              If within a small threshold, it's <span className="text-gray-400">→ Stable</span>.
+            </p>
+            <p className="text-gray-300 text-sm mt-2">
+              This helps identify whether the model is adapting to current league conditions or if 
+              patterns are shifting in ways the model hasn't captured yet.
+            </p>
+          </div>
+          
         </div>
       )}
 
@@ -696,25 +1099,66 @@ const ModelPerformance = () => {
       {/* ============================================ */}
       {!loading && !error && accuracyData && (
         <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-          <h3 className="font-semibold text-gray-900 mb-2">🎯 Additional Analysis: Edge Over Random Chance</h3>
-          <p className="text-sm text-gray-600 mb-4">
-            This section shows how much better the model performs compared to pure random guessing. 
-            "Random" is the probability of guessing correctly by chance alone, while "Edge" shows 
-            how many percentage points better the model's accuracy is.
-          </p>
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">🎯 Additional Analysis: Edge vs Random Chance</h3>
+          <div className="text-sm text-gray-600 mb-4 space-y-2">
+            <p>
+              This section compares the model's accuracy against pure random guessing.
+            </p>
+            <p>
+              <strong>Random</strong> is the probability of guessing correctly by chance alone. For example, 
+              Team to Score First has a "Random Chance" of 33% as the Home Team could score, the Away Team 
+              could score, or nobody could score.
+            </p>
+            <p>
+              <strong>Accuracy</strong> is our model's accuracy, defined earlier as the percentage of correct 
+              predictions for the last 100 matches.
+            </p>
+            <p>
+              <strong>Edge</strong> shows the difference in percentage points — positive means the model beats 
+              random chance, negative means it underperforms.
+            </p>
+          </div>
           
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-gray-300">
+                  {/* Market - not sortable */}
                   <th className="text-left py-2 pr-4 text-gray-700 font-semibold">Market</th>
-                  <th className="text-center py-2 px-4 text-gray-700 font-semibold">Model Accuracy</th>
-                  <th className="text-center py-2 px-4 text-gray-700 font-semibold">Random Chance</th>
-                  <th className="text-center py-2 pl-4 text-gray-700 font-semibold">Edge</th>
+                  
+                  {/* Accuracy - sortable */}
+                  <SortableHeader
+                    label="Accuracy"
+                    column="edgeAccuracy"
+                    currentSort={edgeSortColumn}
+                    currentDirection={edgeSortDirection}
+                    onSort={handleEdgeSort}
+                    className="text-center py-2 px-4"
+                  />
+                  
+                  {/* Random Chance - sortable */}
+                  <SortableHeader
+                    label="Random Chance"
+                    column="edgeRandom"
+                    currentSort={edgeSortColumn}
+                    currentDirection={edgeSortDirection}
+                    onSort={handleEdgeSort}
+                    className="text-center py-2 px-4"
+                  />
+                  
+                  {/* Edge - sortable */}
+                  <SortableHeader
+                    label="Edge"
+                    column="edge"
+                    currentSort={edgeSortColumn}
+                    currentDirection={edgeSortDirection}
+                    onSort={handleEdgeSort}
+                    className="text-center py-2 pl-4"
+                  />
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
-                {MARKET_ORDER.map((marketKey) => {
+                {getSortedEdgeMarkets().map((marketKey) => {
                   const accuracy = accuracyData[marketKey];
                   if (accuracy === undefined) return null;
                   
