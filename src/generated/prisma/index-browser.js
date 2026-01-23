@@ -128,6 +128,8 @@ exports.Prisma.UserScalarFieldEnum = {
   updatedAt: 'updatedAt',
   oddsFormat: 'oddsFormat',
   timezone: 'timezone',
+  dateFormat: 'dateFormat',
+  temperatureUnit: 'temperatureUnit',
   securityQuestion: 'securityQuestion',
   securityAnswer: 'securityAnswer',
   isAdmin: 'isAdmin'
@@ -191,6 +193,16 @@ exports.OddsFormat = exports.$Enums.OddsFormat = {
   AMERICAN: 'AMERICAN',
   DECIMAL: 'DECIMAL',
   FRACTIONAL: 'FRACTIONAL'
+};
+
+exports.DateFormat = exports.$Enums.DateFormat = {
+  US: 'US',
+  EU: 'EU'
+};
+
+exports.TemperatureUnit = exports.$Enums.TemperatureUnit = {
+  FAHRENHEIT: 'FAHRENHEIT',
+  CELSIUS: 'CELSIUS'
 };
 
 exports.ContextType = exports.$Enums.ContextType = {

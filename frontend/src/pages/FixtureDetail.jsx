@@ -15,6 +15,14 @@ import { dataApi } from '../api/client';
 import { useAuth } from '../context/AuthContext';
 import MatchPredictions from '../components/MatchPredictions';
 import FloatingNoteWidget from '../components/FloatingNoteWidget';
+import {
+  formatTime as formatTimeUtil,
+  formatDate as formatDateUtil,
+  formatShortDate as formatShortDateUtil,
+  formatTemperature,
+  formatOdds,
+  getOddsValue
+} from '../utils/formatters';
 
 // ============================================
 // DEFAULT BOOKMAKERS (prepopulated)
@@ -27,77 +35,21 @@ import FloatingNoteWidget from '../components/FloatingNoteWidget';
 const DEFAULT_BOOKMAKER_IDS = [4, 9]; // Betfair, Unibet
 
 // ============================================
-// HELPER: Format American Odds for Display
+// NOTE: Date/Time formatting functions have been moved to
+// src/utils/formatters.js for centralized user preference handling.
+// The component uses the useAuth hook to get user preferences.
 // ============================================
-// The API provides american odds directly, but we need to
-// add the + sign for positive values
-function formatAmericanOdds(americanOdd) {
-  if (americanOdd === null || americanOdd === undefined) return '-';
-
-  // Convert to string first to handle both number and string inputs
-  const oddStr = String(americanOdd);
-  const num = parseInt(oddStr);
-  if (isNaN(num)) return oddStr;
-
-  // Add + sign for positive odds (API may or may not include it)
-  if (num > 0 && !oddStr.startsWith('+')) {
-    return `+${num}`;
-  }
-
-  return oddStr;
-}
-
 
 // ============================================
 // HELPER: Parse UTC datetime string to Date object
 // ============================================
 // SportsMonks returns times in UTC format: "2024-12-26 15:00:00"
-// We need to explicitly tell JavaScript this is UTC, then convert to Eastern.
+// We need to explicitly tell JavaScript this is UTC, then convert.
+// (Still needed locally for sorting operations)
 function parseUTCDateTime(dateString) {
   // "2024-12-26 15:00:00" -> "2024-12-26T15:00:00Z" (ISO format with Z = UTC)
   const isoString = dateString.replace(' ', 'T') + 'Z';
   return new Date(isoString);
-}
-
-// ============================================
-// HELPER: Format date for display (Eastern Time)
-// ============================================
-function formatDate(dateString) {
-  const date = parseUTCDateTime(dateString);
-  return date.toLocaleDateString('en-US', {
-    weekday: 'long',
-    month: 'long',
-    day: 'numeric',
-    year: 'numeric',
-    timeZone: 'America/New_York'
-  });
-}
-
-// ============================================
-// HELPER: Format time for display (Eastern Time)
-// ============================================
-function formatTime(dateString) {
-  const date = parseUTCDateTime(dateString);
-  const timeStr = date.toLocaleTimeString('en-US', {
-    hour: 'numeric',
-    minute: '2-digit',
-    hour12: true,
-    timeZone: 'America/New_York'
-  });
-  return `${timeStr} ET`;
-}
-
-// ============================================
-// HELPER: Format short date for H2H display (Eastern Time)
-// ============================================
-function formatShortDate(dateString) {
-  const date = parseUTCDateTime(dateString);
-  return date.toLocaleDateString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-    timeZone: 'America/New_York'
-  });
 }
 
 // ============================================
@@ -131,6 +83,74 @@ function getScore(fixture, location) {
   if (firstHalfScore) return firstHalfScore.score?.goals ?? null;
   
   return null;
+}
+
+// ============================================
+// HELPER: Get weather display data from weatherReport
+// ============================================
+// Uses SportsMonks weather icon URL and description
+// Weather data is only available close to match day (24-48 hours before)
+// weatherReport is a SEPARATE include from metadata (not nested inside it)
+// temperatureUnit: 'FAHRENHEIT' or 'CELSIUS' (user preference)
+function getWeatherDisplay(weatherReport, temperatureUnit = 'FAHRENHEIT') {
+  if (!weatherReport) return null;
+
+  const weather = weatherReport;
+  const condition = weather.description?.toLowerCase() || weather.type?.toLowerCase() || '';
+  const temp = weather.temperature?.day; // Daytime temperature in Celsius
+  const humidity = weather.humidity;
+  const wind = weather.wind?.speed; // Wind speed
+  const iconUrl = weather.icon; // SportsMonks CDN icon URL
+
+  const label = weather.description || condition || 'Unknown';
+
+  // Format temperature using user preference
+  const tempDisplay = formatTemperature(temp, temperatureUnit);
+
+  return { iconUrl, label, tempDisplay, humidity, wind, condition };
+}
+
+// ============================================
+// HELPER: Get formations from metadata
+// ============================================
+// Extracts team formations from metadata array (type_id: 159)
+// Returns: { home: "4-3-3", away: "4-2-3-1" } or null
+function getFormationsFromMetadata(metadata) {
+  if (!metadata || !Array.isArray(metadata)) return null;
+  
+  // type_id 159 = formations
+  const formationMeta = metadata.find(m => m.type_id === 159);
+  if (!formationMeta?.values) return null;
+  
+  return {
+    home: formationMeta.values.home || null,
+    away: formationMeta.values.away || null
+  };
+}
+
+// ============================================
+// HELPER: Check if lineups are confirmed from metadata
+// ============================================
+// Extracts lineup confirmation status (type_id: 572)
+// Returns true if confirmed, false if predicted
+function getLineupsConfirmed(metadata) {
+  if (!metadata || !Array.isArray(metadata)) return null;
+  
+  // type_id 572 = lineup confirmed
+  const confirmedMeta = metadata.find(m => m.type_id === 572);
+  return confirmedMeta?.values?.confirmed ?? null;
+}
+
+// ============================================
+// HELPER: Get attendance from metadata
+// ============================================
+// Extracts attendance (type_id: 578) - only available for finished matches
+function getAttendanceFromMetadata(metadata) {
+  if (!metadata || !Array.isArray(metadata)) return null;
+  
+  // type_id 578 = attendance
+  const attendanceMeta = metadata.find(m => m.type_id === 578);
+  return attendanceMeta?.values?.attendance ?? null;
 }
 
 // ============================================
@@ -282,7 +302,7 @@ function AccordionSection({ title, icon, children, defaultOpen = false }) {
 // HEAD TO HEAD SECTION COMPONENT
 // ============================================
 // Shows H2H history with expandable "Show More" button
-function HeadToHeadSection({ h2h, h2hLoading }) {
+function HeadToHeadSection({ h2h, h2hLoading, timezone, dateFormat }) {
   const [showAll, setShowAll] = useState(false);
   const INITIAL_DISPLAY = 5; // Show 5 matches initially
   
@@ -360,7 +380,7 @@ function HeadToHeadSection({ h2h, h2hLoading }) {
               >
                 <div className="flex items-center justify-between">
                   <div className="text-xs text-gray-500 w-20">
-                    {formatShortDate(match.starting_at)}
+                    {formatShortDateUtil(match.starting_at, timezone, dateFormat)}
                   </div>
                   <div className="flex items-center space-x-2 text-sm flex-1 justify-center">
                     <span className={`text-right ${mHomeScore > mAwayScore ? 'font-bold' : ''}`}>
@@ -1327,12 +1347,9 @@ function CornersBreakdownSection({ homeCornerAvg, awayCornerAvg, homeTeam, awayT
   // ============================================
   return (
     <div className="bg-white rounded-lg shadow-md p-4">
-      <h2 className="text-lg font-semibold text-gray-900 mb-1">
+      <h2 className="text-lg font-semibold text-gray-900 mb-4">
         🚩 Corner Kicks
       </h2>
-      <p className="text-sm text-gray-500 mb-4">
-        Contextual stats: Home team at home, Away team on the road
-      </p>
 
       {/* Two-column layout for team comparison */}
       <div className="flex flex-col md:flex-row gap-6">
@@ -1432,9 +1449,6 @@ function CornersBreakdownSection({ homeCornerAvg, awayCornerAvg, homeTeam, awayT
               <div className="text-3xl font-bold text-gray-800">{combinedExpected}</div>
               <div className="text-sm text-gray-600">Expected Total Corners</div>
             </div>
-          </div>
-          <div className="text-xs text-gray-500 text-center mt-2">
-            {homeTeam?.name}'s home avg ({homeTeamHomeData?.average}) + {awayTeam?.name}'s away avg ({awayTeamAwayData?.average})
           </div>
         </div>
       )}
@@ -1721,7 +1735,7 @@ function TeamStatsComparisonSection(props) {
 // Shows ALL markets with odds grouped by bookmaker within each market
 // Each market is individually expandable/collapsible
 // This section ignores the main bookmaker filter - shows everything
-function AllBettingMarketsContent({ odds, bookmakers, formatAmericanOdds, formatOddLabel, getMarketName }) {
+function AllBettingMarketsContent({ odds, bookmakers, oddsFormat, formatOddLabel, getMarketName }) {
   // State to track which markets are expanded
   // Default: all collapsed (empty set)
   const [expandedMarkets, setExpandedMarkets] = useState(new Set());
@@ -1897,24 +1911,24 @@ function AllBettingMarketsContent({ odds, bookmakers, formatAmericanOdds, format
                           {labels.map(label => {
                             const odd = bmOdds.find(o => (o.label || o.name) === label);
                             const displayLabel = formatOddLabel(label, mId);
-                            const americanOdd = formatAmericanOdds(odd?.american);
-                            
+                            const formattedOdd = formatOdds(odd, oddsFormat);
+
                             // Skip if no valid odds value
-                            if (americanOdd === '-') return null;
-                            
+                            if (formattedOdd === '-') return null;
+
                             return (
-                              <div 
-                                key={label} 
+                              <div
+                                key={label}
                                 className="bg-gray-50 p-2 rounded text-center hover:bg-gray-100 transition-colors"
                               >
-                                <div 
-                                  className="text-xs text-gray-500 truncate mb-1" 
+                                <div
+                                  className="text-xs text-gray-500 truncate mb-1"
                                   title={displayLabel}
                                 >
                                   {displayLabel}
                                 </div>
                                 <div className="font-bold text-gray-800">
-                                  {americanOdd}
+                                  {formattedOdd}
                                 </div>
                               </div>
                             );
@@ -1937,7 +1951,15 @@ function AllBettingMarketsContent({ odds, bookmakers, formatAmericanOdds, format
 // ============================================
 const FixtureDetail = () => {
   const { id } = useParams();
-  const { token, isAuthenticated } = useAuth();
+  const { token, isAuthenticated, user } = useAuth();
+
+  // ============================================
+  // USER PREFERENCES
+  // ============================================
+  const timezone = user?.timezone || 'America/New_York';
+  const dateFormat = user?.dateFormat || 'US';
+  const temperatureUnit = user?.temperatureUnit || 'FAHRENHEIT';
+  const oddsFormat = user?.oddsFormat || 'AMERICAN';
 
   // Main fixture data
   const [fixture, setFixture] = useState(null);
@@ -2428,7 +2450,7 @@ const FixtureDetail = () => {
                 </div>
               ) : (
                 <div className="text-2xl font-medium text-gray-700">
-                  {formatTime(fixture.starting_at)}
+                  {formatTimeUtil(fixture.starting_at, timezone)}
                 </div>
               )}
               <div className="text-sm text-gray-500 mt-2">
@@ -2452,13 +2474,69 @@ const FixtureDetail = () => {
             </Link>
           </div>
 
-          {/* Date, venue, and weather */}
+          {/* Date, venue, formations, and weather */}
           <div className="mt-4 text-center text-sm text-gray-500 space-y-1">
-            <div>📅 {formatDate(fixture.starting_at)}</div>
+            <div>📅 {formatDateUtil(fixture.starting_at, timezone, dateFormat)}</div>
             {fixture.venue?.name && (
               <div>📍 {fixture.venue.name}{fixture.venue.city ? `, ${fixture.venue.city}` : ''}</div>
             )}
+            
+            {/* Formations - very useful for betting research */}
+            {(() => {
+              const formations = getFormationsFromMetadata(fixture.metadata);
+              const lineupsConfirmed = getLineupsConfirmed(fixture.metadata);
+              if (!formations || (!formations.home && !formations.away)) return null;
+              
+              return (
+                <div className="flex items-center justify-center space-x-3 text-gray-600">
+                  <span className="font-medium">{formations.home || '?'}</span>
+                  <span className="text-xs text-gray-400 flex flex-col items-center">
+                    <span>🎯 Formations</span>
+                    {lineupsConfirmed === false && (
+                      <span className="text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded mt-0.5">
+                        Predicted
+                      </span>
+                    )}
+                  </span>
+                  <span className="font-medium">{formations.away || '?'}</span>
+                </div>
+              );
+            })()}
+            
+            {/* Attendance - only show for finished matches */}
+            {(() => {
+              const attendance = getAttendanceFromMetadata(fixture.metadata);
+              if (!attendance) return null;
+              
+              return (
+                <div className="text-gray-500">
+                  🏟️ {attendance.toLocaleString()} attendance
+                </div>
+              );
+            })()}
+            
+            {/* Weather conditions - only available close to match day */}
+            {/* Note: Weather data only available ~24-48 hours before kickoff */}
+            {(() => {
+              const weather = getWeatherDisplay(fixture.weatherreport, temperatureUnit);
+              if (!weather) return null;
 
+              return (
+                <div className="flex items-center justify-center space-x-2">
+                  {weather.iconUrl && (
+                    <img
+                      src={weather.iconUrl}
+                      alt={weather.label}
+                      className="w-10 h-10"
+                    />
+                  )}
+                  <span className="capitalize">{weather.label}</span>
+                  {weather.tempDisplay && (
+                    <span className="font-medium">{weather.tempDisplay}</span>
+                  )}
+                </div>
+              );
+            })()}
           </div>
         </div>
       </div>
@@ -2564,19 +2642,19 @@ const FixtureDetail = () => {
                           <div className="text-center">
                             <div className="text-xs text-gray-500">Home</div>
                             <div className="font-bold text-blue-600">
-                              {formatAmericanOdds(homeOdd?.american)}
+                              {formatOdds(homeOdd, oddsFormat)}
                             </div>
                           </div>
                           <div className="text-center">
                             <div className="text-xs text-gray-500">Draw</div>
                             <div className="font-bold text-gray-600">
-                              {formatAmericanOdds(drawOdd?.american)}
+                              {formatOdds(drawOdd, oddsFormat)}
                             </div>
                           </div>
                           <div className="text-center">
                             <div className="text-xs text-gray-500">Away</div>
                             <div className="font-bold text-red-600">
-                              {formatAmericanOdds(awayOdd?.american)}
+                              {formatOdds(awayOdd, oddsFormat)}
                             </div>
                           </div>
                         </div>
@@ -2600,7 +2678,7 @@ const FixtureDetail = () => {
       {/* ============================================ */}
       {/* Only show H2H for upcoming fixtures - historical context for betting research */}
       {isUpcoming && (
-        <HeadToHeadSection h2h={h2h} h2hLoading={h2hLoading} />
+        <HeadToHeadSection h2h={h2h} h2hLoading={h2hLoading} timezone={timezone} dateFormat={dateFormat} />
       )}
 
       {/* ============================================ */}
@@ -2703,10 +2781,10 @@ const FixtureDetail = () => {
         {/* This section uses ALL odds (ignoring main filter) and groups by bookmaker */}
         {isUpcoming && (
         <AccordionSection title="All Betting Markets" icon="📊">
-          <AllBettingMarketsContent 
-            odds={safeOdds} 
+          <AllBettingMarketsContent
+            odds={safeOdds}
             bookmakers={bookmakers}
-            formatAmericanOdds={formatAmericanOdds}
+            oddsFormat={oddsFormat}
             formatOddLabel={formatOddLabel}
             getMarketName={getMarketName}
           />

@@ -33,16 +33,41 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   // On mount, check for existing token in localStorage
+  // and validate it's still valid on the backend
   useEffect(() => {
-    const storedToken = localStorage.getItem('betsmoke_token');
-    const storedUser = localStorage.getItem('betsmoke_user');
+    const validateToken = async () => {
+      const storedToken = localStorage.getItem('betsmoke_token');
+      const storedUser = localStorage.getItem('betsmoke_user');
 
-    if (storedToken && storedUser) {
-      setToken(storedToken);
-      setUser(JSON.parse(storedUser));
-    }
+      // No stored credentials - just finish loading
+      if (!storedToken || !storedUser) {
+        setLoading(false);
+        return;
+      }
 
-    setLoading(false);
+      // We have stored credentials - validate them with the backend
+      try {
+        // Call /auth/me to verify token is still valid
+        const response = await authApi.getMe(storedToken);
+        
+        // Token is valid - set auth state
+        setToken(storedToken);
+        setUser(response.user);
+        
+        // Update stored user in case it changed
+        localStorage.setItem('betsmoke_user', JSON.stringify(response.user));
+      } catch (error) {
+        // Token is invalid or expired - clear stored credentials
+        console.warn('Stored token is invalid or expired, clearing auth state');
+        localStorage.removeItem('betsmoke_token');
+        localStorage.removeItem('betsmoke_user');
+        // Don't set token/user - they'll remain null
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    validateToken();
   }, []);
 
   // ============================================
@@ -50,17 +75,19 @@ export const AuthProvider = ({ children }) => {
   // ============================================
   // Accepts optional preferences and security question
   const register = async (email, password, options = {}) => {
-    const { oddsFormat, timezone, securityQuestion, securityAnswer } = options;
-    
+    const { oddsFormat, timezone, dateFormat, temperatureUnit, securityQuestion, securityAnswer } = options;
+
     const response = await authApi.register({
       email,
       password,
       oddsFormat,
       timezone: timezone || getBrowserTimezone(), // Auto-detect if not provided
+      dateFormat,
+      temperatureUnit,
       securityQuestion,
       securityAnswer
     });
-    
+
     return response;
   };
 

@@ -30,12 +30,12 @@ async function makeRequest(endpoint, includes = [], useOddsBaseUrl = false) {
   // Use ODDS_BASE_URL for bookmakers/markets, BASE_URL for everything else
   const baseUrl = useOddsBaseUrl ? ODDS_BASE_URL : BASE_URL;
   let url = `${baseUrl}${endpoint}`;
-  
+
   // Add the API token as a query parameter
   // Check if URL already has query params (contains ?)
   const separator = url.includes('?') ? '&' : '?';
   url += `${separator}api_token=${API_KEY}`;
-  
+
   // Add includes if provided (e.g., statistics, players, etc.)
   // Includes enrich the response with related data
   if (includes.length > 0) {
@@ -47,23 +47,82 @@ async function makeRequest(endpoint, includes = [], useOddsBaseUrl = false) {
   try {
     // Make the HTTP request using fetch (built into Node 18+)
     const response = await fetch(url);
-    
+
     // Parse the JSON response
     const data = await response.json();
-    
+
     // Check if SportsMonks returned an error
     if (!response.ok) {
       throw new Error(data.message || `API error: ${response.status}`);
     }
-    
+
     // Return the data
     return data;
-    
+
   } catch (error) {
     // Log the error and re-throw for the route to handle
     console.error(`[SportsMonks] Error: ${error.message}`);
     throw error;
   }
+}
+
+// ============================================
+// HELPER FUNCTION: Make Paginated API Requests
+// ============================================
+// Fetches ALL pages of results from SportsMonks API.
+// Use this for endpoints that may return many results (fixtures by date range).
+// SportsMonks returns max 50 results per page.
+
+async function makeRequestPaginated(endpoint, includes = [], useOddsBaseUrl = false) {
+  const baseUrl = useOddsBaseUrl ? ODDS_BASE_URL : BASE_URL;
+  let allData = [];
+  let currentPage = 1;
+  let hasMore = true;
+
+  console.log(`[SportsMonks] Requesting (paginated): ${endpoint}`);
+
+  while (hasMore) {
+    // Build URL with pagination params
+    let url = `${baseUrl}${endpoint}`;
+    const separator = url.includes('?') ? '&' : '?';
+    url += `${separator}api_token=${API_KEY}&per_page=50&page=${currentPage}`;
+
+    if (includes.length > 0) {
+      url += `&include=${includes.join(';')}`;
+    }
+
+    try {
+      const response = await fetch(url);
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || `API error: ${response.status}`);
+      }
+
+      // Add this page's data to our collection
+      if (data.data && Array.isArray(data.data)) {
+        allData = allData.concat(data.data);
+      }
+
+      // Check if there are more pages
+      hasMore = data.pagination?.has_more === true;
+      currentPage++;
+
+      // Log progress for large requests
+      if (hasMore) {
+        console.log(`[SportsMonks] Fetched page ${currentPage - 1}, ${allData.length} items so far...`);
+      }
+
+    } catch (error) {
+      console.error(`[SportsMonks] Error on page ${currentPage}: ${error.message}`);
+      throw error;
+    }
+  }
+
+  console.log(`[SportsMonks] Completed: ${allData.length} total items from ${currentPage - 1} page(s)`);
+
+  // Return in the same format as makeRequest
+  return { data: allData };
 }
 
 // ============================================
@@ -200,6 +259,8 @@ async function getFixtureById(fixtureId, options = {}) {
   // - league: League info
   // - season: Season info
   // - state: Match state (scheduled, live, finished)
+  // - metadata: Formations, kit colors, attendance, etc.
+  // - weatherReport: Weather conditions (separate from metadata)
   // NOTE: We no longer include .type - types are stored locally per SportsMonks best practice
   const includes = [
     'participants',
@@ -210,7 +271,9 @@ async function getFixtureById(fixtureId, options = {}) {
     'venue',
     'league',
     'season',
-    'state'
+    'state',
+    'metadata',      // Formations, kit colors, attendance, etc.
+    'weatherReport'  // Weather conditions (available ~24-48hrs before kickoff)
   ];
   
   // Optional includes - added if requested
@@ -261,13 +324,17 @@ async function getFixturesByDate(date, options = {}) {
   // - league: League name
   // - season: Season info
   // - state: Match state (scheduled, live, finished, AET, FT_PEN, etc.)
+  // - metadata: Formations, kit colors, attendance, etc.
+  // - weatherReport: Weather conditions (available ~24-48hrs before kickoff)
   const includes = [
     'participants',
     'scores',
     'venue',
     'league',
     'season',
-    'state'
+    'state',
+    'metadata',      // Formations, kit colors, attendance, etc.
+    'weatherReport'  // Weather conditions
   ];
   
   // Optional includes
@@ -306,7 +373,7 @@ async function getFixturesByDate(date, options = {}) {
 async function getFixturesByDateRange(startDate, endDate, options = {}) {
   // API: GET /fixtures/between/{start_date}/{end_date}
   const endpoint = `/fixtures/between/${startDate}/${endDate}`;
-  
+
   // Base includes
   // - participants: Team names and logos
   // - scores: Match scores
@@ -314,15 +381,19 @@ async function getFixturesByDateRange(startDate, endDate, options = {}) {
   // - league: League name
   // - season: Season info
   // - state: Match state (scheduled, live, finished, etc.)
+  // - metadata: Formations, kit colors, attendance, etc.
+  // - weatherReport: Weather conditions (available ~24-48hrs before kickoff)
   const includes = [
     'participants',
     'scores',
     'venue',
     'league',
     'season',
-    'state'
+    'state',
+    'metadata',      // Formations, kit colors, attendance, etc.
+    'weatherReport'  // Weather conditions
   ];
-  
+
   // Optional includes
   if (options.includeOdds) {
     includes.push('odds');
@@ -330,8 +401,9 @@ async function getFixturesByDateRange(startDate, endDate, options = {}) {
   if (options.includeSidelined) {
     includes.push('sidelined.player');
   }
-  
-  return makeRequest(endpoint, includes);
+
+  // Use paginated request to fetch ALL fixtures across multiple pages
+  return makeRequestPaginated(endpoint, includes);
 }
 
 /**
@@ -361,7 +433,7 @@ async function getFixturesByDateRange(startDate, endDate, options = {}) {
 async function getTeamFixturesByDateRange(startDate, endDate, teamId, options = {}) {
   // API: GET /fixtures/between/{start_date}/{end_date}/{team_id}
   const endpoint = `/fixtures/between/${startDate}/${endDate}/${teamId}`;
-  
+
   // Base includes
   // NOTE: 'state' is required for calculating recent form (W/D/L)
   // The frontend filters by state.state === 'FT' for finished matches
@@ -371,9 +443,11 @@ async function getTeamFixturesByDateRange(startDate, endDate, teamId, options = 
     'venue',
     'league',
     'season',
-    'state'
+    'state',
+    'metadata',      // Formations, kit colors, attendance, etc.
+    'weatherReport'  // Weather conditions
   ];
-  
+
   // Optional includes
   if (options.includeOdds) {
     includes.push('odds');
@@ -381,8 +455,9 @@ async function getTeamFixturesByDateRange(startDate, endDate, teamId, options = 
   if (options.includeSidelined) {
     includes.push('sidelined.player');
   }
-  
-  return makeRequest(endpoint, includes);
+
+  // Use paginated request for large date ranges (e.g., full seasons)
+  return makeRequestPaginated(endpoint, includes);
 }
 
 // ============================================
@@ -417,7 +492,10 @@ async function searchFixtures(searchQuery, options = {}) {
     'scores',
     'venue',
     'league',
-    'season'
+    'season',
+    'state',
+    'metadata',      // Formations, kit colors, attendance, etc.
+    'weatherReport'  // Weather conditions
   ];
   
   // Optional includes

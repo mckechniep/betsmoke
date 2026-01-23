@@ -52,6 +52,22 @@ export namespace $Enums {
 export type OddsFormat = (typeof OddsFormat)[keyof typeof OddsFormat]
 
 
+export const DateFormat: {
+  US: 'US',
+  EU: 'EU'
+};
+
+export type DateFormat = (typeof DateFormat)[keyof typeof DateFormat]
+
+
+export const TemperatureUnit: {
+  FAHRENHEIT: 'FAHRENHEIT',
+  CELSIUS: 'CELSIUS'
+};
+
+export type TemperatureUnit = (typeof TemperatureUnit)[keyof typeof TemperatureUnit]
+
+
 export const ContextType: {
   team: 'team',
   fixture: 'fixture',
@@ -68,6 +84,14 @@ export type ContextType = (typeof ContextType)[keyof typeof ContextType]
 export type OddsFormat = $Enums.OddsFormat
 
 export const OddsFormat: typeof $Enums.OddsFormat
+
+export type DateFormat = $Enums.DateFormat
+
+export const DateFormat: typeof $Enums.DateFormat
+
+export type TemperatureUnit = $Enums.TemperatureUnit
+
+export const TemperatureUnit: typeof $Enums.TemperatureUnit
 
 export type ContextType = $Enums.ContextType
 
@@ -1379,6 +1403,8 @@ export namespace Prisma {
     updatedAt: Date | null
     oddsFormat: $Enums.OddsFormat | null
     timezone: string | null
+    dateFormat: $Enums.DateFormat | null
+    temperatureUnit: $Enums.TemperatureUnit | null
     securityQuestion: string | null
     securityAnswer: string | null
     isAdmin: boolean | null
@@ -1392,6 +1418,8 @@ export namespace Prisma {
     updatedAt: Date | null
     oddsFormat: $Enums.OddsFormat | null
     timezone: string | null
+    dateFormat: $Enums.DateFormat | null
+    temperatureUnit: $Enums.TemperatureUnit | null
     securityQuestion: string | null
     securityAnswer: string | null
     isAdmin: boolean | null
@@ -1405,6 +1433,8 @@ export namespace Prisma {
     updatedAt: number
     oddsFormat: number
     timezone: number
+    dateFormat: number
+    temperatureUnit: number
     securityQuestion: number
     securityAnswer: number
     isAdmin: number
@@ -1420,6 +1450,8 @@ export namespace Prisma {
     updatedAt?: true
     oddsFormat?: true
     timezone?: true
+    dateFormat?: true
+    temperatureUnit?: true
     securityQuestion?: true
     securityAnswer?: true
     isAdmin?: true
@@ -1433,6 +1465,8 @@ export namespace Prisma {
     updatedAt?: true
     oddsFormat?: true
     timezone?: true
+    dateFormat?: true
+    temperatureUnit?: true
     securityQuestion?: true
     securityAnswer?: true
     isAdmin?: true
@@ -1446,6 +1480,8 @@ export namespace Prisma {
     updatedAt?: true
     oddsFormat?: true
     timezone?: true
+    dateFormat?: true
+    temperatureUnit?: true
     securityQuestion?: true
     securityAnswer?: true
     isAdmin?: true
@@ -1532,6 +1568,8 @@ export namespace Prisma {
     updatedAt: Date
     oddsFormat: $Enums.OddsFormat
     timezone: string
+    dateFormat: $Enums.DateFormat
+    temperatureUnit: $Enums.TemperatureUnit
     securityQuestion: string | null
     securityAnswer: string | null
     isAdmin: boolean
@@ -1562,6 +1600,8 @@ export namespace Prisma {
     updatedAt?: boolean
     oddsFormat?: boolean
     timezone?: boolean
+    dateFormat?: boolean
+    temperatureUnit?: boolean
     securityQuestion?: boolean
     securityAnswer?: boolean
     isAdmin?: boolean
@@ -1578,6 +1618,8 @@ export namespace Prisma {
     updatedAt?: boolean
     oddsFormat?: boolean
     timezone?: boolean
+    dateFormat?: boolean
+    temperatureUnit?: boolean
     securityQuestion?: boolean
     securityAnswer?: boolean
     isAdmin?: boolean
@@ -1591,6 +1633,8 @@ export namespace Prisma {
     updatedAt?: boolean
     oddsFormat?: boolean
     timezone?: boolean
+    dateFormat?: boolean
+    temperatureUnit?: boolean
     securityQuestion?: boolean
     securityAnswer?: boolean
     isAdmin?: boolean
@@ -1604,12 +1648,14 @@ export namespace Prisma {
     updatedAt?: boolean
     oddsFormat?: boolean
     timezone?: boolean
+    dateFormat?: boolean
+    temperatureUnit?: boolean
     securityQuestion?: boolean
     securityAnswer?: boolean
     isAdmin?: boolean
   }
 
-  export type UserOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "email" | "password" | "createdAt" | "updatedAt" | "oddsFormat" | "timezone" | "securityQuestion" | "securityAnswer" | "isAdmin", ExtArgs["result"]["user"]>
+  export type UserOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "email" | "password" | "createdAt" | "updatedAt" | "oddsFormat" | "timezone" | "dateFormat" | "temperatureUnit" | "securityQuestion" | "securityAnswer" | "isAdmin", ExtArgs["result"]["user"]>
   export type UserInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     notes?: boolean | User$notesArgs<ExtArgs>
     passwordResets?: boolean | User$passwordResetsArgs<ExtArgs>
@@ -1632,6 +1678,8 @@ export namespace Prisma {
       updatedAt: Date
       oddsFormat: $Enums.OddsFormat
       timezone: string
+      dateFormat: $Enums.DateFormat
+      temperatureUnit: $Enums.TemperatureUnit
       securityQuestion: string | null
       securityAnswer: string | null
       isAdmin: boolean
@@ -2067,6 +2115,8 @@ export namespace Prisma {
     readonly updatedAt: FieldRef<"User", 'DateTime'>
     readonly oddsFormat: FieldRef<"User", 'OddsFormat'>
     readonly timezone: FieldRef<"User", 'String'>
+    readonly dateFormat: FieldRef<"User", 'DateFormat'>
+    readonly temperatureUnit: FieldRef<"User", 'TemperatureUnit'>
     readonly securityQuestion: FieldRef<"User", 'String'>
     readonly securityAnswer: FieldRef<"User", 'String'>
     readonly isAdmin: FieldRef<"User", 'Boolean'>
@@ -6999,6 +7049,8 @@ export namespace Prisma {
     updatedAt: 'updatedAt',
     oddsFormat: 'oddsFormat',
     timezone: 'timezone',
+    dateFormat: 'dateFormat',
+    temperatureUnit: 'temperatureUnit',
     securityQuestion: 'securityQuestion',
     securityAnswer: 'securityAnswer',
     isAdmin: 'isAdmin'
@@ -7131,6 +7183,34 @@ export namespace Prisma {
 
 
   /**
+   * Reference to a field of type 'DateFormat'
+   */
+  export type EnumDateFormatFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'DateFormat'>
+    
+
+
+  /**
+   * Reference to a field of type 'DateFormat[]'
+   */
+  export type ListEnumDateFormatFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'DateFormat[]'>
+    
+
+
+  /**
+   * Reference to a field of type 'TemperatureUnit'
+   */
+  export type EnumTemperatureUnitFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'TemperatureUnit'>
+    
+
+
+  /**
+   * Reference to a field of type 'TemperatureUnit[]'
+   */
+  export type ListEnumTemperatureUnitFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'TemperatureUnit[]'>
+    
+
+
+  /**
    * Reference to a field of type 'Boolean'
    */
   export type BooleanFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Boolean'>
@@ -7193,6 +7273,8 @@ export namespace Prisma {
     updatedAt?: DateTimeFilter<"User"> | Date | string
     oddsFormat?: EnumOddsFormatFilter<"User"> | $Enums.OddsFormat
     timezone?: StringFilter<"User"> | string
+    dateFormat?: EnumDateFormatFilter<"User"> | $Enums.DateFormat
+    temperatureUnit?: EnumTemperatureUnitFilter<"User"> | $Enums.TemperatureUnit
     securityQuestion?: StringNullableFilter<"User"> | string | null
     securityAnswer?: StringNullableFilter<"User"> | string | null
     isAdmin?: BoolFilter<"User"> | boolean
@@ -7208,6 +7290,8 @@ export namespace Prisma {
     updatedAt?: SortOrder
     oddsFormat?: SortOrder
     timezone?: SortOrder
+    dateFormat?: SortOrder
+    temperatureUnit?: SortOrder
     securityQuestion?: SortOrderInput | SortOrder
     securityAnswer?: SortOrderInput | SortOrder
     isAdmin?: SortOrder
@@ -7226,6 +7310,8 @@ export namespace Prisma {
     updatedAt?: DateTimeFilter<"User"> | Date | string
     oddsFormat?: EnumOddsFormatFilter<"User"> | $Enums.OddsFormat
     timezone?: StringFilter<"User"> | string
+    dateFormat?: EnumDateFormatFilter<"User"> | $Enums.DateFormat
+    temperatureUnit?: EnumTemperatureUnitFilter<"User"> | $Enums.TemperatureUnit
     securityQuestion?: StringNullableFilter<"User"> | string | null
     securityAnswer?: StringNullableFilter<"User"> | string | null
     isAdmin?: BoolFilter<"User"> | boolean
@@ -7241,6 +7327,8 @@ export namespace Prisma {
     updatedAt?: SortOrder
     oddsFormat?: SortOrder
     timezone?: SortOrder
+    dateFormat?: SortOrder
+    temperatureUnit?: SortOrder
     securityQuestion?: SortOrderInput | SortOrder
     securityAnswer?: SortOrderInput | SortOrder
     isAdmin?: SortOrder
@@ -7260,6 +7348,8 @@ export namespace Prisma {
     updatedAt?: DateTimeWithAggregatesFilter<"User"> | Date | string
     oddsFormat?: EnumOddsFormatWithAggregatesFilter<"User"> | $Enums.OddsFormat
     timezone?: StringWithAggregatesFilter<"User"> | string
+    dateFormat?: EnumDateFormatWithAggregatesFilter<"User"> | $Enums.DateFormat
+    temperatureUnit?: EnumTemperatureUnitWithAggregatesFilter<"User"> | $Enums.TemperatureUnit
     securityQuestion?: StringNullableWithAggregatesFilter<"User"> | string | null
     securityAnswer?: StringNullableWithAggregatesFilter<"User"> | string | null
     isAdmin?: BoolWithAggregatesFilter<"User"> | boolean
@@ -7542,6 +7632,8 @@ export namespace Prisma {
     updatedAt?: Date | string
     oddsFormat?: $Enums.OddsFormat
     timezone?: string
+    dateFormat?: $Enums.DateFormat
+    temperatureUnit?: $Enums.TemperatureUnit
     securityQuestion?: string | null
     securityAnswer?: string | null
     isAdmin?: boolean
@@ -7557,6 +7649,8 @@ export namespace Prisma {
     updatedAt?: Date | string
     oddsFormat?: $Enums.OddsFormat
     timezone?: string
+    dateFormat?: $Enums.DateFormat
+    temperatureUnit?: $Enums.TemperatureUnit
     securityQuestion?: string | null
     securityAnswer?: string | null
     isAdmin?: boolean
@@ -7572,6 +7666,8 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     oddsFormat?: EnumOddsFormatFieldUpdateOperationsInput | $Enums.OddsFormat
     timezone?: StringFieldUpdateOperationsInput | string
+    dateFormat?: EnumDateFormatFieldUpdateOperationsInput | $Enums.DateFormat
+    temperatureUnit?: EnumTemperatureUnitFieldUpdateOperationsInput | $Enums.TemperatureUnit
     securityQuestion?: NullableStringFieldUpdateOperationsInput | string | null
     securityAnswer?: NullableStringFieldUpdateOperationsInput | string | null
     isAdmin?: BoolFieldUpdateOperationsInput | boolean
@@ -7587,6 +7683,8 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     oddsFormat?: EnumOddsFormatFieldUpdateOperationsInput | $Enums.OddsFormat
     timezone?: StringFieldUpdateOperationsInput | string
+    dateFormat?: EnumDateFormatFieldUpdateOperationsInput | $Enums.DateFormat
+    temperatureUnit?: EnumTemperatureUnitFieldUpdateOperationsInput | $Enums.TemperatureUnit
     securityQuestion?: NullableStringFieldUpdateOperationsInput | string | null
     securityAnswer?: NullableStringFieldUpdateOperationsInput | string | null
     isAdmin?: BoolFieldUpdateOperationsInput | boolean
@@ -7602,6 +7700,8 @@ export namespace Prisma {
     updatedAt?: Date | string
     oddsFormat?: $Enums.OddsFormat
     timezone?: string
+    dateFormat?: $Enums.DateFormat
+    temperatureUnit?: $Enums.TemperatureUnit
     securityQuestion?: string | null
     securityAnswer?: string | null
     isAdmin?: boolean
@@ -7615,6 +7715,8 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     oddsFormat?: EnumOddsFormatFieldUpdateOperationsInput | $Enums.OddsFormat
     timezone?: StringFieldUpdateOperationsInput | string
+    dateFormat?: EnumDateFormatFieldUpdateOperationsInput | $Enums.DateFormat
+    temperatureUnit?: EnumTemperatureUnitFieldUpdateOperationsInput | $Enums.TemperatureUnit
     securityQuestion?: NullableStringFieldUpdateOperationsInput | string | null
     securityAnswer?: NullableStringFieldUpdateOperationsInput | string | null
     isAdmin?: BoolFieldUpdateOperationsInput | boolean
@@ -7628,6 +7730,8 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     oddsFormat?: EnumOddsFormatFieldUpdateOperationsInput | $Enums.OddsFormat
     timezone?: StringFieldUpdateOperationsInput | string
+    dateFormat?: EnumDateFormatFieldUpdateOperationsInput | $Enums.DateFormat
+    temperatureUnit?: EnumTemperatureUnitFieldUpdateOperationsInput | $Enums.TemperatureUnit
     securityQuestion?: NullableStringFieldUpdateOperationsInput | string | null
     securityAnswer?: NullableStringFieldUpdateOperationsInput | string | null
     isAdmin?: BoolFieldUpdateOperationsInput | boolean
@@ -7950,6 +8054,20 @@ export namespace Prisma {
     not?: NestedEnumOddsFormatFilter<$PrismaModel> | $Enums.OddsFormat
   }
 
+  export type EnumDateFormatFilter<$PrismaModel = never> = {
+    equals?: $Enums.DateFormat | EnumDateFormatFieldRefInput<$PrismaModel>
+    in?: $Enums.DateFormat[] | ListEnumDateFormatFieldRefInput<$PrismaModel>
+    notIn?: $Enums.DateFormat[] | ListEnumDateFormatFieldRefInput<$PrismaModel>
+    not?: NestedEnumDateFormatFilter<$PrismaModel> | $Enums.DateFormat
+  }
+
+  export type EnumTemperatureUnitFilter<$PrismaModel = never> = {
+    equals?: $Enums.TemperatureUnit | EnumTemperatureUnitFieldRefInput<$PrismaModel>
+    in?: $Enums.TemperatureUnit[] | ListEnumTemperatureUnitFieldRefInput<$PrismaModel>
+    notIn?: $Enums.TemperatureUnit[] | ListEnumTemperatureUnitFieldRefInput<$PrismaModel>
+    not?: NestedEnumTemperatureUnitFilter<$PrismaModel> | $Enums.TemperatureUnit
+  }
+
   export type StringNullableFilter<$PrismaModel = never> = {
     equals?: string | StringFieldRefInput<$PrismaModel> | null
     in?: string[] | ListStringFieldRefInput<$PrismaModel> | null
@@ -8003,6 +8121,8 @@ export namespace Prisma {
     updatedAt?: SortOrder
     oddsFormat?: SortOrder
     timezone?: SortOrder
+    dateFormat?: SortOrder
+    temperatureUnit?: SortOrder
     securityQuestion?: SortOrder
     securityAnswer?: SortOrder
     isAdmin?: SortOrder
@@ -8016,6 +8136,8 @@ export namespace Prisma {
     updatedAt?: SortOrder
     oddsFormat?: SortOrder
     timezone?: SortOrder
+    dateFormat?: SortOrder
+    temperatureUnit?: SortOrder
     securityQuestion?: SortOrder
     securityAnswer?: SortOrder
     isAdmin?: SortOrder
@@ -8029,6 +8151,8 @@ export namespace Prisma {
     updatedAt?: SortOrder
     oddsFormat?: SortOrder
     timezone?: SortOrder
+    dateFormat?: SortOrder
+    temperatureUnit?: SortOrder
     securityQuestion?: SortOrder
     securityAnswer?: SortOrder
     isAdmin?: SortOrder
@@ -8074,6 +8198,26 @@ export namespace Prisma {
     _count?: NestedIntFilter<$PrismaModel>
     _min?: NestedEnumOddsFormatFilter<$PrismaModel>
     _max?: NestedEnumOddsFormatFilter<$PrismaModel>
+  }
+
+  export type EnumDateFormatWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.DateFormat | EnumDateFormatFieldRefInput<$PrismaModel>
+    in?: $Enums.DateFormat[] | ListEnumDateFormatFieldRefInput<$PrismaModel>
+    notIn?: $Enums.DateFormat[] | ListEnumDateFormatFieldRefInput<$PrismaModel>
+    not?: NestedEnumDateFormatWithAggregatesFilter<$PrismaModel> | $Enums.DateFormat
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedEnumDateFormatFilter<$PrismaModel>
+    _max?: NestedEnumDateFormatFilter<$PrismaModel>
+  }
+
+  export type EnumTemperatureUnitWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.TemperatureUnit | EnumTemperatureUnitFieldRefInput<$PrismaModel>
+    in?: $Enums.TemperatureUnit[] | ListEnumTemperatureUnitFieldRefInput<$PrismaModel>
+    notIn?: $Enums.TemperatureUnit[] | ListEnumTemperatureUnitFieldRefInput<$PrismaModel>
+    not?: NestedEnumTemperatureUnitWithAggregatesFilter<$PrismaModel> | $Enums.TemperatureUnit
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedEnumTemperatureUnitFilter<$PrismaModel>
+    _max?: NestedEnumTemperatureUnitFilter<$PrismaModel>
   }
 
   export type StringNullableWithAggregatesFilter<$PrismaModel = never> = {
@@ -8384,6 +8528,14 @@ export namespace Prisma {
     set?: $Enums.OddsFormat
   }
 
+  export type EnumDateFormatFieldUpdateOperationsInput = {
+    set?: $Enums.DateFormat
+  }
+
+  export type EnumTemperatureUnitFieldUpdateOperationsInput = {
+    set?: $Enums.TemperatureUnit
+  }
+
   export type NullableStringFieldUpdateOperationsInput = {
     set?: string | null
   }
@@ -8642,6 +8794,20 @@ export namespace Prisma {
     not?: NestedEnumOddsFormatFilter<$PrismaModel> | $Enums.OddsFormat
   }
 
+  export type NestedEnumDateFormatFilter<$PrismaModel = never> = {
+    equals?: $Enums.DateFormat | EnumDateFormatFieldRefInput<$PrismaModel>
+    in?: $Enums.DateFormat[] | ListEnumDateFormatFieldRefInput<$PrismaModel>
+    notIn?: $Enums.DateFormat[] | ListEnumDateFormatFieldRefInput<$PrismaModel>
+    not?: NestedEnumDateFormatFilter<$PrismaModel> | $Enums.DateFormat
+  }
+
+  export type NestedEnumTemperatureUnitFilter<$PrismaModel = never> = {
+    equals?: $Enums.TemperatureUnit | EnumTemperatureUnitFieldRefInput<$PrismaModel>
+    in?: $Enums.TemperatureUnit[] | ListEnumTemperatureUnitFieldRefInput<$PrismaModel>
+    notIn?: $Enums.TemperatureUnit[] | ListEnumTemperatureUnitFieldRefInput<$PrismaModel>
+    not?: NestedEnumTemperatureUnitFilter<$PrismaModel> | $Enums.TemperatureUnit
+  }
+
   export type NestedStringNullableFilter<$PrismaModel = never> = {
     equals?: string | StringFieldRefInput<$PrismaModel> | null
     in?: string[] | ListStringFieldRefInput<$PrismaModel> | null
@@ -8711,6 +8877,26 @@ export namespace Prisma {
     _count?: NestedIntFilter<$PrismaModel>
     _min?: NestedEnumOddsFormatFilter<$PrismaModel>
     _max?: NestedEnumOddsFormatFilter<$PrismaModel>
+  }
+
+  export type NestedEnumDateFormatWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.DateFormat | EnumDateFormatFieldRefInput<$PrismaModel>
+    in?: $Enums.DateFormat[] | ListEnumDateFormatFieldRefInput<$PrismaModel>
+    notIn?: $Enums.DateFormat[] | ListEnumDateFormatFieldRefInput<$PrismaModel>
+    not?: NestedEnumDateFormatWithAggregatesFilter<$PrismaModel> | $Enums.DateFormat
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedEnumDateFormatFilter<$PrismaModel>
+    _max?: NestedEnumDateFormatFilter<$PrismaModel>
+  }
+
+  export type NestedEnumTemperatureUnitWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.TemperatureUnit | EnumTemperatureUnitFieldRefInput<$PrismaModel>
+    in?: $Enums.TemperatureUnit[] | ListEnumTemperatureUnitFieldRefInput<$PrismaModel>
+    notIn?: $Enums.TemperatureUnit[] | ListEnumTemperatureUnitFieldRefInput<$PrismaModel>
+    not?: NestedEnumTemperatureUnitWithAggregatesFilter<$PrismaModel> | $Enums.TemperatureUnit
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedEnumTemperatureUnitFilter<$PrismaModel>
+    _max?: NestedEnumTemperatureUnitFilter<$PrismaModel>
   }
 
   export type NestedStringNullableWithAggregatesFilter<$PrismaModel = never> = {
@@ -8938,6 +9124,8 @@ export namespace Prisma {
     updatedAt?: Date | string
     oddsFormat?: $Enums.OddsFormat
     timezone?: string
+    dateFormat?: $Enums.DateFormat
+    temperatureUnit?: $Enums.TemperatureUnit
     securityQuestion?: string | null
     securityAnswer?: string | null
     isAdmin?: boolean
@@ -8952,6 +9140,8 @@ export namespace Prisma {
     updatedAt?: Date | string
     oddsFormat?: $Enums.OddsFormat
     timezone?: string
+    dateFormat?: $Enums.DateFormat
+    temperatureUnit?: $Enums.TemperatureUnit
     securityQuestion?: string | null
     securityAnswer?: string | null
     isAdmin?: boolean
@@ -9010,6 +9200,8 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     oddsFormat?: EnumOddsFormatFieldUpdateOperationsInput | $Enums.OddsFormat
     timezone?: StringFieldUpdateOperationsInput | string
+    dateFormat?: EnumDateFormatFieldUpdateOperationsInput | $Enums.DateFormat
+    temperatureUnit?: EnumTemperatureUnitFieldUpdateOperationsInput | $Enums.TemperatureUnit
     securityQuestion?: NullableStringFieldUpdateOperationsInput | string | null
     securityAnswer?: NullableStringFieldUpdateOperationsInput | string | null
     isAdmin?: BoolFieldUpdateOperationsInput | boolean
@@ -9024,6 +9216,8 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     oddsFormat?: EnumOddsFormatFieldUpdateOperationsInput | $Enums.OddsFormat
     timezone?: StringFieldUpdateOperationsInput | string
+    dateFormat?: EnumDateFormatFieldUpdateOperationsInput | $Enums.DateFormat
+    temperatureUnit?: EnumTemperatureUnitFieldUpdateOperationsInput | $Enums.TemperatureUnit
     securityQuestion?: NullableStringFieldUpdateOperationsInput | string | null
     securityAnswer?: NullableStringFieldUpdateOperationsInput | string | null
     isAdmin?: BoolFieldUpdateOperationsInput | boolean
@@ -9119,6 +9313,8 @@ export namespace Prisma {
     updatedAt?: Date | string
     oddsFormat?: $Enums.OddsFormat
     timezone?: string
+    dateFormat?: $Enums.DateFormat
+    temperatureUnit?: $Enums.TemperatureUnit
     securityQuestion?: string | null
     securityAnswer?: string | null
     isAdmin?: boolean
@@ -9133,6 +9329,8 @@ export namespace Prisma {
     updatedAt?: Date | string
     oddsFormat?: $Enums.OddsFormat
     timezone?: string
+    dateFormat?: $Enums.DateFormat
+    temperatureUnit?: $Enums.TemperatureUnit
     securityQuestion?: string | null
     securityAnswer?: string | null
     isAdmin?: boolean
@@ -9163,6 +9361,8 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     oddsFormat?: EnumOddsFormatFieldUpdateOperationsInput | $Enums.OddsFormat
     timezone?: StringFieldUpdateOperationsInput | string
+    dateFormat?: EnumDateFormatFieldUpdateOperationsInput | $Enums.DateFormat
+    temperatureUnit?: EnumTemperatureUnitFieldUpdateOperationsInput | $Enums.TemperatureUnit
     securityQuestion?: NullableStringFieldUpdateOperationsInput | string | null
     securityAnswer?: NullableStringFieldUpdateOperationsInput | string | null
     isAdmin?: BoolFieldUpdateOperationsInput | boolean
@@ -9177,6 +9377,8 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     oddsFormat?: EnumOddsFormatFieldUpdateOperationsInput | $Enums.OddsFormat
     timezone?: StringFieldUpdateOperationsInput | string
+    dateFormat?: EnumDateFormatFieldUpdateOperationsInput | $Enums.DateFormat
+    temperatureUnit?: EnumTemperatureUnitFieldUpdateOperationsInput | $Enums.TemperatureUnit
     securityQuestion?: NullableStringFieldUpdateOperationsInput | string | null
     securityAnswer?: NullableStringFieldUpdateOperationsInput | string | null
     isAdmin?: BoolFieldUpdateOperationsInput | boolean

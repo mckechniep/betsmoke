@@ -19,6 +19,7 @@
 // ============================================
 
 import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { dataApi } from '../api/client';
 
 // ============================================
@@ -70,16 +71,18 @@ const PREDICTION_TYPES = {
 // ============================================
 // ACCORDION SECTION COMPONENT
 // ============================================
-function AccordionSection({ title, icon, children, defaultOpen = false, highlight = false }) {
+// When a section is expanded (isOpen), it gets a blue border/ring
+// to indicate focus. All sections have the same grey header styling.
+function AccordionSection({ title, icon, children, defaultOpen = false }) {
   const [isOpen, setIsOpen] = useState(defaultOpen);
 
   return (
-    <div className={`border rounded-lg overflow-hidden ${highlight ? 'border-blue-300 ring-2 ring-blue-100' : 'border-gray-200'}`}>
+    <div className={`border rounded-lg overflow-hidden transition-all ${
+      isOpen ? 'border-blue-300 ring-2 ring-blue-100' : 'border-gray-200'
+    }`}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className={`w-full px-4 py-3 flex items-center justify-between transition-colors ${
-          highlight ? 'bg-blue-50 hover:bg-blue-100' : 'bg-gray-50 hover:bg-gray-100'
-        }`}
+        className="w-full px-4 py-3 flex items-center justify-between transition-colors bg-gray-50 hover:bg-gray-100"
       >
         <div className="flex items-center space-x-2">
           <span className="text-lg">{icon}</span>
@@ -646,15 +649,42 @@ export default function MatchPredictions({ fixtureId, homeTeam, awayTeam }) {
         </div>
       </div>
 
-      {/* Disclaimer */}
-      <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-800">
-        ⚠️ Predictions are AI-generated probabilities for research only. Always do your own analysis.
+      {/* AI Predictions Info */}
+      <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg text-sm text-blue-800">
+        <p className="mb-3">
+          AI Predictions are from Sportsmonks'{' '}
+          <a 
+            href="https://www.sportmonks.com/football-api/football-predictions-api/" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="text-blue-600 hover:text-blue-800 underline font-medium"
+          >
+            Football Predictions API
+          </a>
+          , a state-of-the-art AI model that leverages advanced machine learning 
+          techniques and cutting-edge algorithms to generate probabilistic forecasts 
+          for football matches.
+        </p>
+        <div className="flex flex-col sm:flex-row sm:space-x-3 space-y-2 sm:space-y-0">
+          <Link 
+            to="/model-architecture" 
+            className="inline-flex items-center px-3 py-1.5 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-full text-sm font-medium transition-colors"
+          >
+            🧠 Model Architecture
+          </Link>
+          <Link 
+            to="/model-performance" 
+            className="inline-flex items-center px-3 py-1.5 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-full text-sm font-medium transition-colors"
+          >
+            📊 Model's Prediction Accuracy
+          </Link>
+        </div>
       </div>
 
       {/* Accordion Sections */}
       <div className="space-y-3">
         {/* Match Result - Default Open (most important) */}
-        <AccordionSection title="Match Result" icon="⚽" defaultOpen={true} highlight={true}>
+        <AccordionSection title="Match Result" icon="⚽" defaultOpen={true}>
           <MatchResultSection predictions={predictions} homeTeam={homeTeam} awayTeam={awayTeam} />
         </AccordionSection>
 

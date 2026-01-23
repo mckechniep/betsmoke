@@ -24,6 +24,22 @@ enum OddsFormat {
   FRACTIONAL
 }
 
+// Date display format preference
+// - US: MM/DD/YYYY (e.g., 01/25/2026)
+// - EU: DD/MM/YYYY (e.g., 25/01/2026)
+enum DateFormat {
+  US
+  EU
+}
+
+// Temperature unit preference
+// - FAHRENHEIT: °F (US style)
+// - CELSIUS: °C (International style)
+enum TemperatureUnit {
+  FAHRENHEIT
+  CELSIUS
+}
+
 // Defines the allowed context types for notes
 // These map to the categories users can tag notes with:
 //   - team: Team-related research (e.g., Arsenal form analysis)
@@ -59,11 +75,19 @@ model User {
   // Odds format: how betting odds are displayed
   // Default: AMERICAN (US-style odds like +150, -110)
   oddsFormat  OddsFormat @default(AMERICAN)
-  
+
   // Timezone: IANA timezone string (e.g., "America/New_York")
   // Used for displaying match times in user's local time
   // Default: Eastern Time (US)
   timezone    String     @default("America/New_York")
+
+  // Date format: how dates are displayed
+  // Default: US (MM/DD/YYYY)
+  dateFormat  DateFormat @default(US) @map("date_format")
+
+  // Temperature unit: how temperatures are displayed
+  // Default: FAHRENHEIT (US style)
+  temperatureUnit TemperatureUnit @default(FAHRENHEIT) @map("temperature_unit")
 
   // ============================================
   // ACCOUNT RECOVERY (Optional)

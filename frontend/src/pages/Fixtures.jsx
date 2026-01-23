@@ -9,6 +9,14 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { dataApi } from '../api/client';
+import { useAuth } from '../context/AuthContext';
+import {
+  formatTime as formatTimeUtil,
+  formatDateOnly,
+  formatShortDateOnly,
+  getTimezoneDateString,
+  formatTemperature
+} from '../utils/formatters';
 
 // ============================================
 // LEAGUE IDS (Our subscription)
@@ -59,49 +67,18 @@ function getDateRange() {
 }
 
 // ============================================
-// HELPER: Parse date string without timezone shift
+// NOTE: Date/Time formatting functions have been moved to
+// src/utils/formatters.js for centralized user preference handling.
+// The Fixtures component uses hooks to get user preferences and
+// passes them to the formatters.
 // ============================================
-// When JS parses "2024-12-26", it treats it as UTC midnight.
-// In EST (UTC-5), that becomes Dec 25th at 7pm - wrong day!
-// This function parses the date parts manually to avoid timezone issues.
-function parseDateString(dateString) {
-  // Handle both "2024-12-26" and "2024-12-26 15:00:00" formats
-  const datePart = dateString.split(' ')[0];
-  const [year, month, day] = datePart.split('-').map(Number);
-  // Create date in LOCAL timezone (month is 0-indexed)
-  return new Date(year, month - 1, day);
-}
-
-// ============================================
-// HELPER: Format date for display
-// ============================================
-function formatDate(dateString) {
-  const date = parseDateString(dateString);
-  return date.toLocaleDateString('en-GB', {
-    weekday: 'long',
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric'
-  });
-}
-
-// ============================================
-// HELPER: Format short date for display
-// ============================================
-function formatShortDate(dateString) {
-  const date = parseDateString(dateString);
-  return date.toLocaleDateString('en-GB', {
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric'
-  });
-}
 
 // ============================================
 // HELPER: Parse UTC datetime string to Date object
 // ============================================
 // SportsMonks returns times in UTC format: "2024-12-26 15:00:00"
-// We need to explicitly tell JavaScript this is UTC, then convert to Eastern.
+// We need to explicitly tell JavaScript this is UTC, then convert.
+// (Still needed locally for sorting operations)
 function parseUTCDateTime(dateString) {
   // "2024-12-26 15:00:00" -> "2024-12-26T15:00:00Z" (ISO format with Z = UTC)
   const isoString = dateString.replace(' ', 'T') + 'Z';
@@ -109,51 +86,25 @@ function parseUTCDateTime(dateString) {
 }
 
 // ============================================
-// HELPER: Format time for display (Eastern Time)
+// HELPER: Group fixtures by date (user's timezone)
 // ============================================
-function formatTime(dateString) {
-  const date = parseUTCDateTime(dateString);
-  const timeStr = date.toLocaleTimeString('en-US', {
-    hour: 'numeric',
-    minute: '2-digit',
-    hour12: true,
-    timeZone: 'America/New_York'
-  });
-  return `${timeStr} ET`;
-}
-
-// ============================================
-// HELPER: Get Eastern Time date string from UTC datetime
-// ============================================
-// Converts UTC datetime to Eastern Time and returns YYYY-MM-DD format
-function getEasternDateString(dateString) {
-  const date = parseUTCDateTime(dateString);
-  // Format as YYYY-MM-DD in Eastern timezone
-  return date.toLocaleDateString('en-CA', {
-    timeZone: 'America/New_York'
-  }); // en-CA gives YYYY-MM-DD format
-}
-
-// ============================================
-// HELPER: Group fixtures by date (Eastern Time)
-// ============================================
-function groupFixturesByDate(fixtures) {
+function groupFixturesByDate(fixtures, timezone = 'America/New_York') {
   const groups = {};
-  
+
   fixtures.forEach(fixture => {
-    // Group by Eastern Time date, not UTC date
-    const date = getEasternDateString(fixture.starting_at);
+    // Group by user's timezone date, not UTC date
+    const date = getTimezoneDateString(fixture.starting_at, timezone);
     if (!groups[date]) {
       groups[date] = [];
     }
     groups[date].push(fixture);
   });
-  
+
   const sortedDates = Object.keys(groups).sort();
-  
+
   return sortedDates.map(date => ({
     date,
-    fixtures: groups[date].sort((a, b) => 
+    fixtures: groups[date].sort((a, b) =>
       parseUTCDateTime(a.starting_at) - parseUTCDateTime(b.starting_at)
     )
   }));
@@ -252,6 +203,28 @@ function daysBetween(startDate, endDate) {
 }
 
 // ============================================
+// HELPER: Get weather display data from weatherReport
+// ============================================
+// Uses SportsMonks weather icon URL and description
+// weatherReport is a SEPARATE include from metadata (not nested inside it)
+// temperatureUnit: 'FAHRENHEIT' or 'CELSIUS' (user preference)
+function getWeatherDisplay(weatherReport, temperatureUnit = 'FAHRENHEIT') {
+  if (!weatherReport) return null;
+
+  const weather = weatherReport;
+  const condition = weather.description?.toLowerCase() || weather.type?.toLowerCase() || '';
+  const temp = weather.temperature?.day; // Daytime temperature in Celsius
+  const iconUrl = weather.icon; // SportsMonks CDN icon URL
+
+  const label = weather.description || condition || 'Unknown';
+
+  // Format temperature using user preference
+  const tempDisplay = formatTemperature(temp, temperatureUnit);
+
+  return { iconUrl, label, tempDisplay, condition };
+}
+
+// ============================================
 // HELPER: Get "time ago" text for last updated
 // ============================================
 // Returns "X minutes ago" if under 60 minutes,
@@ -340,10 +313,13 @@ function RefreshBar({ timeAgoText, loading, onRefresh }) {
 // ============================================
 // FIXTURE CARD COMPONENT
 // ============================================
-function FixtureCard({ fixture }) {
+function FixtureCard({ fixture, timezone, temperatureUnit }) {
   const homeTeam = fixture.participants?.find(p => p.meta?.location === 'home');
   const awayTeam = fixture.participants?.find(p => p.meta?.location === 'away');
   const score = getScoreDisplay(fixture);
+
+  // Get weather info from weatherreport (separate include from metadata)
+  const weather = getWeatherDisplay(fixture.weatherreport, temperatureUnit);
   
   // Get normalized match state using our helper
   const matchState = getMatchState(fixture);
@@ -481,7 +457,7 @@ function FixtureCard({ fixture }) {
           ) : (
             <div>
               <div className="text-lg font-medium text-gray-700">
-                {formatTime(fixture.starting_at)}
+                {formatTimeUtil(fixture.starting_at, timezone)}
               </div>
               <div className="text-xs text-gray-400 mt-1">Scheduled</div>
             </div>
@@ -503,9 +479,20 @@ function FixtureCard({ fixture }) {
         </div>
       </div>
 
+      {/* Venue */}
       {fixture.venue?.name && (
         <div className="mt-2 text-xs text-gray-400 text-center">
           📍 {fixture.venue.name}
+        </div>
+      )}
+
+      {/* Weather - below venue */}
+      {weather && (
+        <div className="mt-1 text-xs text-gray-400 text-center flex items-center justify-center space-x-1">
+          {weather.iconUrl && (
+            <img src={weather.iconUrl} alt={weather.label} className="w-5 h-5" />
+          )}
+          {weather.tempDisplay && <span>{weather.tempDisplay}</span>}
         </div>
       )}
 
@@ -1040,8 +1027,11 @@ function SearchPanel({ onSearchResults, onClearSearch, isSearchActive }) {
               onSelectTeam={setSelectedTeam}
               disabled={teamSearchLoading}
             />
+            <p className="mt-1 text-xs text-gray-500">
+              Start typing to see matching teams. Select a team, then choose how to search.
+            </p>
           </div>
-          
+
           {/* Search Type Options */}
           <div className="flex flex-wrap gap-3">
             <label className="flex items-center space-x-2 cursor-pointer">
@@ -1054,22 +1044,9 @@ function SearchPanel({ onSearchResults, onClearSearch, isSearchActive }) {
                 className="text-blue-600 focus:ring-blue-500"
                 disabled={teamSearchLoading}
               />
-              <span className="text-sm text-gray-700">Upcoming (next 100 days)</span>
+              <span className="text-sm text-gray-700">Upcoming</span>
             </label>
-            
-            <label className="flex items-center space-x-2 cursor-pointer">
-              <input
-                type="radio"
-                name="searchType"
-                value="historical"
-                checked={searchType === 'historical'}
-                onChange={() => setSearchType('historical')}
-                className="text-blue-600 focus:ring-blue-500"
-                disabled={teamSearchLoading}
-              />
-              <span className="text-sm text-gray-700">Full Season</span>
-            </label>
-            
+
             <label className="flex items-center space-x-2 cursor-pointer">
               <input
                 type="radio"
@@ -1082,8 +1059,21 @@ function SearchPanel({ onSearchResults, onClearSearch, isSearchActive }) {
               />
               <span className="text-sm text-gray-700">Custom Date Range</span>
             </label>
+
+            <label className="flex items-center space-x-2 cursor-pointer">
+              <input
+                type="radio"
+                name="searchType"
+                value="historical"
+                checked={searchType === 'historical'}
+                onChange={() => setSearchType('historical')}
+                className="text-blue-600 focus:ring-blue-500"
+                disabled={teamSearchLoading}
+              />
+              <span className="text-sm text-gray-700">Historical Seasons</span>
+            </label>
           </div>
-          
+
           {/* Season Selector (for historical) */}
           {searchType === 'historical' && (
             <div>
@@ -1105,7 +1095,7 @@ function SearchPanel({ onSearchResults, onClearSearch, isSearchActive }) {
               </select>
             </div>
           )}
-          
+
           {/* Date Range Inputs (for custom range) */}
           {searchType === 'dateRange' && (
             <div className="space-y-2">
@@ -1137,10 +1127,10 @@ function SearchPanel({ onSearchResults, onClearSearch, isSearchActive }) {
                   />
                 </div>
               </div>
-              
+
               {teamStartDate && teamEndDate && (
                 <div className={`text-sm ${isTeamDateRangeValid ? 'text-gray-600' : 'text-red-600'}`}>
-                  {isTeamDateRangeValid 
+                  {isTeamDateRangeValid
                     ? `📅 ${teamDateRangeDays} days selected`
                     : teamDateRangeDays > MAX_TEAM_DATE_RANGE_DAYS
                       ? `⚠️ ${teamDateRangeDays} days selected (max ${MAX_TEAM_DATE_RANGE_DAYS} days allowed)`
@@ -1150,7 +1140,7 @@ function SearchPanel({ onSearchResults, onClearSearch, isSearchActive }) {
               )}
             </div>
           )}
-          
+
           {/* Search Button */}
           <button
             onClick={handleTeamSearch}
@@ -1161,7 +1151,19 @@ function SearchPanel({ onSearchResults, onClearSearch, isSearchActive }) {
           >
             {teamSearchLoading ? 'Searching...' : 'Search Fixtures'}
           </button>
-          
+
+          {/* Contextual hint based on search type */}
+          {searchType === 'upcoming' && (
+            <p className="text-xs text-gray-500 text-center">
+              Shows all scheduled fixtures for the next 100 days
+            </p>
+          )}
+          {searchType === 'dateRange' && (
+            <p className="text-xs text-gray-500 text-center">
+              Search any date range up to 100 days
+            </p>
+          )}
+
           {loadingProgress && (
             <div className="text-sm text-blue-600 bg-blue-50 p-2 rounded-md animate-pulse">
               ⏳ {loadingProgress}
@@ -1415,17 +1417,17 @@ function SearchPanel({ onSearchResults, onClearSearch, isSearchActive }) {
         </div>
       )}
 
-      {/* Helper Text */}
-      <p className="mt-3 text-xs text-gray-500">
-        {searchMode === 'team'
-          ? 'Start typing to see matching teams. Select a team, then choose how to search.'
-          : searchMode === 'competition'
+      {/* Helper Text (not shown for team mode - has its own helper) */}
+      {searchMode !== 'team' && (
+        <p className="mt-3 text-xs text-gray-500">
+          {searchMode === 'competition'
             ? 'Select a competition to view upcoming fixtures or search by date range.'
             : dateSearchType === 'single'
               ? 'Select a date to view all Premier League, FA Cup, and Carabao Cup fixtures.'
               : `Select a date range (up to ${MAX_DATE_RANGE_DAYS} days) to view fixtures across multiple days.`
-        }
-      </p>
+          }
+        </p>
+      )}
     </div>
   );
 }
@@ -1439,10 +1441,13 @@ function SearchPanel({ onSearchResults, onClearSearch, isSearchActive }) {
 //   - loading: Whether a refresh is in progress
 //   - timeAgoText: "X minutes ago" text for last updated
 //   - onRefresh: Function to refresh the search results
-function SearchResults({ searchData, onClear, loading, timeAgoText, onRefresh }) {
+//   - timezone: User's timezone preference
+//   - dateFormat: User's date format preference
+//   - temperatureUnit: User's temperature unit preference
+function SearchResults({ searchData, onClear, loading, timeAgoText, onRefresh, timezone, dateFormat, temperatureUnit }) {
   const { type, query, fixtures, isHistorical, season, teamId, competitionId, dateRange, startDate, endDate, isRange } = searchData;
-  
-  const groupedFixtures = groupFixturesByDate(fixtures);
+
+  const groupedFixtures = groupFixturesByDate(fixtures, timezone);
   
   // Determine if we should show the refresh button
   // Show refresh if the search could contain live matches (not purely historical)
@@ -1454,20 +1459,20 @@ function SearchResults({ searchData, onClear, loading, timeAgoText, onRefresh })
         return `${query} - ${season} Season`;
       }
       if (dateRange) {
-        return `${query} (${formatShortDate(dateRange.startDate)} - ${formatShortDate(dateRange.endDate)})`;
+        return `${query} (${formatShortDateOnly(dateRange.startDate, dateFormat)} - ${formatShortDateOnly(dateRange.endDate, dateFormat)})`;
       }
       return `Upcoming: ${query}`;
     }
     if (type === 'competition') {
       if (dateRange) {
-        return `${query} (${formatShortDate(dateRange.startDate)} - ${formatShortDate(dateRange.endDate)})`;
+        return `${query} (${formatShortDateOnly(dateRange.startDate, dateFormat)} - ${formatShortDateOnly(dateRange.endDate, dateFormat)})`;
       }
       return `Upcoming: ${query}`;
     }
     if (type === 'dateRange' || isRange) {
-      return `Fixtures: ${formatShortDate(startDate)} - ${formatShortDate(endDate)}`;
+      return `Fixtures: ${formatShortDateOnly(startDate, dateFormat)} - ${formatShortDateOnly(endDate, dateFormat)}`;
     }
-    return `Fixtures on ${formatDate(query)}`;
+    return `Fixtures on ${formatDateOnly(query, dateFormat)}`;
   };
   
   return (
@@ -1532,13 +1537,13 @@ function SearchResults({ searchData, onClear, loading, timeAgoText, onRefresh })
                 ${isHistorical ? 'bg-amber-100' : 'bg-blue-100'}`}
               >
                 <h3 className={`font-semibold ${isHistorical ? 'text-amber-800' : 'text-blue-800'}`}>
-                  {formatDate(date)}
+                  {formatDateOnly(date, dateFormat)}
                 </h3>
               </div>
 
               <div className="space-y-3">
                 {dayFixtures.map((fixture) => (
-                  <FixtureCard key={fixture.id} fixture={fixture} />
+                  <FixtureCard key={fixture.id} fixture={fixture} timezone={timezone} temperatureUnit={temperatureUnit} />
                 ))}
               </div>
             </div>
@@ -1552,8 +1557,8 @@ function SearchResults({ searchData, onClear, loading, timeAgoText, onRefresh })
 // ============================================
 // DEFAULT FIXTURES COMPONENT
 // ============================================
-function DefaultFixtures({ fixtures, loading, error, dateRange, timeAgoText, onRefresh }) {
-  const groupedFixtures = groupFixturesByDate(fixtures);
+function DefaultFixtures({ fixtures, loading, error, dateRange, timeAgoText, onRefresh, timezone, dateFormat, temperatureUnit }) {
+  const groupedFixtures = groupFixturesByDate(fixtures, timezone);
 
   return (
     <div>
@@ -1564,9 +1569,9 @@ function DefaultFixtures({ fixtures, loading, error, dateRange, timeAgoText, onR
         
         {dateRange.startDate && dateRange.endDate && (
           <div className="text-sm text-gray-500 text-right">
-            <div>{formatDate(dateRange.startDate)}</div>
+            <div>{formatDateOnly(dateRange.startDate, dateFormat)}</div>
             <div className="text-gray-400">to</div>
-            <div>{formatDate(dateRange.endDate)}</div>
+            <div>{formatDateOnly(dateRange.endDate, dateFormat)}</div>
           </div>
         )}
       </div>
@@ -1597,7 +1602,7 @@ function DefaultFixtures({ fixtures, loading, error, dateRange, timeAgoText, onR
           </h2>
           <p className="text-gray-500">
             No Premier League, FA Cup, or Carabao Cup fixtures before{' '}
-            <span className="font-medium">{formatDate(dateRange.endDate)}</span>.
+            <span className="font-medium">{formatDateOnly(dateRange.endDate, dateFormat)}</span>.
           </p>
         </div>
       ) : (
@@ -1606,13 +1611,13 @@ function DefaultFixtures({ fixtures, loading, error, dateRange, timeAgoText, onR
             <div key={date}>
               <div className="sticky top-0 bg-gray-100 px-4 py-2 rounded-md mb-3 z-10">
                 <h3 className="font-semibold text-gray-700">
-                  {formatDate(date)}
+                  {formatDateOnly(date, dateFormat)}
                 </h3>
               </div>
 
               <div className="space-y-3">
                 {dayFixtures.map((fixture) => (
-                  <FixtureCard key={fixture.id} fixture={fixture} />
+                  <FixtureCard key={fixture.id} fixture={fixture} timezone={timezone} temperatureUnit={temperatureUnit} />
                 ))}
               </div>
             </div>
@@ -1627,6 +1632,14 @@ function DefaultFixtures({ fixtures, loading, error, dateRange, timeAgoText, onR
 // FIXTURES COMPONENT (MAIN)
 // ============================================
 const Fixtures = () => {
+  // ============================================
+  // USER PREFERENCES
+  // ============================================
+  const { user } = useAuth();
+  const timezone = user?.timezone || 'America/New_York';
+  const dateFormat = user?.dateFormat || 'US';
+  const temperatureUnit = user?.temperatureUnit || 'FAHRENHEIT';
+
   // ============================================
   // STATE: Default Fixtures View
   // ============================================
@@ -1916,12 +1929,15 @@ const Fixtures = () => {
       />
 
       {searchResults ? (
-        <SearchResults 
+        <SearchResults
           searchData={searchResults}
           onClear={handleClearSearch}
           loading={searchLoading}
           timeAgoText={searchTimeAgoText}
           onRefresh={refreshSearchResults}
+          timezone={timezone}
+          dateFormat={dateFormat}
+          temperatureUnit={temperatureUnit}
         />
       ) : (
         <DefaultFixtures
@@ -1931,6 +1947,9 @@ const Fixtures = () => {
           dateRange={dateRange}
           timeAgoText={timeAgoText}
           onRefresh={() => fetchFixtures()}
+          timezone={timezone}
+          dateFormat={dateFormat}
+          temperatureUnit={temperatureUnit}
         />
       )}
     </div>

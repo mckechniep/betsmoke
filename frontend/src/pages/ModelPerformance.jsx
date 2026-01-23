@@ -949,15 +949,11 @@ const ModelPerformance = () => {
               </ul>
             </div>
             <p className="text-gray-300 text-sm">
-              Log Loss quantifies the <strong className="text-white">distance</strong> between predicted 
-              probability distributions and actual outcomes. Unlike accuracy (which only cares about 
-              right/wrong), log loss penalizes predictions based on how far off the probability was.
+              Log Loss quantifies the <strong className="text-white">distance</strong> between predicted probability distributions and actual outcomes. Unlike accuracy (which only cares about right/wrong), log loss penalizes predictions based on how far off the probability was.
             </p>
             <p className="text-gray-300 text-sm mt-2">
               A prediction of 0.99 for an event that doesn't happen incurs a much larger penalty than 
-              a prediction of 0.51 for the same wrong outcome. This makes log loss ideal for evaluating 
-              <strong className="text-white">calibration</strong> — whether a model's confidence levels 
-              are trustworthy.
+              a prediction of 0.51 for the same wrong outcome. This makes log loss ideal for evaluating <strong className="text-white">calibration</strong> — whether a model's confidence levels are trustworthy.
             </p>
           </div>
           
@@ -981,8 +977,7 @@ const ModelPerformance = () => {
           <div className="mb-6">
             <h4 className="text-lg font-semibold text-blue-400 mb-2">Historical Log Loss Calculation</h4>
             <p className="text-gray-300 text-sm mb-2">
-              The historical log loss represents a <strong className="text-white">naive baseline</strong> using 
-              only league-wide frequencies. For a 1X2 market:
+              The historical log loss represents a <strong className="text-white">naive baseline</strong> using only league-wide frequencies. For a 1X2 market:
             </p>
             <div className="bg-gray-800 p-4 rounded-lg font-mono text-sm mb-3">
               <p className="text-gray-400">// Example: Premier League historical frequencies</p>
@@ -992,8 +987,7 @@ const ModelPerformance = () => {
               <p className="text-gray-500 mt-2">// Baseline predicts these same probabilities for EVERY match</p>
             </div>
             <p className="text-gray-300 text-sm">
-              This baseline ignores all context — team form, home/away records, injuries, head-to-head. 
-              If the AI model can't beat this baseline, it's not adding value.
+              This baseline ignores all context — team form, home/away records, injuries, head-to-head. If the AI model can't beat this baseline, it's not adding value.
             </p>
           </div>
           
@@ -1008,9 +1002,7 @@ const ModelPerformance = () => {
               <p className="text-green-400">Differential = (0.65 - 0.60) / 0.65 × 100 = +7.7%</p>
             </div>
             <p className="text-gray-300 text-sm">
-              We use absolute values because both numbers are negative. A positive differential means 
-              the model's log loss is closer to zero (better) than the historical baseline. A negative 
-              differential means the model is underperforming the baseline.
+              We use absolute values because both numbers are negative. A positive differential means the model's log loss is closer to zero (better) than the historical baseline. A negative differential means the model is underperforming the baseline.
             </p>
           </div>
           
@@ -1018,8 +1010,7 @@ const ModelPerformance = () => {
           <div className="mb-6">
             <h4 className="text-lg font-semibold text-blue-400 mb-2">Rating Threshold Breakdown</h4>
             <p className="text-gray-300 text-sm mb-2">
-              SportsMonks assigns ratings based on how much the model's log loss improves over the 
-              historical baseline. These thresholds reflect how difficult it is to consistently beat the baseline:
+              SportsMonks assigns ratings based on how much the model's log loss improves over the historical baseline. These thresholds reflect how difficult it is to consistently beat the baseline:
             </p>
             <div className="bg-gray-800 p-4 rounded-lg text-sm">
               <table className="w-full">
@@ -1070,9 +1061,7 @@ const ModelPerformance = () => {
               <p className="text-red-400">Model B: Higher log loss (overconfident and wrong)</p>
             </div>
             <p className="text-gray-300 text-sm">
-              For betting, calibration matters enormously. A model that says "60% confident" should 
-              be right about 60% of the time at that confidence level. Log loss captures this; raw 
-              accuracy doesn't.
+              For betting, calibration matters enormously. A model that says "60% confident" should be right about 60% of the time at that confidence level. Log loss captures this; raw accuracy doesn't.
             </p>
           </div>
           
@@ -1080,14 +1069,10 @@ const ModelPerformance = () => {
           <div>
             <h4 className="text-lg font-semibold text-blue-400 mb-2">Trend Calculation</h4>
             <p className="text-gray-300 text-sm">
-              The trend compares the model's log loss over the <strong className="text-white">most recent 50 matches</strong> 
-              against the prior period. If the recent log loss is meaningfully lower (better), the trend 
-              is <span className="text-green-400">↑ Up</span>. If higher (worse), it's <span className="text-red-400">↓ Down</span>. 
-              If within a small threshold, it's <span className="text-gray-400">→ Stable</span>.
+              The trend compares the model's log loss over the <strong className="text-white">most recent 50 matches</strong> against the prior period. If the recent log loss is meaningfully lower (better), the trend is <span className="text-green-400">↑ Up</span>. If higher (worse), it's <span className="text-red-400">↓ Down</span>. If within a small threshold, it's <span className="text-gray-400">→ Stable</span>.
             </p>
             <p className="text-gray-300 text-sm mt-2">
-              This helps identify whether the model is adapting to current league conditions or if 
-              patterns are shifting in ways the model hasn't captured yet.
+              This helps identify whether the model is adapting to current league conditions or if patterns are shifting in ways the model hasn't captured yet.
             </p>
           </div>
           

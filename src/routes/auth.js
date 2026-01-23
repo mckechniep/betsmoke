@@ -25,6 +25,8 @@ const router = express.Router();
 const SALT_ROUNDS = 10;                    // bcrypt salt rounds
 const RESET_TOKEN_EXPIRY_HOURS = 1;        // Password reset token valid for 1 hour
 const VALID_ODDS_FORMATS = ['AMERICAN', 'DECIMAL', 'FRACTIONAL'];
+const VALID_DATE_FORMATS = ['US', 'EU'];
+const VALID_TEMPERATURE_UNITS = ['FAHRENHEIT', 'CELSIUS'];
 
 // ============================================
 // HELPER: Generate a secure random token
@@ -49,6 +51,8 @@ const sanitizeUser = (user) => {
     email: user.email,
     oddsFormat: user.oddsFormat,
     timezone: user.timezone,
+    dateFormat: user.dateFormat,
+    temperatureUnit: user.temperatureUnit,
     hasSecurityQuestion: !!user.securityQuestion,
     isAdmin: user.isAdmin || false,
     createdAt: user.createdAt
@@ -71,13 +75,15 @@ const sanitizeUser = (user) => {
 
 router.post('/register', async (req, res) => {
   try {
-    const { 
-      email, 
-      password, 
-      oddsFormat, 
-      timezone, 
-      securityQuestion, 
-      securityAnswer 
+    const {
+      email,
+      password,
+      oddsFormat,
+      timezone,
+      dateFormat,
+      temperatureUnit,
+      securityQuestion,
+      securityAnswer
     } = req.body;
 
     // -----------------------------------------
@@ -102,6 +108,20 @@ router.post('/register', async (req, res) => {
     if (oddsFormat && !VALID_ODDS_FORMATS.includes(oddsFormat)) {
       return res.status(400).json({
         error: `Invalid odds format. Must be one of: ${VALID_ODDS_FORMATS.join(', ')}`
+      });
+    }
+
+    // Date format validation (if provided)
+    if (dateFormat && !VALID_DATE_FORMATS.includes(dateFormat)) {
+      return res.status(400).json({
+        error: `Invalid date format. Must be one of: ${VALID_DATE_FORMATS.join(', ')}`
+      });
+    }
+
+    // Temperature unit validation (if provided)
+    if (temperatureUnit && !VALID_TEMPERATURE_UNITS.includes(temperatureUnit)) {
+      return res.status(400).json({
+        error: `Invalid temperature unit. Must be one of: ${VALID_TEMPERATURE_UNITS.join(', ')}`
       });
     }
 
@@ -147,6 +167,8 @@ router.post('/register', async (req, res) => {
     // Add optional fields if provided
     if (oddsFormat) userData.oddsFormat = oddsFormat;
     if (timezone) userData.timezone = timezone;
+    if (dateFormat) userData.dateFormat = dateFormat;
+    if (temperatureUnit) userData.temperatureUnit = temperatureUnit;
     if (securityQuestion) userData.securityQuestion = securityQuestion;
     if (hashedSecurityAnswer) userData.securityAnswer = hashedSecurityAnswer;
 
@@ -256,12 +278,12 @@ router.get('/me', authMiddleware, async (req, res) => {
 // UPDATE PREFERENCES (Protected)
 // PATCH /auth/preferences
 // ============================================
-// Body: { oddsFormat?, timezone? }
+// Body: { oddsFormat?, timezone?, dateFormat?, temperatureUnit? }
 // ============================================
 
 router.patch('/preferences', authMiddleware, async (req, res) => {
   try {
-    const { oddsFormat, timezone } = req.body;
+    const { oddsFormat, timezone, dateFormat, temperatureUnit } = req.body;
     const updateData = {};
 
     // Validate and add odds format
@@ -277,6 +299,26 @@ router.patch('/preferences', authMiddleware, async (req, res) => {
     // Add timezone (we trust the frontend to send valid IANA timezones)
     if (timezone !== undefined) {
       updateData.timezone = timezone;
+    }
+
+    // Validate and add date format
+    if (dateFormat !== undefined) {
+      if (!VALID_DATE_FORMATS.includes(dateFormat)) {
+        return res.status(400).json({
+          error: `Invalid date format. Must be one of: ${VALID_DATE_FORMATS.join(', ')}`
+        });
+      }
+      updateData.dateFormat = dateFormat;
+    }
+
+    // Validate and add temperature unit
+    if (temperatureUnit !== undefined) {
+      if (!VALID_TEMPERATURE_UNITS.includes(temperatureUnit)) {
+        return res.status(400).json({
+          error: `Invalid temperature unit. Must be one of: ${VALID_TEMPERATURE_UNITS.join(', ')}`
+        });
+      }
+      updateData.temperatureUnit = temperatureUnit;
     }
 
     // Check if there's anything to update

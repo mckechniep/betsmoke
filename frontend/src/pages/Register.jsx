@@ -46,6 +46,8 @@ const Register = () => {
   const [showPreferences, setShowPreferences] = useState(false);
   const [oddsFormat, setOddsFormat] = useState('AMERICAN');
   const [timezone, setTimezone] = useState('');
+  const [dateFormat, setDateFormat] = useState('US');
+  const [temperatureUnit, setTemperatureUnit] = useState('FAHRENHEIT');
   const [timezoneOptions, setTimezoneOptions] = useState([]);
   
   // Optional security question
@@ -120,6 +122,8 @@ const Register = () => {
       const options = {
         oddsFormat,
         timezone,
+        dateFormat,
+        temperatureUnit,
       };
 
       // Add security question if provided
@@ -268,6 +272,38 @@ const Register = () => {
                   <p className="text-xs text-gray-500 mt-1">
                     Match times will be shown in this timezone (detected: {getBrowserTimezone()})
                   </p>
+                </div>
+
+                {/* Date Format */}
+                <div>
+                  <label htmlFor="dateFormat" className="block text-sm font-medium text-gray-700 mb-1">
+                    Date Format
+                  </label>
+                  <select
+                    id="dateFormat"
+                    value={dateFormat}
+                    onChange={(e) => setDateFormat(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="US">US (January 25, 2026)</option>
+                    <option value="EU">European (25 January 2026)</option>
+                  </select>
+                </div>
+
+                {/* Temperature Unit */}
+                <div>
+                  <label htmlFor="temperatureUnit" className="block text-sm font-medium text-gray-700 mb-1">
+                    Temperature Unit
+                  </label>
+                  <select
+                    id="temperatureUnit"
+                    value={temperatureUnit}
+                    onChange={(e) => setTemperatureUnit(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="FAHRENHEIT">Fahrenheit (°F)</option>
+                    <option value="CELSIUS">Celsius (°C)</option>
+                  </select>
                 </div>
               </div>
             )}

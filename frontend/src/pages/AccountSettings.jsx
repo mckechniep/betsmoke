@@ -55,6 +55,8 @@ const AccountSettings = () => {
   // -----------------------------------------
   const [oddsFormat, setOddsFormat] = useState(user?.oddsFormat || 'AMERICAN');
   const [timezone, setTimezone] = useState(user?.timezone || 'America/New_York');
+  const [dateFormat, setDateFormat] = useState(user?.dateFormat || 'US');
+  const [temperatureUnit, setTemperatureUnit] = useState(user?.temperatureUnit || 'FAHRENHEIT');
   const [timezoneOptions, setTimezoneOptions] = useState([]);
   const [preferencesLoading, setPreferencesLoading] = useState(false);
   const [preferencesSuccess, setPreferencesSuccess] = useState('');
@@ -121,6 +123,8 @@ const AccountSettings = () => {
     if (user) {
       setOddsFormat(user.oddsFormat || 'AMERICAN');
       setTimezone(user.timezone || 'America/New_York');
+      setDateFormat(user.dateFormat || 'US');
+      setTemperatureUnit(user.temperatureUnit || 'FAHRENHEIT');
     }
   }, [user]);
 
@@ -136,7 +140,7 @@ const AccountSettings = () => {
     setPreferencesLoading(true);
 
     try {
-      await updatePreferences({ oddsFormat, timezone });
+      await updatePreferences({ oddsFormat, timezone, dateFormat, temperatureUnit });
       setPreferencesSuccess('Preferences saved successfully!');
     } catch (err) {
       setPreferencesError(err.message || 'Failed to save preferences');
@@ -295,6 +299,38 @@ const AccountSettings = () => {
             <p className="text-xs text-gray-500 mt-1">
               Your browser timezone: {getBrowserTimezone()}
             </p>
+          </div>
+
+          {/* Date Format */}
+          <div>
+            <label htmlFor="dateFormat" className="block text-sm font-medium text-gray-700 mb-1">
+              Date Format
+            </label>
+            <select
+              id="dateFormat"
+              value={dateFormat}
+              onChange={(e) => setDateFormat(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="US">US (MM/DD/YYYY - January 25, 2026)</option>
+              <option value="EU">European (DD/MM/YYYY - 25 January 2026)</option>
+            </select>
+          </div>
+
+          {/* Temperature Unit */}
+          <div>
+            <label htmlFor="temperatureUnit" className="block text-sm font-medium text-gray-700 mb-1">
+              Temperature Unit
+            </label>
+            <select
+              id="temperatureUnit"
+              value={temperatureUnit}
+              onChange={(e) => setTemperatureUnit(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="FAHRENHEIT">Fahrenheit (°F)</option>
+              <option value="CELSIUS">Celsius (°C)</option>
+            </select>
           </div>
 
           {/* Messages */}
