@@ -28,13 +28,13 @@ It is a **betting journal + research terminal**, NOT a gambling platform.
 | ORM | Prisma |
 | Auth | JWT tokens + bcrypt |
 | External Data | SportsMonks API (Standard Plan) |
-| Frontend | React (not yet implemented) |
+| Frontend | React + Vite + Tailwind CSS |
 
 ---
 
 ## Project Structure
 ```
-/home/mckechniep/projects-aw/betsmoke/
+/home/mckechniep/projects/betsmoke/
 │
 ├── prisma/
 │   ├── schema.prisma              # Database schema definition
@@ -62,6 +62,30 @@ It is a **betting journal + research terminal**, NOT a gambling platform.
 │   └── generated/
 │       └── prisma/                # Auto-generated Prisma client
 │
+├── frontend/                      # React frontend application
+│   ├── src/
+│   │   ├── api/
+│   │   │   └── client.js          # API client for backend calls
+│   │   ├── components/
+│   │   │   ├── Navbar.jsx         # Navigation bar with admin menu
+│   │   │   ├── ProtectedRoute.jsx # Auth route wrapper
+│   │   │   └── MatchPredictions.jsx # Match prediction display
+│   │   ├── context/
+│   │   │   └── AuthContext.jsx    # User auth state management
+│   │   ├── pages/
+│   │   │   ├── Login.jsx          # Login page
+│   │   │   ├── Register.jsx       # Registration page
+│   │   │   ├── Fixtures.jsx       # Fixtures list page
+│   │   │   ├── FixtureDetail.jsx  # Single fixture detail page
+│   │   │   ├── AccountSettings.jsx # User preferences page
+│   │   │   └── ModelPerformance.jsx # Prediction model stats
+│   │   ├── utils/
+│   │   │   └── formatters.js      # Centralized formatting utilities
+│   │   ├── App.jsx                # Main app component
+│   │   └── main.jsx               # Entry point
+│   ├── package.json
+│   └── vite.config.js
+│
 ├── scripts/
 │   └── seed-sportsmonks-types.js  # Seeds types from Excel file
 │
@@ -81,7 +105,7 @@ It is a **betting journal + research terminal**, NOT a gambling platform.
 ## Development Environment
 
 ### Location
-- WSL Ubuntu: `/home/mckechniep/projects-aw/betsmoke`
+- WSL Ubuntu: `/home/mckechniep/projects/betsmoke`
 
 ### Docker Database
 - Container name: `betsmoke-db`
@@ -90,10 +114,10 @@ It is a **betting journal + research terminal**, NOT a gambling platform.
 
 ### Running the Server
 ```bash
-cd /home/mckechniep/projects-aw/betsmoke
-npm run dev
+cd /home/mckechniep/projects/betsmoke
+npm run dev        # Backend on http://localhost:3000
+cd frontend && npm run dev  # Frontend on http://localhost:5173
 ```
-Server runs on `http://localhost:3000`
 
 ### Required Environment Variables
 ```
@@ -282,6 +306,8 @@ GET /types/status
 - Odds endpoints may use different response structures than match endpoints
 - Route ordering matters in Express - more specific routes must come before parameterized routes
 - Some endpoints return nested data differently based on includes used
+- **Fractional odds**: When denominator is 1, SportsMonks returns just the numerator (e.g., "15" instead of "15/1"). Our `formatOdds()` utility handles this automatically.
+- **Odds label inconsistency**: Different bookmakers use different labels for the same market (e.g., "Home/Draw", "1X", "Home or Draw" all mean the same thing). The `normalizeLabel()` function in FixtureDetail.jsx handles this.
 
 ### Available Data (Standard Plan)
 ✅ Fixtures, Livescores, Events, Lineups, Match Stats
@@ -325,6 +351,11 @@ Our SportsMonks subscription is limited to specific competitions:
 - `email`: Unique email address
 - `password`: Hashed with bcrypt
 - `isAdmin`: Boolean (default false) - grants access to admin endpoints
+- `timezone`: String (default "America/New_York") - user's preferred timezone
+- `oddsFormat`: Enum - AMERICAN, DECIMAL, FRACTIONAL (default AMERICAN)
+- `dateFormat`: Enum - US, EU (default US) - date display preference
+- `temperatureUnit`: Enum - FAHRENHEIT, CELSIUS (default FAHRENHEIT)
+- `securityQuestion`, `securityAnswer`: Optional account recovery fields
 - `createdAt`, `updatedAt`: Timestamps
 
 **Note**
@@ -446,6 +477,105 @@ adminApi.syncTypes(token)  // POST /admin/types/sync
 
 ---
 
+## User Preferences System
+
+### Overview
+Users can customize how data is displayed throughout the app. Preferences are stored in the database and applied client-side.
+
+### Available Preferences
+
+| Preference | Options | Default | Affects |
+|------------|---------|---------|---------|
+| Timezone | IANA timezone strings | America/New_York | Match times |
+| Date Format | US / EU | US | All date displays |
+| Temperature Unit | FAHRENHEIT / CELSIUS | FAHRENHEIT | Weather display |
+| Odds Format | AMERICAN / DECIMAL / FRACTIONAL | AMERICAN | All odds displays |
+
+### Date Format Examples
+- **US**: "Friday, January 25, 2026" / "Jan 25, 2026"
+- **EU**: "Friday, 25 January 2026" / "25 Jan 2026"
+
+### Backend Endpoints
+```
+PATCH /auth/preferences
+{
+  "timezone": "Europe/London",
+  "dateFormat": "EU",
+  "temperatureUnit": "CELSIUS",
+  "oddsFormat": "DECIMAL"
+}
+```
+
+### Frontend Implementation
+
+**Location:** `frontend/src/utils/formatters.js`
+
+Centralized formatting utilities that respect user preferences:
+
+```javascript
+import { formatTime, formatDate, formatShortDate, formatTemperature, formatOdds } from '../utils/formatters';
+
+// Time formatting (timezone-aware)
+formatTime("2024-12-26 15:00:00", "America/New_York")  // "10:00 AM ET"
+formatTime("2024-12-26 15:00:00", "Europe/London")     // "3:00 PM GMT"
+
+// Date formatting
+formatDate("2024-12-26 15:00:00", timezone, "US")  // "Thursday, December 26, 2024"
+formatDate("2024-12-26 15:00:00", timezone, "EU")  // "Thursday, 26 December 2024"
+
+// Temperature
+formatTemperature(22, "FAHRENHEIT")  // "72°F"
+formatTemperature(22, "CELSIUS")     // "22°C"
+
+// Odds (uses SportsMonks data fields directly)
+formatOdds(oddObject, "AMERICAN")    // "+150" or "-110"
+formatOdds(oddObject, "DECIMAL")     // "2.50"
+formatOdds(oddObject, "FRACTIONAL")  // "3/2" or "15/1"
+```
+
+### Key Implementation Details
+
+**Timezone Handling:**
+- SportsMonks returns all times in UTC format: "2024-12-26 15:00:00"
+- `parseUTCDateTime()` converts to JS Date with explicit UTC marker
+- `formatTime()` converts to user's timezone with abbreviation (ET, PT, GMT, etc.)
+
+**Odds Data from SportsMonks:**
+- SportsMonks returns odds in ALL formats - no conversion needed!
+- `value` or `decimal`: Decimal odds (e.g., "1.78")
+- `fractional`: Fractional odds (e.g., "39/50")
+- `american`: American odds (e.g., "+150" or "-110")
+- Just select the appropriate field based on user preference
+
+**SportsMonks Quirk - Fractional Odds:**
+- When denominator is 1, SportsMonks omits it (returns "15" instead of "15/1")
+- `formatOdds()` automatically appends "/1" when no slash present
+
+### Usage Pattern in Components
+```javascript
+import { useAuth } from '../context/AuthContext';
+import { formatTime, formatDate, formatTemperature, formatOdds } from '../utils/formatters';
+
+function MyComponent() {
+  const { user } = useAuth();
+  const timezone = user?.timezone || 'America/New_York';
+  const dateFormat = user?.dateFormat || 'US';
+  const temperatureUnit = user?.temperatureUnit || 'FAHRENHEIT';
+  const oddsFormat = user?.oddsFormat || 'AMERICAN';
+
+  return (
+    <div>
+      <p>{formatTime(fixture.starting_at, timezone)}</p>
+      <p>{formatDate(fixture.starting_at, timezone, dateFormat)}</p>
+      <p>{formatTemperature(weather.temp, temperatureUnit)}</p>
+      <p>{formatOdds(oddObject, oddsFormat)}</p>
+    </div>
+  );
+}
+```
+
+---
+
 ## Working Style Preferences
 
 ### Development Approach
@@ -491,13 +621,37 @@ Each endpoint implementation should include:
 - ✅ Top Scorers - Player leaderboards (GET /topscorers/seasons/:seasonId)
 - ✅ SportsMonks Types - Local storage of ~1200+ types with in-memory cache (GET /types/status)
 - ✅ Admin System - isAdmin flag, admin middleware, frontend Admin menu (POST /admin/types/sync)
+- ✅ User Preferences - timezone, oddsFormat, dateFormat, temperatureUnit (PATCH /auth/preferences)
+
+### Completed (Frontend)
+- ✅ React + Vite + Tailwind CSS setup
+- ✅ Authentication flow (Login, Register pages)
+- ✅ AuthContext for user state management
+- ✅ Protected routes
+- ✅ Fixtures list page with date navigation
+- ✅ Fixture detail page with:
+  - Match info (date, venue, weather, formations)
+  - Live/final scores with proper status handling (FT, AET, PEN, LIVE)
+  - Odds display (pre-match odds from multiple bookmakers)
+  - All Betting Markets section with normalized labels and table layout
+  - Match predictions display
+- ✅ Account Settings page (timezone, date format, temperature, odds format)
+- ✅ Model Performance page (prediction accuracy stats)
+- ✅ Centralized formatters utility (frontend/src/utils/formatters.js)
+- ✅ User preferences applied to all displays (timezone, date, temperature, odds)
+- ✅ Admin dropdown menu in navbar
 
 ### Not Yet Started
 
 **Infrastructure:**
-- ⬜ Frontend (React)
 - ⬜ Caching layer
 - ⬜ Deployment configuration
+
+**Features:**
+- ⬜ Notes UI (create, edit, delete notes)
+- ⬜ Team detail pages
+- ⬜ Player detail pages
+- ⬜ Search functionality
 
 ---
 
@@ -522,8 +676,15 @@ Each endpoint implementation should include:
 # Start database
 docker start betsmoke-db
 
-# Run development server
+# Run backend development server (from project root)
 npm run dev
+
+# Run frontend development server (from frontend/ directory)
+cd frontend && npm run dev
+
+# Run both backend and frontend (in separate terminals)
+# Terminal 1: npm run dev
+# Terminal 2: cd frontend && npm run dev
 
 # Run Prisma migrations
 npx prisma migrate dev
@@ -540,6 +701,12 @@ node scripts/seed-sportsmonks-types.js
 # Promote a user to admin
 node scripts/promote-admin.js <email>
 ```
+
+### Frontend Development Notes
+- Backend runs on `http://localhost:3000`
+- Frontend runs on `http://localhost:5173`
+- Frontend proxies API requests to backend via Vite config
+- After changing backend User model, restart backend to pick up new Prisma client
 
 ---
 

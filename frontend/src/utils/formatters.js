@@ -194,6 +194,7 @@ export function getOddsValue(odd, format = 'AMERICAN') {
 // ============================================
 // Formats odds value for display based on user preference.
 // Handles null values and adds + sign for positive American odds.
+// For fractional odds, adds "/1" when SportsMonks omits it.
 export function formatOdds(odd, format = 'AMERICAN') {
   const value = getOddsValue(odd, format);
   if (value === null || value === undefined) return '-';
@@ -208,7 +209,17 @@ export function formatOdds(odd, format = 'AMERICAN') {
     return oddStr;
   }
 
-  // For decimal and fractional, return as-is
+  // For fractional odds, add "/1" if missing (SportsMonks omits it for whole numbers)
+  if (format === 'FRACTIONAL') {
+    const oddStr = String(value);
+    // If it's just a number without a slash, add "/1"
+    if (!oddStr.includes('/')) {
+      return `${oddStr}/1`;
+    }
+    return oddStr;
+  }
+
+  // For decimal, return as-is
   return String(value);
 }
 

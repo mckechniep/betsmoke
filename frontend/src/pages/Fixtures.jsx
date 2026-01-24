@@ -21,13 +21,22 @@ import {
 // ============================================
 // LEAGUE IDS (Our subscription)
 // ============================================
-const ALLOWED_LEAGUES = {
+const ALLOWED_LEAGUE_IDS = [8, 24, 27]; // Premier League, FA Cup, Carabao Cup
+
+// Fallback league names (used if API data not loaded)
+const LEAGUE_NAMES = {
   8: 'Premier League',
   24: 'FA Cup',
   27: 'Carabao Cup'
 };
 
-const ALLOWED_LEAGUE_IDS = Object.keys(ALLOWED_LEAGUES).map(Number);
+// Helper to get league name by ID (uses fetched data if available, falls back to static names)
+const getLeagueName = (leagueId, leaguesData = null) => {
+  if (leaguesData && leaguesData[leagueId]) {
+    return leaguesData[leagueId].name;
+  }
+  return LEAGUE_NAMES[leagueId] || 'Unknown';
+};
 
 // ============================================
 // CONSTANTS
@@ -404,7 +413,7 @@ function FixtureCard({ fixture, timezone, temperatureUnit }) {
     >
       <div className="text-xs text-gray-500 mb-2 flex items-center justify-between">
         <span className="font-medium">
-          {fixture.league?.name || ALLOWED_LEAGUES[fixture.league_id]}
+          {fixture.league?.name || getLeagueName(fixture.league_id)}
         </span>
         {isLive && (
           <span className="bg-green-500 text-white px-2 py-0.5 rounded text-xs font-bold animate-pulse">
@@ -488,11 +497,13 @@ function FixtureCard({ fixture, timezone, temperatureUnit }) {
 
       {/* Weather - below venue */}
       {weather && (
-        <div className="mt-1 text-xs text-gray-400 text-center flex items-center justify-center space-x-1">
+        <div className="mt-1 text-sm text-gray-500 text-center flex items-center justify-center space-x-2">
           {weather.iconUrl && (
-            <img src={weather.iconUrl} alt={weather.label} className="w-5 h-5" />
+            <div className="bg-gradient-to-b from-sky-100 to-slate-200 rounded-full p-1 shadow-sm">
+              <img src={weather.iconUrl} alt={weather.label} className="w-8 h-8" />
+            </div>
           )}
-          {weather.tempDisplay && <span>{weather.tempDisplay}</span>}
+          {weather.tempDisplay && <span className="font-medium">{weather.tempDisplay}</span>}
         </div>
       )}
 
@@ -679,7 +690,11 @@ function TeamAutocomplete({ selectedTeam, onSelectTeam, disabled }) {
 function SearchPanel({ onSearchResults, onClearSearch, isSearchActive }) {
   // Search mode: 'team', 'competition', or 'date'
   const [searchMode, setSearchMode] = useState('team');
-  
+
+  // Leagues data (fetched from API for logos)
+  const [leaguesData, setLeaguesData] = useState(null);
+  const [leaguesLoading, setLeaguesLoading] = useState(false);
+
   // Competition search state
   const [selectedCompetition, setSelectedCompetition] = useState(null);
   const [competitionSearchType, setCompetitionSearchType] = useState('upcoming'); // 'upcoming' or 'dateRange'
@@ -707,6 +722,38 @@ function SearchPanel({ onSearchResults, onClearSearch, isSearchActive }) {
   // Error and progress state
   const [searchError, setSearchError] = useState('');
   const [loadingProgress, setLoadingProgress] = useState('');
+
+  // ============================================
+  // FETCH LEAGUES DATA (for competition logos)
+  // ============================================
+  useEffect(() => {
+    // Only fetch when switching to competition mode and data not yet loaded
+    if (searchMode === 'competition' && !leaguesData && !leaguesLoading) {
+      const fetchLeagues = async () => {
+        setLeaguesLoading(true);
+        try {
+          const data = await dataApi.getLeagues();
+          // Convert array to object keyed by league ID for easy lookup
+          const leaguesMap = {};
+          (data.leagues || []).forEach(league => {
+            if (ALLOWED_LEAGUE_IDS.includes(league.id)) {
+              leaguesMap[league.id] = {
+                name: league.name,
+                logo: league.image_path
+              };
+            }
+          });
+          setLeaguesData(leaguesMap);
+        } catch (err) {
+          console.error('Failed to fetch leagues:', err);
+          // Will fall back to static names, no logo
+        } finally {
+          setLeaguesLoading(false);
+        }
+      };
+      fetchLeagues();
+    }
+  }, [searchMode, leaguesData, leaguesLoading]);
 
   // ============================================
   // Calculate days in selected ranges
@@ -846,7 +893,7 @@ function SearchPanel({ onSearchResults, onClearSearch, isSearchActive }) {
       
       onSearchResults({
         type: 'competition',
-        query: ALLOWED_LEAGUES[selectedCompetition],
+        query: getLeagueName(selectedCompetition, leaguesData),
         competitionId: selectedCompetition,
         isHistorical,
         dateRange: competitionSearchType === 'dateRange' 
@@ -1182,27 +1229,76 @@ function SearchPanel({ onSearchResults, onClearSearch, isSearchActive }) {
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Select Competition
             </label>
-            <div className="grid grid-cols-3 gap-2">
-              {Object.entries(ALLOWED_LEAGUES).map(([id, name]) => (
-                <button
-                  key={id}
-                  type="button"
-                  onClick={() => setSelectedCompetition(parseInt(id))}
-                  disabled={competitionSearchLoading}
-                  className={`px-3 py-3 rounded-md text-sm font-medium transition-colors border-2
-                    ${selectedCompetition === parseInt(id)
-                      ? 'bg-blue-600 text-white border-blue-600'
-                      : 'bg-white text-gray-700 border-gray-200 hover:border-blue-300 hover:bg-blue-50'
+            {leaguesLoading ? (
+              <div className="flex justify-center py-8">
+                <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+              </div>
+            ) : (
+              <div className="grid grid-cols-3 gap-4">
+                {ALLOWED_LEAGUE_IDS.map((id) => {
+                  const league = leaguesData?.[id];
+                  const leagueName = league?.name || LEAGUE_NAMES[id];
+                  const leagueLogo = league?.logo;
+
+                  // Color scheme matching Competitions page
+                  const colorConfig = {
+                    8: { // Premier League
+                      gradient: 'from-purple-600 to-purple-800',
+                      hoverGradient: 'hover:from-purple-700 hover:to-purple-900',
+                      selectedRing: 'ring-purple-300',
+                      textColor: 'text-purple-700'
+                    },
+                    24: { // FA Cup
+                      gradient: 'from-red-600 to-red-800',
+                      hoverGradient: 'hover:from-red-700 hover:to-red-900',
+                      selectedRing: 'ring-red-300',
+                      textColor: 'text-red-700'
+                    },
+                    27: { // Carabao Cup
+                      gradient: 'from-green-600 to-green-800',
+                      hoverGradient: 'hover:from-green-700 hover:to-green-900',
+                      selectedRing: 'ring-green-300',
+                      textColor: 'text-green-700'
                     }
-                    ${competitionSearchLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
-                >
-                  {id === '8' && '⚽ '}
-                  {id === '24' && '🏆 '}
-                  {id === '27' && '🏆 '}
-                  {name}
-                </button>
-              ))}
-            </div>
+                  };
+
+                  const colors = colorConfig[id] || colorConfig[8];
+
+                  return (
+                    <button
+                      key={id}
+                      type="button"
+                      onClick={() => setSelectedCompetition(id)}
+                      disabled={competitionSearchLoading}
+                      className={`p-4 rounded-lg transition-all duration-200
+                        flex flex-col items-center justify-center space-y-3
+                        bg-gradient-to-r ${colors.gradient} ${colors.hoverGradient}
+                        shadow-md hover:shadow-lg
+                        ${selectedCompetition === id
+                          ? `ring-4 ${colors.selectedRing} shadow-lg`
+                          : ''
+                        }
+                        ${competitionSearchLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    >
+                      <div className="w-28 h-28 bg-white rounded-full flex items-center justify-center p-2">
+                        {leagueLogo ? (
+                          <img
+                            src={leagueLogo}
+                            alt={leagueName}
+                            className="w-24 h-24 object-contain"
+                          />
+                        ) : (
+                          <span className={`font-bold text-2xl ${colors.textColor}`}>
+                            {id === 8 ? 'PL' : id === 24 ? 'FA' : 'CC'}
+                          </span>
+                        )}
+                      </div>
+                      <span className="text-white font-bold text-sm">{leagueName}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
           </div>
           
           {/* Search Type Options */}

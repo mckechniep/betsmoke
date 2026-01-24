@@ -1734,10 +1734,9 @@ function TeamStatsComparisonSection(props) {
 // ============================================
 // Shows ALL markets with odds grouped by bookmaker within each market
 // Each market is individually expandable/collapsible
-// This section ignores the main bookmaker filter - shows everything
+// Uses consistent ordering and normalized labels across all bookmakers
 function AllBettingMarketsContent({ odds, bookmakers, oddsFormat, formatOddLabel, getMarketName }) {
   // State to track which markets are expanded
-  // Default: all collapsed (empty set)
   const [expandedMarkets, setExpandedMarkets] = useState(new Set());
 
   // Toggle a specific market's expanded state
@@ -1764,8 +1763,91 @@ function AllBettingMarketsContent({ odds, bookmakers, oddsFormat, formatOddLabel
     setExpandedMarkets(new Set());
   };
 
-  // Build a map of bookmaker ID -> name from the odds data
-  // This ensures we show proper names even for bookmakers not in the main filter
+  // ============================================
+  // NORMALIZE LABEL - Maps various formats to canonical keys
+  // ============================================
+  const normalizeLabel = (label, marketId) => {
+    if (!label) return label;
+    const lower = label.toLowerCase().trim();
+
+    // 1X2 / Match Result markets
+    if ([1, 37, 80, 28075].includes(marketId)) {
+      if (lower === '1' || lower === 'home' || lower.includes('home win')) return '1';
+      if (lower === 'x' || lower === 'draw') return 'X';
+      if (lower === '2' || lower === 'away' || lower.includes('away win')) return '2';
+    }
+
+    // Double Chance (market 63)
+    if (marketId === 63) {
+      if (lower === '1x' || lower.includes('home or draw') || lower.includes('home/draw')) return '1X';
+      if (lower === 'x2' || lower.includes('draw or away') || lower.includes('draw/away')) return 'X2';
+      if (lower === '12' || lower.includes('home or away') || lower.includes('home/away') || lower.includes('no draw')) return '12';
+    }
+
+    // Both Teams to Score (market 14)
+    if (marketId === 14) {
+      if (lower === 'yes' || lower === 'btts yes') return 'yes';
+      if (lower === 'no' || lower === 'btts no') return 'no';
+    }
+
+    // Over/Under markets (12, 38, 47, 5) - normalize the number format
+    if ([12, 38, 47, 5].includes(marketId)) {
+      // Extract Over/Under and the number
+      const overMatch = lower.match(/over\s*([\d.]+)/);
+      const underMatch = lower.match(/under\s*([\d.]+)/);
+      if (overMatch) return `over_${overMatch[1]}`;
+      if (underMatch) return `under_${underMatch[1]}`;
+    }
+
+    // Team to Score First/Last (69, 75)
+    if ([69, 75].includes(marketId)) {
+      if (lower === '1' || lower === 'home') return '1';
+      if (lower === '2' || lower === 'away') return '2';
+      if (lower === 'x' || lower === 'none' || lower === 'no goal') return 'X';
+    }
+
+    // Odd/Even (99)
+    if (marketId === 99) {
+      if (lower === 'odd') return 'odd';
+      if (lower === 'even') return 'even';
+    }
+
+    return label; // Return original if no normalization needed
+  };
+
+  // ============================================
+  // GET SORT ORDER FOR MARKET
+  // ============================================
+  const getSortOrder = (marketId) => {
+    // 1X2 markets: Home → Draw → Away
+    if ([1, 37, 80, 28075].includes(marketId)) {
+      return { '1': 0, 'X': 1, '2': 2 };
+    }
+
+    // Double Chance: Home/Draw → Home/Away → Draw/Away
+    if (marketId === 63) {
+      return { '1X': 0, '12': 1, 'X2': 2 };
+    }
+
+    // BTTS: Yes → No
+    if (marketId === 14) {
+      return { 'yes': 0, 'no': 1 };
+    }
+
+    // Team to Score: Home → Away → None
+    if ([69, 75].includes(marketId)) {
+      return { '1': 0, '2': 1, 'X': 2 };
+    }
+
+    // Odd/Even: Odd → Even
+    if (marketId === 99) {
+      return { 'odd': 0, 'even': 1 };
+    }
+
+    return null; // No specific order
+  };
+
+  // Build a map of bookmaker ID -> name
   const bookmakerNames = useMemo(() => {
     const names = {};
     odds.forEach(odd => {
@@ -1776,7 +1858,7 @@ function AllBettingMarketsContent({ odds, bookmakers, oddsFormat, formatOddLabel
     return names;
   }, [odds]);
 
-  // Group ALL odds by market (ignoring any filter)
+  // Group ALL odds by market
   const allOddsByMarket = useMemo(() => {
     return odds.reduce((acc, odd) => {
       const marketId = odd.market_id;
@@ -1820,11 +1902,11 @@ function AllBettingMarketsContent({ odds, bookmakers, oddsFormat, formatOddLabel
       {Object.entries(allOddsByMarket).map(([marketId, marketOdds]) => {
         const mId = parseInt(marketId);
         const isExpanded = expandedMarkets.has(mId);
-        
-        // Get market name from the included market data, or fallback to lookup
+
+        // Get market name
         const marketName = marketOdds[0]?.market?.name || getMarketName(mId);
-        
-        // Group odds by bookmaker within this market
+
+        // Group odds by bookmaker
         const oddsByBookmaker = marketOdds.reduce((acc, odd) => {
           const bmId = odd.bookmaker_id;
           if (!acc[bmId]) {
@@ -1833,16 +1915,52 @@ function AllBettingMarketsContent({ odds, bookmakers, oddsFormat, formatOddLabel
           acc[bmId].push(odd);
           return acc;
         }, {});
-        
-        // Count unique bookmakers for this market
+
         const bookmakerCount = Object.keys(oddsByBookmaker).length;
-        
-        // Get unique selection labels for this market (for header preview)
-        const uniqueLabels = [...new Set(marketOdds.map(o => o.label || o.name))].slice(0, 4);
-        
+
+        // Get all unique normalized labels across ALL bookmakers for consistent columns
+        const allNormalizedLabels = new Map();
+        marketOdds.forEach(odd => {
+          const rawLabel = odd.label || odd.name;
+          const normalized = normalizeLabel(rawLabel, mId);
+          if (!allNormalizedLabels.has(normalized)) {
+            allNormalizedLabels.set(normalized, rawLabel);
+          }
+        });
+
+        // Sort the canonical labels
+        let sortedLabels = [...allNormalizedLabels.keys()];
+        const sortOrder = getSortOrder(mId);
+        if (sortOrder) {
+          sortedLabels.sort((a, b) => {
+            const orderA = sortOrder[a] ?? 999;
+            const orderB = sortOrder[b] ?? 999;
+            return orderA - orderB;
+          });
+        } else {
+          // For Over/Under, sort numerically
+          if ([12, 38, 47, 5].includes(mId)) {
+            sortedLabels.sort((a, b) => {
+              const aNum = parseFloat(a.split('_')[1] || '0');
+              const bNum = parseFloat(b.split('_')[1] || '0');
+              const aIsOver = a.startsWith('over');
+              const bIsOver = b.startsWith('over');
+              // Group overs first, then unders, each sorted by number
+              if (aIsOver && !bIsOver) return -1;
+              if (!aIsOver && bIsOver) return 1;
+              return aNum - bNum;
+            });
+          } else {
+            sortedLabels.sort();
+          }
+        }
+
+        // Preview labels for collapsed state
+        const previewLabels = sortedLabels.slice(0, 4).map(norm => formatOddLabel(allNormalizedLabels.get(norm), mId));
+
         return (
           <div key={marketId} className="border border-gray-200 rounded-lg overflow-hidden">
-            {/* Market Header (clickable to expand/collapse) */}
+            {/* Market Header */}
             <button
               onClick={() => toggleMarket(mId)}
               className="w-full px-4 py-3 bg-gray-50 hover:bg-gray-100 flex items-center justify-between transition-colors"
@@ -1856,84 +1974,67 @@ function AllBettingMarketsContent({ odds, bookmakers, oddsFormat, formatOddLabel
                   {bookmakerCount} bookmaker{bookmakerCount !== 1 ? 's' : ''}
                 </span>
               </div>
-              {/* Preview of selections when collapsed */}
               {!isExpanded && (
                 <div className="text-xs text-gray-400 hidden sm:block">
-                  {uniqueLabels.map(label => formatOddLabel(label, mId)).join(' • ')}
+                  {previewLabels.join(' • ')}
                 </div>
               )}
             </button>
-            
-            {/* Expanded Content - Odds grouped by bookmaker */}
+
+            {/* Expanded Content - Table Layout */}
             {isExpanded && (
-              <div className="p-4 bg-white border-t border-gray-200 space-y-3">
+              <div className="bg-white border-t border-gray-200">
+                {/* Column Headers */}
+                <div className="grid bg-gray-100 border-b border-gray-200 text-xs font-medium text-gray-600"
+                  style={{ gridTemplateColumns: `140px repeat(${sortedLabels.length}, minmax(80px, 1fr))` }}
+                >
+                  <div className="px-3 py-2">Bookmaker</div>
+                  {sortedLabels.map(normLabel => (
+                    <div key={normLabel} className="px-2 py-2 text-center">
+                      {formatOddLabel(allNormalizedLabels.get(normLabel), mId)}
+                    </div>
+                  ))}
+                </div>
+
+                {/* Bookmaker Rows */}
                 {Object.entries(oddsByBookmaker)
                   .sort((a, b) => {
-                    // Sort bookmakers alphabetically by name
                     const nameA = bookmakerNames[a[0]] || '';
                     const nameB = bookmakerNames[b[0]] || '';
                     return nameA.localeCompare(nameB);
                   })
-                  .map(([bmId, bmOdds]) => {
+                  .map(([bmId, bmOdds], idx) => {
                     const bookmakerName = bookmakerNames[bmId] || `Bookmaker ${bmId}`;
-                    
-                    // Get unique labels for this bookmaker's odds
-                    let labels = [...new Set(bmOdds.map(o => o.label || o.name))];
-                    
-                    // ============================================
-                    // ENFORCE CONSISTENT ORDER FOR 1X2 MARKETS
-                    // ============================================
-                    // For Fulltime Result markets (1, 37, 80, 28075), always show:
-                    // Home (1) → Draw (X) → Away (2)
-                    // This ensures consistent display across all bookmakers
-                    // Handle both uppercase and lowercase variants
-                    if ([1, 37, 80, 28075].includes(mId)) {
-                      const sortOrder = { 
-                        '1': 0, 'x': 1, 'X': 1, '2': 2,
-                        'Home': 0, 'home': 0, 'Draw': 1, 'draw': 1, 'Away': 2, 'away': 2
-                      };
-                      labels = labels.sort((a, b) => {
-                        const orderA = sortOrder[a] ?? 999; // Unknown labels go to end
-                        const orderB = sortOrder[b] ?? 999;
-                        return orderA - orderB;
-                      });
-                    }
-                    
+
+                    // Build a map of normalized label -> odd for this bookmaker
+                    const bmOddsMap = {};
+                    bmOdds.forEach(odd => {
+                      const rawLabel = odd.label || odd.name;
+                      const normalized = normalizeLabel(rawLabel, mId);
+                      bmOddsMap[normalized] = odd;
+                    });
+
                     return (
-                      <div key={bmId} className="border-b border-gray-100 pb-3 last:border-0 last:pb-0">
-                        {/* Bookmaker Name */}
-                        <div className="text-sm font-medium text-gray-700 mb-2">
+                      <div
+                        key={bmId}
+                        className={`grid items-center ${idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'} hover:bg-blue-50 transition-colors`}
+                        style={{ gridTemplateColumns: `140px repeat(${sortedLabels.length}, minmax(80px, 1fr))` }}
+                      >
+                        <div className="px-3 py-2 text-sm font-medium text-gray-700 truncate" title={bookmakerName}>
                           {bookmakerName}
                         </div>
-                        
-                        {/* Odds Grid */}
-                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2">
-                          {labels.map(label => {
-                            const odd = bmOdds.find(o => (o.label || o.name) === label);
-                            const displayLabel = formatOddLabel(label, mId);
-                            const formattedOdd = formatOdds(odd, oddsFormat);
+                        {sortedLabels.map(normLabel => {
+                          const odd = bmOddsMap[normLabel];
+                          const formattedOdd = odd ? formatOdds(odd, oddsFormat) : '-';
 
-                            // Skip if no valid odds value
-                            if (formattedOdd === '-') return null;
-
-                            return (
-                              <div
-                                key={label}
-                                className="bg-gray-50 p-2 rounded text-center hover:bg-gray-100 transition-colors"
-                              >
-                                <div
-                                  className="text-xs text-gray-500 truncate mb-1"
-                                  title={displayLabel}
-                                >
-                                  {displayLabel}
-                                </div>
-                                <div className="font-bold text-gray-800">
-                                  {formattedOdd}
-                                </div>
-                              </div>
-                            );
-                          })}
-                        </div>
+                          return (
+                            <div key={normLabel} className="px-2 py-2 text-center">
+                              <span className={`font-semibold ${formattedOdd === '-' ? 'text-gray-300' : 'text-gray-800'}`}>
+                                {formattedOdd}
+                              </span>
+                            </div>
+                          );
+                        })}
                       </div>
                     );
                   })}
@@ -2475,64 +2576,83 @@ const FixtureDetail = () => {
           </div>
 
           {/* Date, venue, formations, and weather */}
-          <div className="mt-4 text-center text-sm text-gray-500 space-y-1">
-            <div>📅 {formatDateUtil(fixture.starting_at, timezone, dateFormat)}</div>
+          <div className="mt-4 text-sm text-gray-500 space-y-1">
+            {/* Date - icon absolutely positioned left of centered text */}
+            <div className="flex justify-center">
+              <div className="relative">
+                <span className="absolute -left-7 top-0">📅</span>
+                <span>{formatDateUtil(fixture.starting_at, timezone, dateFormat)}</span>
+              </div>
+            </div>
+
+            {/* Venue - icon absolutely positioned left of centered text */}
             {fixture.venue?.name && (
-              <div>📍 {fixture.venue.name}{fixture.venue.city ? `, ${fixture.venue.city}` : ''}</div>
+              <div className="flex justify-center">
+                <div className="relative">
+                  <span className="absolute -left-7 top-0">📍</span>
+                  <span>{fixture.venue.name}{fixture.venue.city ? `, ${fixture.venue.city}` : ''}</span>
+                </div>
+              </div>
             )}
-            
-            {/* Formations - very useful for betting research */}
+
+            {/* Formations - no icon, just centered text */}
             {(() => {
               const formations = getFormationsFromMetadata(fixture.metadata);
               const lineupsConfirmed = getLineupsConfirmed(fixture.metadata);
               if (!formations || (!formations.home && !formations.away)) return null;
-              
+
               return (
-                <div className="flex items-center justify-center space-x-3 text-gray-600">
-                  <span className="font-medium">{formations.home || '?'}</span>
-                  <span className="text-xs text-gray-400 flex flex-col items-center">
-                    <span>🎯 Formations</span>
-                    {lineupsConfirmed === false && (
-                      <span className="text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded mt-0.5">
-                        Predicted
-                      </span>
-                    )}
-                  </span>
-                  <span className="font-medium">{formations.away || '?'}</span>
+                <div className="text-center text-gray-600">
+                  <div>
+                    <span className="font-medium">{formations.home || '?'}</span>
+                    <span className="mx-2 text-gray-400">vs</span>
+                    <span className="font-medium">{formations.away || '?'}</span>
+                  </div>
+                  {lineupsConfirmed === false && (
+                    <div className="text-xs text-amber-600 mt-0.5">Predicted</div>
+                  )}
                 </div>
               );
             })()}
-            
-            {/* Attendance - only show for finished matches */}
+
+            {/* Attendance - icon absolutely positioned left of centered text */}
             {(() => {
               const attendance = getAttendanceFromMetadata(fixture.metadata);
               if (!attendance) return null;
-              
+
               return (
-                <div className="text-gray-500">
-                  🏟️ {attendance.toLocaleString()} attendance
+                <div className="flex justify-center">
+                  <div className="relative">
+                    <span className="absolute -left-7 top-0">🏟️</span>
+                    <span>{attendance.toLocaleString()} attendance</span>
+                  </div>
                 </div>
               );
             })()}
-            
-            {/* Weather conditions - only available close to match day */}
-            {/* Note: Weather data only available ~24-48 hours before kickoff */}
+
+            {/* Weather - text centered, icon centered below */}
             {(() => {
               const weather = getWeatherDisplay(fixture.weatherreport, temperatureUnit);
               if (!weather) return null;
 
               return (
-                <div className="flex items-center justify-center space-x-2">
+                <div className="text-center">
+                  <div>
+                    <span className="capitalize">{weather.label}</span>
+                    {weather.tempDisplay && (
+                      <span className="font-medium ml-2">{weather.tempDisplay}</span>
+                    )}
+                  </div>
                   {weather.iconUrl && (
-                    <img
-                      src={weather.iconUrl}
-                      alt={weather.label}
-                      className="w-10 h-10"
-                    />
-                  )}
-                  <span className="capitalize">{weather.label}</span>
-                  {weather.tempDisplay && (
-                    <span className="font-medium">{weather.tempDisplay}</span>
+                    <div className="flex justify-center mt-1">
+                      <div className="bg-gradient-to-b from-sky-100 to-slate-200 rounded-full p-1 shadow-sm">
+                        <img
+                          src={weather.iconUrl}
+                          alt={weather.label}
+                          className="w-8 h-8"
+                        />
+                      </div>
+                    </div>
                   )}
                 </div>
               );
