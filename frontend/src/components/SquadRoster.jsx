@@ -19,6 +19,7 @@
 
 import { useState, useEffect } from 'react';
 import { dataApi } from '../api/client';
+import AppIcon from './AppIcon';
 
 // ============================================
 // POSITION MAPPING
@@ -234,14 +235,14 @@ const SquadRoster = ({ teamId }) => {
       return (
         <div className="flex items-center space-x-2">
           {player.image ? (
-            <img 
-              src={player.image} 
+            <img
+              src={player.image}
               alt={player.name}
-              className="w-8 h-8 rounded-full object-cover bg-gray-100"
+              className="w-12 h-12 rounded-full object-cover bg-gray-100"
               onError={(e) => { e.target.style.display = 'none'; }}
             />
           ) : (
-            <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-gray-400 text-xs">
+            <div className="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center text-gray-400 text-sm">
               ?
             </div>
           )}
@@ -300,8 +301,8 @@ const SquadRoster = ({ teamId }) => {
     <div className="bg-white rounded-lg shadow-md p-6">
       {/* Header with Season Selector */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 gap-4">
-        <h2 className="text-xl font-semibold text-gray-900">
-          👥 Squad Roster
+        <h2 className="text-xl font-semibold text-gray-900 flex items-center gap-2">
+          <AppIcon name="players" size="lg" /> Squad Roster
         </h2>
         
         <div className="flex flex-wrap items-center gap-4">

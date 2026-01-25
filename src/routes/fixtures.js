@@ -16,9 +16,9 @@
 // ============================================
 
 import express from 'express';
-import { 
-  getFixtureById, 
-  getFixturesByDate, 
+import {
+  getFixtureById,
+  getFixturesByDate,
   getFixturesByDateRange,
   getTeamFixturesByDateRange,
   searchFixtures,
@@ -31,8 +31,14 @@ import {
 // so the frontend doesn't need hardcoded type_id mappings
 import { enrichFixtureWithTypes } from '../services/types.js';
 
+// Import auth middleware - all routes require authentication
+import { authMiddleware } from '../middleware/auth.js';
+
 // Create a router
 const router = express.Router();
+
+// Apply auth middleware to all routes in this router
+router.use(authMiddleware);
 
 // ============================================
 // HELPER: Validate Date Format

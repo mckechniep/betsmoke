@@ -905,8 +905,9 @@ async function getLivescoresInplay() {
   // API: GET /livescores/inplay
   const endpoint = '/livescores/inplay';
 
-  // Include participants (teams), scores, league, events (goals, cards)
-  return makeRequest(endpoint, ['participants', 'scores', 'league', 'events']);
+  // Include participants (teams), scores, league, state, and events (goals, cards)
+  // State is critical - it tells us the match period (1H, 2H, HT, ET, etc.)
+  return makeRequest(endpoint, ['participants', 'scores', 'league', 'state', 'events']);
 }
 
 // ============================================
@@ -1184,15 +1185,18 @@ async function getStagesBySeason(seasonId) {
 async function getTeamFixturesWithStats(startDate, endDate, teamId) {
   // API: GET /fixtures/between/{start_date}/{end_date}/{team_id}
   const endpoint = `/fixtures/between/${startDate}/${endDate}/${teamId}`;
-  
+
   // Include statistics and state for filtering finished matches
   // - statistics: Match stats including corners (type_id 34)
   // - participants: Team info to determine home/away
   // - state: To filter only finished matches (FT)
   // - scores: Final scores
-  return makeRequest(endpoint, [
+  //
+  // NOTE: Use makeRequestPaginated to fetch ALL fixtures across multiple pages
+  // SportsMonks returns max 25 results per page by default
+  return makeRequestPaginated(endpoint, [
     'statistics',
-    'participants', 
+    'participants',
     'state',
     'scores'
   ]);

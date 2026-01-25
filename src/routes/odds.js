@@ -9,7 +9,7 @@
 // ============================================
 
 import express from 'express';
-import { 
+import {
   getOddsByFixture,
   getOddsByFixtureAndBookmaker,
   getOddsByFixtureAndMarket,
@@ -20,8 +20,14 @@ import {
   searchMarkets
 } from '../services/sportsmonks.js';
 
+// Import auth middleware - all routes require authentication
+import { authMiddleware } from '../middleware/auth.js';
+
 // Create a router
 const router = express.Router();
+
+// Apply auth middleware to all routes in this router
+router.use(authMiddleware);
 
 // ============================================
 // PRE-MATCH ODDS ROUTES

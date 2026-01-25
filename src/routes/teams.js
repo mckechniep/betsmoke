@@ -6,9 +6,9 @@
 // ============================================
 
 import express from 'express';
-import { 
-  searchTeams, 
-  getTeamById, 
+import {
+  searchTeams,
+  getTeamById,
   getHeadToHead,
   getTeamWithStats,
   getTeamStatsBySeason,
@@ -25,8 +25,14 @@ import {
 } from '../services/sportsmonks.js';
 import cache from '../services/cache.js';
 
+// Import auth middleware - all routes require authentication
+import { authMiddleware } from '../middleware/auth.js';
+
 // Create a router
 const router = express.Router();
+
+// Apply auth middleware to all routes in this router
+router.use(authMiddleware);
 
 // ============================================
 // HELPER: Parse Include Options from Query
@@ -520,7 +526,7 @@ router.get('/:id/fullsquad/seasons/:seasonId', async (req, res) => {
         firstName: player.firstname,
         lastName: player.lastname,
         image: player.image_path,
-        positionId: member.position_id,
+        positionId: member.position_id || player.position_id,
         jerseyNumber: member.jersey_number,
         dateOfBirth: player.date_of_birth,
         nationality: player.nationality?.name,
@@ -953,7 +959,7 @@ router.get('/:id/corners/seasons/:seasonId', async (req, res) => {
     // so we must filter to only include fixtures from the specified season.
     // This ensures Premier League stats don't include FA Cup / Carabao Cup games.
     const fixtures = allFixtures.filter(f => f.season_id === parseInt(seasonId));
-    
+
     console.log(`[Corners] Found ${allFixtures.length} total fixtures, ${fixtures.length} in season ${seasonId}`);
     
     // ============================================
@@ -967,36 +973,36 @@ router.get('/:id/corners/seasons/:seasonId', async (req, res) => {
     let homeGames = 0;
     let awayCorners = 0;
     let awayGames = 0;
-    
+
     // Process each fixture
     for (const fixture of fixtures) {
       // Only count finished matches
       if (fixture.state?.state !== 'FT') continue;
-      
+
       // Find this team's location in this match (home or away)
       const teamParticipant = fixture.participants?.find(
         p => p.id === parseInt(teamId)
       );
-      
+
       if (!teamParticipant) continue;
-      
+
       const teamLocation = teamParticipant.meta?.location; // 'home' or 'away'
-      
+
       // Find corners stat for this team in this match
       // Statistics are per-team, identified by participant_id
       const cornersStat = fixture.statistics?.find(
         s => s.type_id === CORNERS_TYPE_ID && s.participant_id === parseInt(teamId)
       );
-      
+
       // Extract corner count
       // Data structure: { value: 6 } or sometimes just a number
       let corners = 0;
       if (cornersStat?.data) {
-        corners = typeof cornersStat.data === 'number' 
-          ? cornersStat.data 
+        corners = typeof cornersStat.data === 'number'
+          ? cornersStat.data
           : cornersStat.data.value ?? 0;
       }
-      
+
       // Add to appropriate totals
       if (teamLocation === 'home') {
         homeCorners += corners;
@@ -1004,6 +1010,14 @@ router.get('/:id/corners/seasons/:seasonId', async (req, res) => {
       } else if (teamLocation === 'away') {
         awayCorners += corners;
         awayGames++;
+      } else {
+        // Track fixtures with unexpected location
+        skippedFixtures.push({
+          fixtureId: fixture.id,
+          teamLocation,
+          state: fixture.state?.state,
+          participantMeta: teamParticipant?.meta
+        });
       }
     }
     
@@ -1039,7 +1053,7 @@ router.get('/:id/corners/seasons/:seasonId', async (req, res) => {
           average: overallAvg
         }
       },
-      cachedAt: new Date().toISOString()
+            cachedAt: new Date().toISOString()
     };
     
     // ============================================

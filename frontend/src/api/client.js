@@ -8,6 +8,15 @@
 const API_BASE = 'http://localhost:3001';
 
 // ============================================
+// HELPER: Get stored auth token
+// ============================================
+// Retrieves the auth token from localStorage (where AuthContext stores it)
+
+const getStoredToken = () => {
+  return localStorage.getItem('token');
+};
+
+// ============================================
 // HELPER: Make a request
 // ============================================
 
@@ -46,6 +55,16 @@ const request = async (method, path, data = null, token = null) => {
 };
 
 // ============================================
+// HELPER: Make authenticated request (auto-token)
+// ============================================
+// Automatically includes the stored auth token
+
+const requestWithAuth = async (method, path, data = null) => {
+  const token = getStoredToken();
+  return request(method, path, data, token);
+};
+
+// ============================================
 // API METHODS
 // ============================================
 
@@ -53,22 +72,28 @@ export const api = {
   // GET request (public)
   get: (path) => request('GET', path),
 
-  // GET request (authenticated)
+  // GET request (authenticated - explicit token)
   getAuth: (path, token) => request('GET', path, null, token),
+
+  // GET request (authenticated - auto token from localStorage)
+  getWithAuth: (path) => requestWithAuth('GET', path),
 
   // POST request (public)
   post: (path, data) => request('POST', path, data),
 
-  // POST request (authenticated)
+  // POST request (authenticated - explicit token)
   postAuth: (path, data, token) => request('POST', path, data, token),
 
-  // PUT request (authenticated)
+  // POST request (authenticated - auto token)
+  postWithAuth: (path, data) => requestWithAuth('POST', path, data),
+
+  // PUT request (authenticated - explicit token)
   putAuth: (path, data, token) => request('PUT', path, data, token),
 
-  // PATCH request (authenticated)
+  // PATCH request (authenticated - explicit token)
   patchAuth: (path, data, token) => request('PATCH', path, data, token),
 
-  // DELETE request (authenticated)
+  // DELETE request (authenticated - explicit token)
   deleteAuth: (path, token) => request('DELETE', path, null, token),
 };
 
@@ -122,23 +147,25 @@ export const notesApi = {
 };
 
 // ============================================
-// PUBLIC DATA API (SportsMonks proxy)
+// PROTECTED DATA API (SportsMonks proxy)
 // ============================================
+// All data endpoints require authentication.
+// Token is automatically retrieved from localStorage.
 
 export const dataApi = {
   // Teams
-  searchTeams: (query) => api.get(`/teams/search/${encodeURIComponent(query)}`),
-  getTeam: (id) => api.get(`/teams/${id}`),
-  getTeamStats: (id) => api.get(`/teams/${id}/stats`),
-  getTeamStatsBySeason: (teamId, seasonId) => api.get(`/teams/${teamId}/stats/seasons/${seasonId}`),
-  getTeamSeasons: (id) => api.get(`/teams/${id}/seasons`),
-  getHeadToHead: (team1Id, team2Id) => api.get(`/teams/h2h/${team1Id}/${team2Id}`),
+  searchTeams: (query) => api.getWithAuth(`/teams/search/${encodeURIComponent(query)}`),
+  getTeam: (id) => api.getWithAuth(`/teams/${id}`),
+  getTeamStats: (id) => api.getWithAuth(`/teams/${id}/stats`),
+  getTeamStatsBySeason: (teamId, seasonId) => api.getWithAuth(`/teams/${teamId}/stats/seasons/${seasonId}`),
+  getTeamSeasons: (id) => api.getWithAuth(`/teams/${id}/seasons`),
+  getHeadToHead: (team1Id, team2Id) => api.getWithAuth(`/teams/h2h/${team1Id}/${team2Id}`),
 
   // Fixtures
-  getFixturesByDate: (date) => api.get(`/fixtures/date/${date}`),
-  getFixturesByDateRange: (startDate, endDate) => api.get(`/fixtures/between/${startDate}/${endDate}`),
-  getTeamFixturesByDateRange: (startDate, endDate, teamId) => api.get(`/fixtures/between/${startDate}/${endDate}/team/${teamId}`),
-  searchFixtures: (query) => api.get(`/fixtures/search/${encodeURIComponent(query)}`),
+  getFixturesByDate: (date) => api.getWithAuth(`/fixtures/date/${date}`),
+  getFixturesByDateRange: (startDate, endDate) => api.getWithAuth(`/fixtures/between/${startDate}/${endDate}`),
+  getTeamFixturesByDateRange: (startDate, endDate, teamId) => api.getWithAuth(`/fixtures/between/${startDate}/${endDate}/team/${teamId}`),
+  searchFixtures: (query) => api.getWithAuth(`/fixtures/search/${encodeURIComponent(query)}`),
   // Get single fixture with optional includes
   // Always includes sidelined (injuries/suspensions) for betting research
   getFixture: (id, includeOdds = false) => {
@@ -148,55 +175,56 @@ export const dataApi = {
       includes.push('odds');
     }
     const params = `?include=${includes.join(',')}`;
-    return api.get(`/fixtures/${id}${params}`);
+    return api.getWithAuth(`/fixtures/${id}${params}`);
   },
 
   // Odds
-  getOddsByFixture: (fixtureId) => api.get(`/odds/fixtures/${fixtureId}`),
-  getBookmakers: () => api.get('/odds/bookmakers'),
-  getMarkets: () => api.get('/odds/markets'),
+  getOddsByFixture: (fixtureId) => api.getWithAuth(`/odds/fixtures/${fixtureId}`),
+  getBookmakers: () => api.getWithAuth('/odds/bookmakers'),
+  getMarkets: () => api.getWithAuth('/odds/markets'),
 
   // Standings
-  getStandings: (seasonId) => api.get(`/standings/seasons/${seasonId}`),
+  getStandings: (seasonId) => api.getWithAuth(`/standings/seasons/${seasonId}`),
 
   // Leagues
-  getLeagues: () => api.get('/leagues'),
-  getLeague: (id) => api.get(`/leagues/${id}`),
-  searchLeagues: (query) => api.get(`/leagues/search/${encodeURIComponent(query)}`),
+  getLeagues: () => api.getWithAuth('/leagues'),
+  getLeague: (id) => api.getWithAuth(`/leagues/${id}`),
+  searchLeagues: (query) => api.getWithAuth(`/leagues/search/${encodeURIComponent(query)}`),
 
   // Seasons
-  getSeasons: () => api.get('/seasons'),
-  getSeasonsByLeague: (leagueId) => api.get(`/seasons/leagues/${leagueId}`),
+  getSeasons: () => api.getWithAuth('/seasons'),
+  getSeasonsByLeague: (leagueId) => api.getWithAuth(`/seasons/leagues/${leagueId}`),
 
   // Live scores
-  getLivescores: () => api.get('/livescores'),
+  getLivescores: () => api.getWithAuth('/livescores'),
+  getLivescoresInplay: () => api.getWithAuth('/livescores/inplay'),
 
   // Top scorers
-  getTopScorers: (seasonId) => api.get(`/topscorers/seasons/${seasonId}`),
+  getTopScorers: (seasonId) => api.getWithAuth(`/topscorers/seasons/${seasonId}`),
 
   // Team top scorers & assists (for fixture details)
-  getTeamTopStats: (teamId, seasonId) => api.get(`/teams/${teamId}/topstats/seasons/${seasonId}`),
-  
+  getTeamTopStats: (teamId, seasonId) => api.getWithAuth(`/teams/${teamId}/topstats/seasons/${seasonId}`),
+
   // Full squad with all player statistics (for team roster table)
-  getTeamFullSquad: (teamId, seasonId) => api.get(`/teams/${teamId}/fullsquad/seasons/${seasonId}`),
+  getTeamFullSquad: (teamId, seasonId) => api.getWithAuth(`/teams/${teamId}/fullsquad/seasons/${seasonId}`),
 
   // Team stats (for scoring patterns, etc.)
-  getTeamStats: (teamId) => api.get(`/teams/${teamId}/stats`),
-  getTeamStatsBySeason: (teamId, seasonId) => api.get(`/teams/${teamId}/stats/seasons/${seasonId}`),
+  getTeamStats: (teamId) => api.getWithAuth(`/teams/${teamId}/stats`),
+  getTeamStatsBySeason: (teamId, seasonId) => api.getWithAuth(`/teams/${teamId}/stats/seasons/${seasonId}`),
 
   // Predictions
-  getPredictions: (fixtureId) => api.get(`/fixtures/${fixtureId}/predictions`),
-  
+  getPredictions: (fixtureId) => api.getWithAuth(`/fixtures/${fixtureId}/predictions`),
+
   // Prediction Model Performance (accuracy stats by league)
   // leagueId: 8 (Premier League), 24 (FA Cup), 27 (Carabao Cup)
-  getPredictability: (leagueId) => api.get(`/predictions/predictability/leagues/${leagueId}`),
+  getPredictability: (leagueId) => api.getWithAuth(`/predictions/predictability/leagues/${leagueId}`),
 
   // Stages (for cup competitions - fixtures organized by stage/round)
-  getStagesBySeason: (seasonId) => api.get(`/fixtures/seasons/${seasonId}`),
+  getStagesBySeason: (seasonId) => api.getWithAuth(`/fixtures/seasons/${seasonId}`),
 
   // Corner averages (calculated from historical fixtures, cached 12h)
   // Returns home/away/overall corner averages for a team in a season
-  getTeamCornerAverages: (teamId, seasonId) => api.get(`/teams/${teamId}/corners/seasons/${seasonId}`),
+  getTeamCornerAverages: (teamId, seasonId) => api.getWithAuth(`/teams/${teamId}/corners/seasons/${seasonId}`),
 };
 
 // ============================================

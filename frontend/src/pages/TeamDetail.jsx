@@ -19,6 +19,7 @@ import { dataApi } from '../api/client';
 import { useAuth } from '../context/AuthContext';
 import SquadRoster from '../components/SquadRoster';
 import FloatingNoteWidget from '../components/FloatingNoteWidget';
+import AppIcon from '../components/AppIcon';
 
 // ============================================
 // TYPE IDS FROM SPORTSMONKS
@@ -522,7 +523,7 @@ function WinDrawLossDistributionSection({ teamId }) {
       {/* Header with Season Selector */}
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-xl font-semibold text-gray-900">
-          📊 Win / Draw / Loss Distribution
+          Win / Draw / Loss Distribution
         </h2>
         
         {/* Season Selector - Premier League seasons only */}
@@ -864,7 +865,7 @@ function HalfTimingAnalysisSection({ teamId }) {
       {/* Header with Season Selector */}
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-xl font-semibold text-gray-900">
-          ⚽ Half & Timing Analysis
+          Half & Timing Analysis
         </h2>
         
         {/* Season Selector */}
@@ -918,7 +919,7 @@ function HalfTimingAnalysisSection({ teamId }) {
           {/* Most Scored Half - Visual Bar */}
           <div>
             <h3 className="text-sm font-semibold text-gray-700 mb-3">
-              📊 Goals by Half
+              Goals by Half
             </h3>
             
             {totalHalfGoals > 0 ? (
@@ -987,7 +988,7 @@ function HalfTimingAnalysisSection({ teamId }) {
           {/* Half Results Grid */}
           <div>
             <h3 className="text-sm font-semibold text-gray-700 mb-3">
-              🏆 Match Dominance
+              Match Dominance
             </h3>
             <div className="grid grid-cols-3 gap-4">
               {/* Won Both Halves */}
@@ -1053,7 +1054,7 @@ function HalfTimingAnalysisSection({ teamId }) {
           {/* Betting Insight */}
           <div className="pt-4 border-t border-gray-100">
             <p className="text-xs text-gray-500">
-              📊 <strong>Betting Insight:</strong> 
+              <strong>Betting Insight:</strong> 
               {strongerHalf !== 'Equal' && ` This team scores more in the ${strongerHalf} half.`}
               {halfData.comebacks > 0 && ` They've come from behind to win ${halfData.comebacks} time${halfData.comebacks !== 1 ? 's' : ''}.`}
               {halfData.injuryTimeTotal > 0 && ` They've scored ${halfData.injuryTimeTotal} injury time goal${halfData.injuryTimeTotal !== 1 ? 's' : ''} (${halfData.injuryTimeAverage.toFixed(2)}/game).`}
@@ -1202,7 +1203,7 @@ function OverUnderGoalsSection({ teamId }) {
       {/* Header with Season Selector */}
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-xl font-semibold text-gray-900">
-          📈 Over/Under Goals Analysis
+          Over/Under Goals Analysis
         </h2>
         
         {/* Season Selector */}
@@ -1338,7 +1339,7 @@ function OverUnderGoalsSection({ teamId }) {
           {/* Betting Insight */}
           <div className="mt-4 pt-4 border-t border-gray-100">
             <p className="text-xs text-gray-500">
-              📊 <strong>Betting Insight:</strong> 
+              <strong>Betting Insight:</strong> 
               {overUnderData[2]?.matchPct >= 50 && ` ${Math.round(overUnderData[2].matchPct)}% of this team's matches go Over 2.5 goals.`}
               {overUnderData[2]?.matchPct < 50 && ` Only ${Math.round(overUnderData[2]?.matchPct || 0)}% of matches go Over 2.5 - consider Under bets.`}
               {overUnderData[1]?.teamPct >= 70 && ' This team regularly scores 2+ goals.'}
@@ -1615,7 +1616,7 @@ function ScoringPatternSection({ teamId }) {
       {!loading && !error && (totalScored > 0 || totalConceded > 0) && (
         <div className="mt-6 pt-4 border-t border-gray-100">
           <p className="text-xs text-gray-500">
-            📊 <strong>Betting Insight:</strong> Shows when this team typically scores and concedes goals.
+            <strong>Betting Insight:</strong> Shows when this team typically scores and concedes goals.
             Useful for in-play betting, goal timing predictions, and identifying vulnerable periods.
           </p>
         </div>
@@ -1903,7 +1904,7 @@ function CornersSection({ teamId }) {
             ) : cornerAvg?.corners ? (
               <div className="mt-6 pt-4 border-t border-gray-100">
                 <h3 className="text-sm font-semibold text-gray-700 mb-3">
-                  📊 Home vs Away Breakdown
+                  Home vs Away Breakdown
                 </h3>
                 
                 <div className="grid grid-cols-2 gap-4">
@@ -2066,8 +2067,8 @@ const TeamDetail = () => {
             <h1 className="text-3xl font-bold text-gray-900">{team.name}</h1>
             <p className="text-gray-500">{team.country?.name}</p>
             {team.venue?.name && (
-              <p className="text-sm text-gray-400">
-                🏟️ {team.venue.name}
+              <p className="text-sm text-gray-400 flex items-center gap-1">
+                <AppIcon name="stadium" size="sm" /> {team.venue.name}
                 {team.venue.capacity && ` (${team.venue.capacity.toLocaleString()} capacity)`}
               </p>
             )}
@@ -2078,7 +2079,7 @@ const TeamDetail = () => {
       {/* Coach Section */}
       {team.coaches && team.coaches.length > 0 && (
         <div className="bg-white rounded-lg shadow-md p-6">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">👔 Manager</h2>
+          <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center gap-2"><AppIcon name="player" size="lg" /> Manager</h2>
           <div className="flex items-center space-x-4">
             {team.coaches[0].image_path && (
               <img

@@ -103,89 +103,88 @@ const Navbar = () => {
             BetSmoke
           </Link>
 
-          {/* Main Navigation */}
-          <div className="flex items-center space-x-6">
-            <Link to="/fixtures" className="hover:text-blue-400 transition-colors">
-              Fixtures
-            </Link>
-            <Link to="/teams" className="hover:text-blue-400 transition-colors">
-              Teams
-            </Link>
-            <Link to="/competitions" className="hover:text-blue-400 transition-colors">
-              Competitions
-            </Link>
-
-            {isAuthenticated && (
+          {/* Main Navigation - Only show for authenticated users */}
+          {isAuthenticated && (
+            <div className="flex items-center space-x-6">
+              <Link to="/fixtures" className="hover:text-blue-400 transition-colors">
+                Fixtures
+              </Link>
+              <Link to="/teams" className="hover:text-blue-400 transition-colors">
+                Teams
+              </Link>
+              <Link to="/competitions" className="hover:text-blue-400 transition-colors">
+                Competitions
+              </Link>
               <Link to="/notes" className="hover:text-blue-400 transition-colors">
                 Notes
               </Link>
-            )}
 
-            {/* ============================================ */}
-            {/* "MORE" DROPDOWN */}
-            {/* ============================================ */}
-            <div className="relative" ref={dropdownRef}>
-              {/* Dropdown Trigger Button */}
-              <button
-                onClick={toggleDropdown}
-                className={`flex items-center space-x-1 transition-colors ${
-                  isDropdownOpen ? 'text-blue-400' : 'hover:text-blue-400'
-                }`}
-              >
-                <span>More</span>
-                {/* X icon when open, chevron when closed */}
-                {isDropdownOpen ? (
-                  <svg 
-                    className="w-4 h-4" 
-                    fill="none" 
-                    stroke="currentColor" 
-                    viewBox="0 0 24 24"
-                  >
-                    <path 
-                      strokeLinecap="round" 
-                      strokeLinejoin="round" 
-                      strokeWidth={2} 
-                      d="M6 18L18 6M6 6l12 12" 
-                    />
-                  </svg>
-                ) : (
-                  <svg 
-                    className="w-4 h-4"
-                    fill="none" 
-                    stroke="currentColor" 
-                    viewBox="0 0 24 24"
-                  >
-                    <path 
-                      strokeLinecap="round" 
-                      strokeLinejoin="round" 
-                      strokeWidth={2} 
-                      d="M19 9l-7 7-7-7" 
-                    />
-                  </svg>
+              {/* ============================================ */}
+              {/* "MORE" DROPDOWN */}
+              {/* ============================================ */}
+              <div className="relative" ref={dropdownRef}>
+                {/* Dropdown Trigger Button */}
+                <button
+                  onClick={toggleDropdown}
+                  className={`flex items-center space-x-1 transition-colors ${
+                    isDropdownOpen ? 'text-blue-400' : 'hover:text-blue-400'
+                  }`}
+                >
+                  <span>More</span>
+                  {/* X icon when open, chevron when closed */}
+                  {isDropdownOpen ? (
+                    <svg
+                      className="w-4 h-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M6 18L18 6M6 6l12 12"
+                      />
+                    </svg>
+                  ) : (
+                    <svg
+                      className="w-4 h-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M19 9l-7 7-7-7"
+                      />
+                    </svg>
+                  )}
+                </button>
+
+                {/* Dropdown Menu */}
+                {isDropdownOpen && (
+                  <div className="absolute top-full left-0 mt-2 w-48 bg-gray-800 rounded-md shadow-lg py-1 z-50">
+                    <Link
+                      to="/model-performance"
+                      className="block px-4 py-2 text-sm hover:bg-gray-700 hover:text-blue-400 transition-colors"
+                      onClick={() => setIsDropdownOpen(false)}
+                    >
+                      Model Performance
+                    </Link>
+                    <Link
+                      to="/model-architecture"
+                      className="block px-4 py-2 text-sm hover:bg-gray-700 hover:text-blue-400 transition-colors"
+                      onClick={() => setIsDropdownOpen(false)}
+                    >
+                      Model Architecture
+                    </Link>
+                  </div>
                 )}
-              </button>
-
-              {/* Dropdown Menu */}
-              {isDropdownOpen && (
-                <div className="absolute top-full left-0 mt-2 w-48 bg-gray-800 rounded-md shadow-lg py-1 z-50">
-                  <Link
-                    to="/model-performance"
-                    className="block px-4 py-2 text-sm hover:bg-gray-700 hover:text-blue-400 transition-colors"
-                    onClick={() => setIsDropdownOpen(false)}
-                  >
-                    Model Performance
-                  </Link>
-                  <Link
-                    to="/model-architecture"
-                    className="block px-4 py-2 text-sm hover:bg-gray-700 hover:text-blue-400 transition-colors"
-                    onClick={() => setIsDropdownOpen(false)}
-                  >
-                    Model Architecture
-                  </Link>
-                </div>
-              )}
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Auth Section */}
           <div className="flex items-center space-x-4">

@@ -15,6 +15,7 @@ import { dataApi } from '../api/client';
 import { useAuth } from '../context/AuthContext';
 import MatchPredictions from '../components/MatchPredictions';
 import FloatingNoteWidget from '../components/FloatingNoteWidget';
+import AppIcon from '../components/AppIcon';
 import {
   formatTime as formatTimeUtil,
   formatDate as formatDateUtil,
@@ -272,8 +273,12 @@ function formatOddLabel(label, marketId) {
 // ============================================
 // ACCORDION SECTION COMPONENT
 // ============================================
+// icon can be either an emoji string or an AppIcon name
 function AccordionSection({ title, icon, children, defaultOpen = false }) {
   const [isOpen, setIsOpen] = useState(defaultOpen);
+
+  // Check if icon is an AppIcon name (no emoji characters)
+  const isAppIconName = icon && !/[\u{1F300}-\u{1F9FF}]/u.test(icon);
 
   return (
     <div className="border border-gray-200 rounded-lg overflow-hidden">
@@ -282,11 +287,11 @@ function AccordionSection({ title, icon, children, defaultOpen = false }) {
         className="w-full px-4 py-3 bg-gray-50 hover:bg-gray-100 flex items-center justify-between transition-colors"
       >
         <div className="flex items-center space-x-2">
-          <span>{icon}</span>
+          {isAppIconName ? <AppIcon name={icon} size="md" /> : <span>{icon}</span>}
           <span className="font-medium text-gray-900">{title}</span>
         </div>
         <span className={`transform transition-transform ${isOpen ? 'rotate-180' : ''}`}>
-          ▼
+          <AppIcon name="chevron-down" size="sm" />
         </span>
       </button>
       {isOpen && (
@@ -799,7 +804,7 @@ function TopScorersSection({ seasonTopScorers, homeTeam, awayTeam, loading }) {
   if (loading) {
     return (
       <div className="bg-white rounded-lg shadow-md p-4">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">🏆 Top Scorers</h2>
+        <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2"><AppIcon name="trophy" /> Top Scorers</h2>
         <div className="text-center py-4 text-gray-500">Loading scorers...</div>
       </div>
     );
@@ -876,7 +881,7 @@ function TopScorersSection({ seasonTopScorers, homeTeam, awayTeam, loading }) {
   return (
     <div className="bg-white rounded-lg shadow-md p-4">
       <h2 className="text-lg font-semibold text-gray-900 mb-4">
-        🏆 Top Scorers
+        Top Scorers
         <span className="text-sm font-normal text-gray-500 ml-2">
           (this season)
         </span>
@@ -909,7 +914,7 @@ function TopScorersAssistsSection({ homeTopStats, awayTopStats, homeTeam, awayTe
   if (loading) {
     return (
       <div className="bg-white rounded-lg shadow-md p-4">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">🎯 Top Scorers & Assists</h2>
+        <h2 className="text-lg font-semibold text-gray-900 mb-4">Top Scorers & Assists</h2>
         <div className="text-center py-4 text-gray-500">Loading player stats...</div>
       </div>
     );
@@ -988,7 +993,7 @@ function TopScorersAssistsSection({ homeTopStats, awayTopStats, homeTeam, awayTe
   return (
     <div className="bg-white rounded-lg shadow-md p-4">
       <h2 className="text-lg font-semibold text-gray-900 mb-4">
-        🎯 Top Scorers & Assists
+        Top Scorers & Assists
         <span className="text-sm font-normal text-gray-500 ml-2">
           (this season)
         </span>
@@ -1159,8 +1164,8 @@ function EnhancedLineupsSection({ lineups, homeTeam, awayTeam }) {
 
   return (
     <div className="bg-white rounded-lg shadow-md p-4">
-      <h2 className="text-lg font-semibold text-gray-900 mb-4">
-        👥 Lineups
+      <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+        <AppIcon name="players" className="mr-2" /> Lineups
         <span className="text-sm font-normal text-gray-500 ml-2">
           (by position)
         </span>
@@ -1546,7 +1551,7 @@ function TeamStatsComparisonSection(props) {
   if (loading) {
     return (
       <div className="bg-white rounded-lg shadow-md p-4">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">📊 Season Stats</h2>
+        <h2 className="text-lg font-semibold text-gray-900 mb-4">Season Stats</h2>
         <div className="text-center py-4 text-gray-500">Loading stats...</div>
       </div>
     );
@@ -1645,7 +1650,7 @@ function TeamStatsComparisonSection(props) {
   return (
     <div className="bg-white rounded-lg shadow-md p-4">
       <h2 className="text-lg font-semibold text-gray-900 mb-4">
-        📊 Season Stats Comparison
+        Season Stats Comparison
         <span className="text-sm font-normal text-gray-500 ml-2">
           ({homeGames || '?'} vs {awayGames || '?'} games)
         </span>
@@ -2487,8 +2492,15 @@ const FixtureDetail = () => {
   const awayTeam = fixture.participants?.find(p => p.meta?.location === 'away');
   const homeScore = getScore(fixture, 'home');
   const awayScore = getScore(fixture, 'away');
-  const isFinished = fixture.state?.state === 'FT';
-  const isLive = ['1H', '2H', 'HT', 'ET', 'PEN'].includes(fixture.state?.state);
+
+  // Get state from short_name (most reliable) or fall back to state field
+  // Normalize to lowercase for consistent comparison
+  const stateCode = (fixture.state?.short_name || fixture.state?.state || '').toLowerCase();
+
+  const isFinished = ['ft', 'aet', 'ftp'].includes(stateCode);
+  // SportsMonks uses: "1st" (1st half), "2nd" (2nd half), "HT" (half time), "ET", "PEN"
+  // Also check for legacy values and variations
+  const isLive = ['1st', '2nd', 'ht', 'et', 'pen', 'live', 'inplay', '1h', '2h'].includes(stateCode);
   const fixtureName = `${homeTeam?.name || 'Home'} vs ${awayTeam?.name || 'Away'}`;
   
   // ============================================
@@ -2580,7 +2592,7 @@ const FixtureDetail = () => {
             {/* Date - icon absolutely positioned left of centered text */}
             <div className="flex justify-center">
               <div className="relative">
-                <span className="absolute -left-7 top-0">📅</span>
+                <span className="absolute -left-7 top-0"><AppIcon name="calendar" size="sm" /></span>
                 <span>{formatDateUtil(fixture.starting_at, timezone, dateFormat)}</span>
               </div>
             </div>
@@ -2589,7 +2601,7 @@ const FixtureDetail = () => {
             {fixture.venue?.name && (
               <div className="flex justify-center">
                 <div className="relative">
-                  <span className="absolute -left-7 top-0">📍</span>
+                  <span className="absolute -left-7 top-0"><AppIcon name="location" size="sm" /></span>
                   <span>{fixture.venue.name}{fixture.venue.city ? `, ${fixture.venue.city}` : ''}</span>
                 </div>
               </div>
@@ -2623,7 +2635,7 @@ const FixtureDetail = () => {
               return (
                 <div className="flex justify-center">
                   <div className="relative">
-                    <span className="absolute -left-7 top-0">🏟️</span>
+                    <span className="absolute -left-7 top-0"><AppIcon name="stadium" size="sm" /></span>
                     <span>{attendance.toLocaleString()} attendance</span>
                   </div>
                 </div>
@@ -2680,7 +2692,7 @@ const FixtureDetail = () => {
       {isUpcoming && (
       <div className="bg-white rounded-lg shadow-md p-4">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold text-gray-900">💰 Odds</h2>
+          <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2"><AppIcon name="odds" /> Odds</h2>
           
           {/* Bookmaker filter */}
           <div className="relative group">
@@ -2816,12 +2828,96 @@ const FixtureDetail = () => {
       )}
 
       {/* ============================================ */}
+      {/* MATCH STATISTICS SECTION - LIVE ONLY (FIRST) */}
+      {/* ============================================ */}
+      {/* For live matches, show stats at the top for easy access */}
+      {isLive && fixture.statistics && fixture.statistics.length > 0 && (
+        <div className="bg-white rounded-lg shadow-md p-4">
+          <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+            <AppIcon name="trend-up" /> Match Statistics
+          </h2>
+          <div className="space-y-3">
+            {(() => {
+              // Group statistics by type_id
+              const statsByType = {};
+
+              fixture.statistics.forEach(stat => {
+                const typeId = stat.type_id;
+                if (!typeId) return;
+
+                if (!statsByType[typeId]) {
+                  statsByType[typeId] = {
+                    typeId,
+                    typeName: stat.typeName || stat.type?.name || `Stat ${typeId}`,
+                    home: null,
+                    away: null
+                  };
+                }
+
+                let value = stat.data;
+                if (typeof value === 'object' && value !== null) {
+                  value = value.value ?? value.count ?? value.total ?? value;
+                }
+
+                if (stat.location === 'home') {
+                  statsByType[typeId].home = value;
+                } else if (stat.location === 'away') {
+                  statsByType[typeId].away = value;
+                }
+              });
+
+              const groupedStats = Object.values(statsByType)
+                .filter(s => s.home !== null || s.away !== null)
+                .slice(0, 10);
+
+              return groupedStats.map((stat, idx) => {
+                const formatValue = (val) => {
+                  if (val === null || val === undefined) return '-';
+                  if (typeof val === 'object') {
+                    return val.value ?? val.count ?? val.total ?? '-';
+                  }
+                  return val;
+                };
+
+                const homeVal = formatValue(stat.home);
+                const awayVal = formatValue(stat.away);
+                const homeNum = typeof homeVal === 'number' ? homeVal : parseFloat(homeVal) || 0;
+                const awayNum = typeof awayVal === 'number' ? awayVal : parseFloat(awayVal) || 0;
+                const total = homeNum + awayNum;
+                const homePercent = total > 0 ? (homeNum / total) * 100 : 50;
+
+                return (
+                  <div key={idx} className="space-y-1">
+                    <div className="flex justify-between text-sm">
+                      <span>{homeVal}</span>
+                      <span className="text-gray-600">{stat.typeName}</span>
+                      <span>{awayVal}</span>
+                    </div>
+                    <div className="flex h-2 rounded overflow-hidden">
+                      <div
+                        className="bg-blue-500"
+                        style={{ width: `${homePercent}%` }}
+                      />
+                      <div
+                        className="bg-red-500"
+                        style={{ width: `${100 - homePercent}%` }}
+                      />
+                    </div>
+                  </div>
+                );
+              });
+            })()}
+          </div>
+        </div>
+      )}
+
+      {/* ============================================ */}
       {/* SIDELINED PLAYERS SECTION */}
       {/* ============================================ */}
-      <SidelinedPlayersSection 
-        sidelined={fixture.sidelined} 
-        homeTeam={homeTeam} 
-        awayTeam={awayTeam} 
+      <SidelinedPlayersSection
+        sidelined={fixture.sidelined}
+        homeTeam={homeTeam}
+        awayTeam={awayTeam}
       />
 
       {/* ============================================ */}
@@ -2900,7 +2996,7 @@ const FixtureDetail = () => {
         {/* Detailed Odds - UPCOMING ONLY */}
         {/* This section uses ALL odds (ignoring main filter) and groups by bookmaker */}
         {isUpcoming && (
-        <AccordionSection title="All Betting Markets" icon="📊">
+        <AccordionSection title="All Betting Markets" icon="stats">
           <AllBettingMarketsContent
             odds={safeOdds}
             bookmakers={bookmakers}
@@ -2932,7 +3028,7 @@ const FixtureDetail = () => {
               23 = Penalty Shootout Goal
             ============================================ */}
         {fixture.events && fixture.events.length > 0 && (
-          <AccordionSection title="Match Events" icon="⚽" defaultOpen={isFinished || isLive}>
+          <AccordionSection title="Match Events" icon="soccer-ball" defaultOpen={isFinished || isLive}>
             <div className="space-y-2">
               {fixture.events
                 .sort((a, b) => (a.minute || 0) - (b.minute || 0))
@@ -2986,7 +3082,8 @@ const FixtureDetail = () => {
           </AccordionSection>
         )}
 
-        {/* Statistics */}
+        {/* Statistics - only show in accordion for FINISHED matches */}
+        {/* For LIVE matches, stats are shown at the top of the page */}
         {/* ============================================
             MATCH STATISTICS DISPLAY
             ============================================
@@ -2994,7 +3091,7 @@ const FixtureDetail = () => {
             local SportsMonks types database. This means we get proper
             names like "Corners", "Shots On Target", etc. instead of
             cryptic "Stat 34" fallbacks.
-            
+
             Common statistic types (for reference):
               34 = Corners
               41 = Shots Off Target
@@ -3004,8 +3101,8 @@ const FixtureDetail = () => {
               56 = Fouls
               86 = Shots On Target
             ============================================ */}
-        {fixture.statistics && fixture.statistics.length > 0 && (
-          <AccordionSection title="Match Statistics" icon="📈">
+        {!isLive && fixture.statistics && fixture.statistics.length > 0 && (
+          <AccordionSection title="Match Statistics" icon="trend-up">
             <div className="space-y-3">
               {(() => {
                 // Group statistics by type_id

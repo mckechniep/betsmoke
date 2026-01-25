@@ -1,11 +1,9 @@
 // ============================================
-// HOME PAGE (Dashboard)
+// HOME PAGE
 // ============================================
-// Main dashboard showing:
-// - Hero section
-// - Quick links to main pages
-// - Research journal CTA
-// - Premier League standings (via LeagueStandings component)
+// Shows different content based on authentication:
+// - Non-authenticated: Marketing landing page with features & CTA
+// - Authenticated: Dashboard with quick links and Premier League standings
 // ============================================
 
 import { useState, useEffect } from 'react';
@@ -17,15 +15,156 @@ import LeagueStandings from '../components/LeagueStandings';
 // Premier League ID in SportsMonks
 const PREMIER_LEAGUE_ID = 8;
 
-const Home = () => {
-  const { isAuthenticated } = useAuth();
-  
+// ============================================
+// LANDING PAGE (Non-Authenticated Users)
+// ============================================
+const LandingPage = () => {
+  return (
+    <div className="space-y-12">
+      {/* Hero Section */}
+      <div className="text-center py-12 bg-gradient-to-b from-gray-900 to-gray-800 -mx-4 px-4 rounded-lg">
+        <h1 className="text-5xl font-bold text-white mb-4">
+          BetSmoke
+        </h1>
+        <p className="text-xl text-gray-300 max-w-2xl mx-auto mb-8">
+          Your personal betting research terminal. Aggregate football data,
+          track insights, and make disciplined betting decisions.
+        </p>
+        <div className="flex justify-center space-x-4">
+          <Link
+            to="/register"
+            className="bg-blue-600 text-white px-8 py-3 rounded-lg text-lg font-semibold hover:bg-blue-700 transition-colors"
+          >
+            Sign Up
+          </Link>
+          <Link
+            to="/login"
+            className="bg-gray-700 text-white px-8 py-3 rounded-lg text-lg font-semibold hover:bg-gray-600 transition-colors"
+          >
+            Sign In
+          </Link>
+        </div>
+      </div>
+
+      {/* AI Predictions Highlight */}
+      <div className="bg-gradient-to-r from-purple-600 to-indigo-600 -mx-4 px-6 py-8 rounded-lg text-white">
+        <div className="max-w-4xl mx-auto flex flex-col md:flex-row items-center gap-6">
+          <div className="text-6xl">🤖</div>
+          <div className="flex-1 text-center md:text-left">
+            <h2 className="text-2xl font-bold mb-2">
+              Powered by State-of-the-Art AI Predictions
+            </h2>
+            <p className="text-purple-100 mb-4">
+              Our machine learning models analyze thousands of data points to generate match predictions
+              with full transparency on model performance and accuracy metrics.
+            </p>
+            <div className="flex flex-wrap justify-center md:justify-start gap-4 text-sm">
+              <span className="bg-white/20 px-3 py-1 rounded-full">Match Results</span>
+              <span className="bg-white/20 px-3 py-1 rounded-full">Over/Under Goals</span>
+              <span className="bg-white/20 px-3 py-1 rounded-full">Both Teams to Score</span>
+              <span className="bg-white/20 px-3 py-1 rounded-full">Correct Score</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Features Section */}
+      <div className="py-8">
+        <h2 className="text-3xl font-bold text-gray-900 text-center mb-8">
+          Tools for Disciplined Betting
+        </h2>
+        <div className="grid md:grid-cols-3 gap-8">
+          {/* Feature 1 */}
+          <div className="bg-white p-6 rounded-lg shadow-md border-t-4 border-blue-500">
+            <div className="text-3xl mb-4">📊</div>
+            <h3 className="text-xl font-semibold text-gray-900 mb-2">Live & Historical Data</h3>
+            <p className="text-gray-600">
+              Real-time scores and historical fixtures, statistics, and trends from
+              the Premier League, FA Cup, and Carabao Cup.
+            </p>
+          </div>
+
+          {/* Feature 2 */}
+          <div className="bg-white p-6 rounded-lg shadow-md border-t-4 border-green-500">
+            <div className="text-3xl mb-4">📝</div>
+            <h3 className="text-xl font-semibold text-gray-900 mb-2">Research Journal</h3>
+            <p className="text-gray-600">
+              Keep notes on teams, fixtures, and trends. Build your own database
+              of insights to inform future bets.
+            </p>
+          </div>
+
+          {/* Feature 3 */}
+          <div className="bg-white p-6 rounded-lg shadow-md border-t-4 border-purple-500">
+            <div className="text-3xl mb-4">💰</div>
+            <h3 className="text-xl font-semibold text-gray-900 mb-2">Odds Comparison</h3>
+            <p className="text-gray-600">
+              Compare pre-match odds across multiple bookmakers to find
+              the best value for your bets.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Data Section */}
+      <div className="py-8 bg-gray-50 -mx-4 px-4 rounded-lg">
+        <h2 className="text-3xl font-bold text-gray-900 text-center mb-8">
+          Comprehensive Football Data
+        </h2>
+        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-4xl mx-auto">
+          <div className="text-center">
+            <div className="text-4xl font-bold text-blue-600 mb-2">H2H</div>
+            <p className="text-gray-600">Head-to-head history</p>
+          </div>
+          <div className="text-center">
+            <div className="text-4xl font-bold text-green-600 mb-2">ODDS</div>
+            <p className="text-gray-600">Pre-match betting odds</p>
+          </div>
+          <div className="text-center">
+            <div className="text-4xl font-bold text-purple-600 mb-2">STATS</div>
+            <p className="text-gray-600">Team & player statistics</p>
+          </div>
+          <div className="text-center">
+            <div className="text-4xl font-bold text-orange-600 mb-2">FORM</div>
+            <p className="text-gray-600">Recent form & trends</p>
+          </div>
+        </div>
+      </div>
+
+      {/* CTA Section */}
+      <div className="text-center py-12">
+        <h2 className="text-3xl font-bold text-gray-900 mb-4">
+          Ready to Start Your Research?
+        </h2>
+        <p className="text-xl text-gray-600 mb-8 max-w-xl mx-auto">
+          Join BetSmoke and take a disciplined approach to your betting research.
+        </p>
+        <Link
+          to="/register"
+          className="bg-blue-600 text-white px-8 py-3 rounded-lg text-lg font-semibold hover:bg-blue-700 transition-colors"
+        >
+          Sign Up
+        </Link>
+      </div>
+
+      {/* Footer Note */}
+      <div className="text-center text-sm text-gray-500 py-4 border-t">
+        <p>
+          BetSmoke is a research tool only. We do not place bets or process payments.
+        </p>
+      </div>
+    </div>
+  );
+};
+
+// ============================================
+// DASHBOARD (Authenticated Users)
+// ============================================
+const Dashboard = () => {
   // State for Premier League logo
   const [plLogo, setPlLogo] = useState(null);
 
-  // ============================================
-  // FETCH PREMIER LEAGUE LOGO ON MOUNT
-  // ============================================
+  // Fetch Premier League logo on mount
   useEffect(() => {
     const fetchLogo = async () => {
       try {
@@ -33,103 +172,82 @@ const Home = () => {
         setPlLogo(data.league?.image_path || null);
       } catch (err) {
         console.error('Failed to fetch Premier League logo:', err);
-        // Keep null - component will show fallback
       }
     };
-
     fetchLogo();
   }, []);
 
-  // ============================================
-  // RENDER
-  // ============================================
   return (
     <div className="space-y-8">
-      {/* Hero Section */}
-      <div className="text-center py-8">
-        <h1 className="text-4xl font-bold text-gray-900 mb-4">
-          BetSmoke
+      {/* Welcome Section */}
+      <div className="text-center py-6">
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">
+          Welcome to BetSmoke
         </h1>
-        <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-          Your personal betting research journal. Track fixtures, analyze teams,
-          and keep notes on your insights.
+        <p className="text-gray-600">
+          Your betting research terminal is ready.
         </p>
       </div>
 
       {/* Quick Links */}
-      <div className="grid md:grid-cols-3 gap-6">
+      <div className="grid md:grid-cols-4 gap-4">
         <Link
           to="/fixtures"
-          className="block p-6 bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow"
+          className="block p-4 bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow text-center"
         >
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">Fixtures</h2>
-          <p className="text-gray-600">Browse upcoming and past matches by date.</p>
+          <div className="text-2xl mb-2">📅</div>
+          <h2 className="text-lg font-semibold text-gray-900">Fixtures</h2>
+          <p className="text-sm text-gray-600">View matches</p>
         </Link>
 
         <Link
           to="/teams"
-          className="block p-6 bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow"
+          className="block p-4 bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow text-center"
         >
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">Teams</h2>
-          <p className="text-gray-600">Search and explore team statistics.</p>
+          <div className="text-2xl mb-2">⚽</div>
+          <h2 className="text-lg font-semibold text-gray-900">Teams</h2>
+          <p className="text-sm text-gray-600">Search teams</p>
         </Link>
 
         <Link
           to="/competitions"
-          className="block p-6 bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow"
+          className="block p-4 bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow text-center"
         >
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">Competitions</h2>
-          <p className="text-gray-600">View standings and cup fixtures.</p>
+          <div className="text-2xl mb-2">🏆</div>
+          <h2 className="text-lg font-semibold text-gray-900">Competitions</h2>
+          <p className="text-sm text-gray-600">Standings & cups</p>
+        </Link>
+
+        <Link
+          to="/notes"
+          className="block p-4 bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow text-center"
+        >
+          <div className="text-2xl mb-2">📝</div>
+          <h2 className="text-lg font-semibold text-gray-900">Notes</h2>
+          <p className="text-sm text-gray-600">Your journal</p>
         </Link>
       </div>
 
-      {/* Notes CTA (for non-authenticated users) */}
-      {!isAuthenticated && (
-        <div className="bg-blue-50 p-6 rounded-lg text-center">
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">
-            Start Your Research Journal
-          </h3>
-          <p className="text-gray-600 mb-4">
-            Create an account to save notes and track your betting research.
-          </p>
-          <Link
-            to="/register"
-            className="inline-block bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 transition-colors"
-          >
-            Get Started
-          </Link>
-        </div>
-      )}
-
-      {/* Notes CTA (for authenticated users) */}
-      {isAuthenticated && (
-        <div className="bg-green-50 p-6 rounded-lg text-center">
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">
-            Your Research Journal
-          </h3>
-          <p className="text-gray-600 mb-4">
-            Access your notes and continue your research.
-          </p>
-          <Link
-            to="/notes"
-            className="inline-block bg-green-600 text-white px-6 py-2 rounded-md hover:bg-green-700 transition-colors"
-          >
-            View Notes
-          </Link>
-        </div>
-      )}
-
-      {/* ============================================ */}
-      {/* PREMIER LEAGUE STANDINGS */}
-      {/* ============================================ */}
-      <LeagueStandings 
-        leagueId={PREMIER_LEAGUE_ID} 
+      {/* Premier League Standings */}
+      <LeagueStandings
+        leagueId={PREMIER_LEAGUE_ID}
         leagueName="Premier League"
         leagueLogo={plLogo}
         showZones={true}
       />
     </div>
   );
+};
+
+// ============================================
+// HOME COMPONENT (Router)
+// ============================================
+const Home = () => {
+  const { isAuthenticated } = useAuth();
+
+  // Show landing page for non-authenticated users
+  // Show dashboard for authenticated users
+  return isAuthenticated ? <Dashboard /> : <LandingPage />;
 };
 
 export default Home;

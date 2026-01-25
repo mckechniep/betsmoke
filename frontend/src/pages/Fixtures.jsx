@@ -10,6 +10,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { dataApi } from '../api/client';
 import { useAuth } from '../context/AuthContext';
+import AppIcon from '../components/AppIcon';
 import {
   formatTime as formatTimeUtil,
   formatDateOnly,
@@ -122,11 +123,11 @@ function groupFixturesByDate(fixtures, timezone = 'America/New_York') {
 // ============================================
 // HELPER: Get normalized match state
 // ============================================
-// SportsMonks short_name values (lowercase):
+// SportsMonks short_name values (lowercase after normalization):
 //   "ns" = Not Started
-//   "1h" = First Half
-//   "ht" = Half Time  
-//   "2h" = Second Half
+//   "1st" = First Half (INPLAY_1ST_HALF)
+//   "ht" = Half Time
+//   "2nd" = Second Half (INPLAY_2ND_HALF)
 //   "et" = Extra Time
 //   "pen" = Penalty Shootout (in progress)
 //   "ft" = Full Time (90 mins)
@@ -161,8 +162,9 @@ function getScoreDisplay(fixture) {
   const matchState = getMatchState(fixture);
   
   // Valid states where we should show a score
-  // Note: "ftp" = after penalties (FT_PEN), "aet" = after extra time
-  const validStatesForScore = ['1h', '2h', 'ht', 'et', 'pen', 'ft', 'aet', 'ftp'];
+  // SportsMonks uses: "1st", "2nd", "ht", "et", "pen", "ft", "aet", "ftp"
+  // Also include legacy values for compatibility
+  const validStatesForScore = ['1st', '2nd', 'ht', 'et', 'pen', 'ft', 'aet', 'ftp', '1h', '2h'];
   
   if (!matchState || !validStatesForScore.includes(matchState)) {
     return null;
@@ -290,8 +292,8 @@ function RefreshBar({ timeAgoText, loading, onRefresh }) {
     <div className="flex items-center justify-between mb-4 bg-gray-50 rounded-lg px-4 py-2">
       <div className="text-sm text-gray-500">
         {timeAgoText && (
-          <span>
-            🕒 Last updated: <span className="font-medium">{timeAgoText}</span>
+          <span className="flex items-center gap-1">
+            <AppIcon name="clock" size="sm" /> Last updated: <span className="font-medium">{timeAgoText}</span>
           </span>
         )}
       </div>
@@ -329,17 +331,19 @@ function FixtureCard({ fixture, timezone, temperatureUnit }) {
 
   // Get weather info from weatherreport (separate include from metadata)
   const weather = getWeatherDisplay(fixture.weatherreport, temperatureUnit);
-  
+
   // Get normalized match state using our helper
   const matchState = getMatchState(fixture);
-  
+
   // Match is finished if it's FT, AET, or FTP (after penalties)
   const isFinished = ['ft', 'aet', 'ftp'].includes(matchState);
   const isAfterExtraTime = matchState === 'aet';
   const isAfterPenalties = matchState === 'ftp';
-  
+
   // Match is live if in progress
-  const isLive = ['1h', '2h', 'ht', 'et', 'pen'].includes(matchState);
+  // SportsMonks uses: "1st" (1st half), "2nd" (2nd half), "HT" (half time), "ET", "PEN"
+  // Also check for legacy values and variations
+  const isLive = ['1st', '2nd', 'ht', 'et', 'pen', 'live', 'inplay', '1h', '2h'].includes(matchState);
   
   // ============================================
   // GET PENALTY SCORE (for FT_PEN matches only)
@@ -490,8 +494,8 @@ function FixtureCard({ fixture, timezone, temperatureUnit }) {
 
       {/* Venue */}
       {fixture.venue?.name && (
-        <div className="mt-2 text-xs text-gray-400 text-center">
-          📍 {fixture.venue.name}
+        <div className="mt-2 text-xs text-gray-400 text-center flex items-center justify-center gap-1">
+          <AppIcon name="location" size="xs" /> {fixture.venue.name}
         </div>
       )}
 
@@ -1035,28 +1039,29 @@ function SearchPanel({ onSearchResults, onClearSearch, isSearchActive }) {
               ? 'bg-blue-600 text-white'
               : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
             }`}
+        className="flex items-center gap-2"
         >
-          🏟️ By Team
+          <AppIcon name="team" size="sm" /> By Team
         </button>
         <button
           onClick={() => setSearchMode('competition')}
-          className={`px-4 py-2 rounded-md text-sm font-medium transition-colors
+          className={`px-4 py-2 rounded-md text-sm font-medium transition-colors flex items-center gap-2
             ${searchMode === 'competition'
               ? 'bg-blue-600 text-white'
               : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
             }`}
         >
-          🏆 By Competition
+          <AppIcon name="trophy" size="sm" /> By Competition
         </button>
         <button
           onClick={() => setSearchMode('date')}
-          className={`px-4 py-2 rounded-md text-sm font-medium transition-colors
+          className={`px-4 py-2 rounded-md text-sm font-medium transition-colors flex items-center gap-2
             ${searchMode === 'date'
               ? 'bg-blue-600 text-white'
               : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
             }`}
         >
-          📅 By Date
+          <AppIcon name="calendar" size="sm" /> By Date
         </button>
       </div>
 
@@ -1178,7 +1183,7 @@ function SearchPanel({ onSearchResults, onClearSearch, isSearchActive }) {
               {teamStartDate && teamEndDate && (
                 <div className={`text-sm ${isTeamDateRangeValid ? 'text-gray-600' : 'text-red-600'}`}>
                   {isTeamDateRangeValid
-                    ? `📅 ${teamDateRangeDays} days selected`
+                    ? `${teamDateRangeDays} days selected`
                     : teamDateRangeDays > MAX_TEAM_DATE_RANGE_DAYS
                       ? `⚠️ ${teamDateRangeDays} days selected (max ${MAX_TEAM_DATE_RANGE_DAYS} days allowed)`
                       : '⚠️ End date must be after start date'
@@ -1365,7 +1370,7 @@ function SearchPanel({ onSearchResults, onClearSearch, isSearchActive }) {
               {competitionStartDate && competitionEndDate && (
                 <div className={`text-sm ${isCompetitionDateRangeValid ? 'text-gray-600' : 'text-red-600'}`}>
                   {isCompetitionDateRangeValid 
-                    ? `📅 ${competitionDateRangeDays} days selected`
+                    ? `${competitionDateRangeDays} days selected`
                     : competitionDateRangeDays > MAX_DATE_RANGE_DAYS
                       ? `⚠️ ${competitionDateRangeDays} days selected (max ${MAX_DATE_RANGE_DAYS} days allowed)`
                       : '⚠️ End date must be after start date'
@@ -1479,7 +1484,7 @@ function SearchPanel({ onSearchResults, onClearSearch, isSearchActive }) {
               {dateRangeStart && dateRangeEnd && (
                 <div className={`text-sm ${isGeneralDateRangeValid ? 'text-gray-600' : 'text-red-600'}`}>
                   {isGeneralDateRangeValid 
-                    ? `📅 ${generalDateRangeDays} days selected`
+                    ? `${generalDateRangeDays} days selected`
                     : generalDateRangeDays > MAX_DATE_RANGE_DAYS
                       ? `⚠️ ${generalDateRangeDays} days selected (max ${MAX_DATE_RANGE_DAYS} days for all-teams search)`
                       : '⚠️ End date must be after start date'
@@ -1659,8 +1664,8 @@ function DefaultFixtures({ fixtures, loading, error, dateRange, timeAgoText, onR
   return (
     <div>
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-xl font-bold text-gray-900">
-          📅 Fixture List
+        <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+          <AppIcon name="calendar" size="lg" /> Fixture List
         </h2>
         
         {dateRange.startDate && dateRange.endDate && (
@@ -1692,7 +1697,7 @@ function DefaultFixtures({ fixtures, loading, error, dateRange, timeAgoText, onR
         </div>
       ) : groupedFixtures.length === 0 ? (
         <div className="bg-gray-50 rounded-lg p-8 text-center">
-          <div className="text-gray-400 text-5xl mb-4">📅</div>
+          <div className="text-gray-400 mb-4"><AppIcon name="calendar" size="3xl" /></div>
           <h2 className="text-xl font-semibold text-gray-700 mb-2">
             No Upcoming Fixtures
           </h2>
@@ -1765,28 +1770,39 @@ const Fixtures = () => {
     setDateRange({ startDate, endDate });
 
     try {
-      // Fetch fixtures by date range AND live scores in parallel
-      const [fixturesData, livescoresData] = await Promise.all([
+      // Fetch fixtures by date range, live scores, AND in-play scores in parallel
+      // Using both livescores (today's fixtures) and livescoresInplay (currently playing)
+      // to ensure we catch all live match states
+      const [fixturesData, livescoresData, inplayData] = await Promise.all([
         dataApi.getFixturesByDateRange(startDate, endDate),
-        dataApi.getLivescores()
+        dataApi.getLivescores(),
+        dataApi.getLivescoresInplay()
       ]);
-      
+
       // Filter to our allowed leagues
       let filteredFixtures = (fixturesData.fixtures || []).filter(
         fixture => ALLOWED_LEAGUE_IDS.includes(fixture.league_id)
       );
-      
-      // Get live fixtures from our allowed leagues
+
+      // Get live fixtures from our allowed leagues (from both endpoints)
       const liveFixtures = (livescoresData.fixtures || []).filter(
         fixture => ALLOWED_LEAGUE_IDS.includes(fixture.league_id)
       );
-      
-      // Create a map of live fixture IDs to their live data
+      const inplayFixtures = (inplayData.fixtures || []).filter(
+        fixture => ALLOWED_LEAGUE_IDS.includes(fixture.league_id)
+      );
+
+      // Create a map of fixture IDs to their live data
+      // Start with livescores, then override with inplay (more accurate for current state)
       const liveFixtureMap = new Map();
       liveFixtures.forEach(liveFixture => {
         liveFixtureMap.set(liveFixture.id, liveFixture);
       });
-      
+      // Inplay data takes precedence (more real-time)
+      inplayFixtures.forEach(inplayFixture => {
+        liveFixtureMap.set(inplayFixture.id, inplayFixture);
+      });
+
       // Merge live data into fixtures
       filteredFixtures = filteredFixtures.map(fixture => {
         const liveVersion = liveFixtureMap.get(fixture.id);
@@ -1799,9 +1815,9 @@ const Fixtures = () => {
         }
         return fixture;
       });
-      
+
       setFixtures(filteredFixtures);
-      
+
       // Update the "last updated" timestamp
       const now = new Date();
       setLastUpdated(now);
@@ -1902,16 +1918,28 @@ const Fixtures = () => {
       // ============================================
       // Fetch live scores and merge
       // ============================================
-      const livescoresData = await dataApi.getLivescores();
+      // Fetch both livescores and inplay in parallel for most accurate live state
+      const [livescoresData, inplayData] = await Promise.all([
+        dataApi.getLivescores(),
+        dataApi.getLivescoresInplay()
+      ]);
+
       const liveFixtures = (livescoresData.fixtures || []).filter(
         fixture => ALLOWED_LEAGUE_IDS.includes(fixture.league_id)
       );
-      
+      const inplayFixtures = (inplayData.fixtures || []).filter(
+        fixture => ALLOWED_LEAGUE_IDS.includes(fixture.league_id)
+      );
+
+      // Create map with livescores, then override with inplay (more real-time)
       const liveFixtureMap = new Map();
       liveFixtures.forEach(liveFixture => {
         liveFixtureMap.set(liveFixture.id, liveFixture);
       });
-      
+      inplayFixtures.forEach(inplayFixture => {
+        liveFixtureMap.set(inplayFixture.id, inplayFixture);
+      });
+
       // Merge live data into fixtures
       newFixtures = newFixtures.map(fixture => {
         const liveVersion = liveFixtureMap.get(fixture.id);
