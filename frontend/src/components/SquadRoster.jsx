@@ -238,15 +238,15 @@ const SquadRoster = ({ teamId }) => {
             <img
               src={player.image}
               alt={player.name}
-              className="w-12 h-12 rounded-full object-cover bg-gray-100"
+              className="w-8 h-8 md:w-12 md:h-12 rounded-full object-cover bg-white flex-shrink-0"
               onError={(e) => { e.target.style.display = 'none'; }}
             />
           ) : (
-            <div className="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center text-gray-400 text-sm">
+            <div className="w-8 h-8 md:w-12 md:h-12 rounded-full bg-white flex items-center justify-center text-gray-500 text-xs md:text-sm flex-shrink-0">
               ?
             </div>
           )}
-          <span className="font-medium text-gray-900">{value}</span>
+          <span className="font-medium text-gray-100 truncate max-w-[90px] md:max-w-none">{value}</span>
         </div>
       );
     }
@@ -255,11 +255,11 @@ const SquadRoster = ({ teamId }) => {
     if (column.key === 'positionId') {
       return (
         <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
-          value === 24 ? 'bg-yellow-100 text-yellow-800' :  // GK
-          value === 25 ? 'bg-blue-100 text-blue-800' :      // DEF
-          value === 26 ? 'bg-green-100 text-green-800' :    // MID
-          value === 27 ? 'bg-red-100 text-red-800' :        // FWD
-          'bg-gray-100 text-gray-800'
+          value === 24 ? 'bg-yellow-900/50 text-yellow-400' :  // GK
+          value === 25 ? 'bg-blue-900/50 text-blue-400' :      // DEF
+          value === 26 ? 'bg-green-900/50 text-green-400' :    // MID
+          value === 27 ? 'bg-red-900/50 text-red-400' :        // FWD
+          'bg-gray-700 text-gray-300'
         }`}>
           {POSITION_NAMES[value] || '?'}
         </span>
@@ -298,23 +298,23 @@ const SquadRoster = ({ teamId }) => {
   // RENDER
   // ============================================
   return (
-    <div className="bg-white rounded-lg shadow-md p-6">
+    <div className="bg-gray-800 rounded-lg shadow-md p-6">
       {/* Header with Season Selector */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 gap-4">
-        <h2 className="text-xl font-semibold text-gray-900 flex items-center gap-2">
+        <h2 className="text-xl font-semibold text-gray-100 flex items-center gap-2">
           <AppIcon name="players" size="lg" /> Squad Roster
         </h2>
         
         <div className="flex flex-wrap items-center gap-4">
           {/* View Mode Toggle */}
           <div className="flex items-center space-x-2">
-            <span className="text-sm text-gray-600">View:</span>
+            <span className="text-sm text-gray-400">View:</span>
             <button
               onClick={() => setViewMode('compact')}
               className={`px-3 py-1 text-sm rounded-l-md border ${
-                viewMode === 'compact' 
-                  ? 'bg-blue-600 text-white border-blue-600' 
-                  : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                viewMode === 'compact'
+                  ? 'bg-amber-600 text-white border-amber-600'
+                  : 'bg-gray-700 text-gray-300 border-gray-600 hover:bg-gray-600'
               }`}
             >
               Compact
@@ -322,22 +322,22 @@ const SquadRoster = ({ teamId }) => {
             <button
               onClick={() => setViewMode('full')}
               className={`px-3 py-1 text-sm rounded-r-md border-t border-r border-b ${
-                viewMode === 'full' 
-                  ? 'bg-blue-600 text-white border-blue-600' 
-                  : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                viewMode === 'full'
+                  ? 'bg-amber-600 text-white border-amber-600'
+                  : 'bg-gray-700 text-gray-300 border-gray-600 hover:bg-gray-600'
               }`}
             >
               Full Stats
             </button>
           </div>
-          
+
           {/* Season Selector Dropdown */}
           <div className="flex items-center space-x-2">
-            <label className="text-sm text-gray-600">Season:</label>
+            <label className="text-sm text-gray-400">Season:</label>
             <select
               value={selectedSeasonId || ''}
               onChange={(e) => setSelectedSeasonId(parseInt(e.target.value))}
-              className="border border-gray-300 rounded-md px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white min-w-[200px]"
+              className="border border-gray-600 rounded-md px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 bg-gray-700 text-gray-100 min-w-[200px]"
               disabled={seasons.length === 0}
             >
               {seasons.length === 0 ? (
@@ -368,7 +368,7 @@ const SquadRoster = ({ teamId }) => {
 
       {/* Error State */}
       {error && (
-        <div className="bg-red-50 text-red-600 p-3 rounded-md text-sm">
+        <div className="bg-red-900/30 text-red-400 p-3 rounded-md text-sm">
           {error}
         </div>
       )}
@@ -376,18 +376,18 @@ const SquadRoster = ({ teamId }) => {
       {/* Squad Table */}
       {!loading && !error && players.length > 0 && (
         <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
+          <table className="min-w-full divide-y divide-gray-700">
             {/* Table Header */}
-            <thead className="bg-gray-50">
+            <thead className="bg-gray-700">
               <tr>
                 {columns.map((column) => (
                   <th
                     key={column.key}
                     scope="col"
                     title={column.title || column.label}
-                    className={`px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider ${
-                      column.sortable ? 'cursor-pointer hover:bg-gray-100' : ''
-                    } ${column.sticky ? 'sticky left-0 bg-gray-50 z-10' : ''}`}
+                    className={`px-3 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider ${
+                      column.sortable ? 'cursor-pointer hover:bg-gray-600' : ''
+                    } ${column.sticky ? 'sticky left-0 bg-gray-700 z-10' : ''}`}
                     onClick={() => column.sortable && handleSort(column.key)}
                   >
                     <div className="flex items-center">
@@ -398,19 +398,19 @@ const SquadRoster = ({ teamId }) => {
                 ))}
               </tr>
             </thead>
-            
+
             {/* Table Body */}
-            <tbody className="bg-white divide-y divide-gray-200">
+            <tbody className="bg-gray-800 divide-y divide-gray-700">
               {sortedPlayers.map((player, index) => (
-                <tr 
+                <tr
                   key={player.playerId || index}
-                  className="hover:bg-gray-50 transition-colors"
+                  className="hover:bg-gray-700 transition-colors"
                 >
                   {columns.map((column) => (
                     <td
                       key={column.key}
-                      className={`px-3 py-3 whitespace-nowrap text-sm ${
-                        column.sticky ? 'sticky left-0 bg-white z-10' : ''
+                      className={`px-3 py-3 whitespace-nowrap text-sm text-gray-300 ${
+                        column.sticky ? 'sticky left-0 bg-gray-800 z-10' : ''
                       }`}
                     >
                       {renderCellValue(player, column)}

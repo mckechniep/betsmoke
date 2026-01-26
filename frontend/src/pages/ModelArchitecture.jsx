@@ -6,6 +6,8 @@
 // ============================================
 
 import { useState } from 'react';
+import AppIcon from '../components/AppIcon';
+import aiPredictionsIcon from '../assets/ai-probability-betsmoke-3.png';
 
 // ============================================
 // HELPER COMPONENTS
@@ -17,21 +19,23 @@ import { useState } from 'react';
  */
 const ExpandableSection = ({ title, isExpanded, onToggle, children }) => {
   return (
-    <div className="border border-blue-200 rounded-lg overflow-hidden">
+    <div className="border border-gray-600 rounded-lg overflow-hidden">
       {/* Clickable Header */}
       <button
         onClick={onToggle}
-        className="w-full px-4 py-3 bg-white/70 hover:bg-white/90 flex items-center justify-between text-left transition-colors"
+        className="w-full px-4 py-3 bg-gray-800/70 hover:bg-gray-800/90 flex items-center justify-between text-left transition-colors"
       >
-        <span className="font-medium text-blue-800">{title}</span>
-        <span className="text-blue-600 text-lg">
-          {isExpanded ? '▼' : '▶'}
-        </span>
+        <span className="font-medium text-amber-400">{title}</span>
+        <AppIcon
+          name={isExpanded ? 'chevron-down' : 'chevron-right'}
+          size="md"
+          className="text-amber-500"
+        />
       </button>
       
       {/* Collapsible Content */}
       {isExpanded && (
-        <div className="px-4 py-3 bg-white/50 border-t border-blue-200">
+        <div className="px-4 py-3 bg-gray-800/50 border-t border-gray-600">
           {children}
         </div>
       )}
@@ -74,8 +78,8 @@ const ModelArchitecture = () => {
       {/* ============================================ */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Model Architecture</h1>
-          <p className="text-sm text-gray-500 mt-1">
+          <h1 className="text-2xl font-bold text-gray-100">Model Architecture</h1>
+          <p className="text-sm text-gray-400 mt-1">
             Learn how our AI prediction model works under the hood
           </p>
         </div>
@@ -84,9 +88,12 @@ const ModelArchitecture = () => {
       {/* ============================================ */}
       {/* HOW IT WORKS CARD */}
       {/* ============================================ */}
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-        <h3 className="font-semibold text-blue-900 mb-2">🤖 AI Predictions: How it Works</h3>
-        <div className="text-sm text-blue-800 space-y-3">
+      <div className="bg-gray-800 border border-gray-600 rounded-lg p-4">
+        <h3 className="font-semibold text-amber-400 mb-2 flex items-center gap-2">
+          <img src={aiPredictionsIcon} alt="AI Predictions" className="w-14 h-14 object-contain" />
+          <span>AI Predictions: How it Works</span>
+        </h3>
+        <div className="text-sm text-gray-300 space-y-3">
           <p>
             We're using a state-of-the-art, AI-driven Predictions API from SportsMonks, a leading football data platform.
           </p>
@@ -106,7 +113,7 @@ const ModelArchitecture = () => {
               isExpanded={expandedSections.dataInputs}
               onToggle={() => toggleSection('dataInputs')}
             >
-              <ul className="list-disc list-inside space-y-1 text-blue-700 text-xs">
+              <ul className="list-disc list-inside space-y-1 text-gray-400 text-xs">
                 <li><strong>Event data</strong> — Passes, shots, fouls, timestamps, pitch coordinates</li>
                 <li><strong>Player & team metadata</strong> — Age, height, experience, injury history, team value</li>
                 <li><strong>Match context</strong> — Home/away, rest days, weather, referee</li>
@@ -121,7 +128,7 @@ const ModelArchitecture = () => {
               isExpanded={expandedSections.algorithms}
               onToggle={() => toggleSection('algorithms')}
             >
-              <ul className="list-disc list-inside space-y-1 text-blue-700 text-xs">
+              <ul className="list-disc list-inside space-y-1 text-gray-400 text-xs">
                 <li><strong>Poisson regression</strong> — Models goal scoring as random events based on team strength</li>
                 <li><strong>Dixon & Coles model</strong> — Adjusts for low-scoring games (0-0, 1-1)</li>
                 <li><strong>Gradient boosting</strong> — XGBoost, LightGBM for complex pattern detection</li>
@@ -136,7 +143,7 @@ const ModelArchitecture = () => {
               isExpanded={expandedSections.limitations}
               onToggle={() => toggleSection('limitations')}
             >
-              <ul className="list-disc list-inside space-y-1 text-blue-700 text-xs">
+              <ul className="list-disc list-inside space-y-1 text-gray-400 text-xs">
                 <li><strong>High randomness</strong> — Goals are rare events; deflections, referee decisions, and luck create noise</li>
                 <li><strong>Small sample sizes</strong> — Individual player data can be too limited for reliable estimates</li>
                 <li><strong>Shifting conditions</strong> — Transfers, injuries, and managerial changes mean past data may not predict future</li>
@@ -145,9 +152,9 @@ const ModelArchitecture = () => {
             </ExpandableSection>
           </div>
           
-          <p className="text-blue-600 text-xs mt-3">
+          <p className="text-amber-500 text-xs mt-3">
             Source: <a href="https://www.sportmonks.com/glossary/algorithm-predictive-modeling/" 
-              target="_blank" rel="noopener noreferrer" className="underline hover:text-blue-800">
+              target="_blank" rel="noopener noreferrer" className="underline hover:text-amber-400">
               SportsMonks - Algorithm (Predictive Modeling)
             </a>
           </p>

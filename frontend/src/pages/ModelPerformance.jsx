@@ -16,6 +16,7 @@
 
 import { useState, useEffect } from 'react';
 import { dataApi } from '../api/client';
+import AppIcon from '../components/AppIcon';
 
 // ============================================
 // CONSTANTS
@@ -127,12 +128,12 @@ const MARKET_ORDER = [
 const RatingBadge = ({ rating }) => {
   const styles = {
     high: 'bg-green-100 text-green-800 border-green-200',
-    good: 'bg-blue-100 text-blue-800 border-blue-200',
+    good: 'bg-blue-900/30 text-blue-400 border-gray-600',
     medium: 'bg-yellow-100 text-yellow-800 border-yellow-200',
     poor: 'bg-red-100 text-red-800 border-red-200',
   };
   
-  const style = styles[rating] || 'bg-gray-100 text-gray-800 border-gray-200';
+  const style = styles[rating] || 'bg-gray-700 text-gray-100 border-gray-700';
   
   return (
     <span className={`px-2 py-0.5 text-xs font-medium rounded-full border ${style} capitalize`}>
@@ -165,12 +166,12 @@ const DifferentialBadge = ({ differential, rating }) => {
   // Color based on the ACTUAL rating from SportsMonks (so they always match)
   const colorByRating = {
     high: 'bg-green-100 text-green-700',
-    good: 'bg-blue-100 text-blue-700',
+    good: 'bg-blue-900/30 text-blue-400',
     medium: 'bg-yellow-100 text-yellow-700',
     poor: 'bg-red-100 text-red-700',
   };
   
-  const colorClass = colorByRating[rating] || 'bg-gray-100 text-gray-700';
+  const colorClass = colorByRating[rating] || 'bg-gray-700 text-gray-300';
   const formatted = roundedDifferential >= 0 ? `+${roundedDifferential.toFixed(1)}%` : `${roundedDifferential.toFixed(1)}%`;
   
   return (
@@ -189,15 +190,15 @@ const SortableHeader = ({ label, column, currentSort, currentDirection, onSort, 
   return (
     <th
       onClick={() => onSort(column)}
-      className={`px-4 py-3 text-xs font-semibold text-gray-600 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors select-none ${className}`}
+      className={`px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider cursor-pointer hover:bg-gray-700 transition-colors select-none ${className}`}
     >
       <div className="flex items-center justify-center gap-1">
         <span>{label}</span>
         <span className="text-gray-400">
           {isActive ? (
-            currentDirection === 'desc' ? '▼' : '▲'
+            <AppIcon name={currentDirection === 'desc' ? 'chevron-down' : 'chevron-up'} size="xs" className="text-amber-500" />
           ) : (
-            <span className="opacity-30">▼</span>
+            <AppIcon name="chevron-down" size="xs" className="text-gray-500 opacity-30" />
           )}
         </span>
       </div>
@@ -263,24 +264,24 @@ const AccordionItem = ({ title, children, defaultOpen = false }) => {
   const [isOpen, setIsOpen] = useState(defaultOpen);
   
   return (
-    <div className="border-b border-blue-200 last:border-b-0">
+    <div className="border-b border-gray-600 last:border-b-0">
       {/* Clickable Header */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full flex items-center justify-between py-3 px-1 text-left hover:bg-blue-100/50 transition-colors rounded"
+        className="w-full flex items-center justify-between py-3 px-1 text-left hover:bg-gray-700/50 transition-colors rounded"
       >
-        <span className="font-medium text-blue-900">{title}</span>
+        <span className="font-medium text-amber-400">{title}</span>
         {/* Chevron that rotates when open */}
-        <span 
-          className={`text-blue-600 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}
+        <span
+          className={`text-amber-500 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}
         >
-          ▼
+          <AppIcon name="chevron-down" size="sm" className="text-amber-500" />
         </span>
       </button>
       
       {/* Collapsible Content - only renders when open */}
       {isOpen && (
-        <div className="pb-4 px-1 text-sm text-blue-800 space-y-2">
+        <div className="pb-4 px-1 text-sm text-gray-300 space-y-2">
           {children}
         </div>
       )}
@@ -298,7 +299,7 @@ const EdgeBadge = ({ edge }) => {
   if (edgePercent >= 15) {
     colorClass = 'bg-green-100 text-green-700';
   } else if (edgePercent >= 10) {
-    colorClass = 'bg-blue-100 text-blue-700';
+    colorClass = 'bg-blue-900/30 text-blue-400';
   } else if (edgePercent >= 5) {
     colorClass = 'bg-yellow-100 text-yellow-700';
   }
@@ -577,11 +578,11 @@ const ModelPerformance = () => {
       {/* HEADER */}
       {/* ============================================ */}
       <div>
-        <h1 className="text-2xl font-bold text-gray-900 mb-4">AI Prediction Model Performance</h1>
-        <p className="text-sm text-gray-500 font-semibold">
+        <h1 className="text-2xl font-bold text-gray-100 mb-4">AI Prediction Model Performance</h1>
+        <p className="text-sm text-gray-400 font-semibold">
           See how accurate the AI predictions are for each competition and market.
         </p>
-        <p className="text-sm text-gray-600 mt-3 max-w-3xl">
+        <p className="text-sm text-gray-400 mt-3 max-w-3xl">
           The performance of our AI Prediction Model is continuously monitored by tracking 
           historical outcomes and objective quality metrics over the last 100 matches.
         </p>
@@ -590,8 +591,8 @@ const ModelPerformance = () => {
       {/* ============================================ */}
       {/* COMPETITION SELECTOR */}
       {/* ============================================ */}
-      <div className="bg-white rounded-lg shadow-md p-4">
-        <label className="block text-sm font-medium text-gray-700 mb-2">
+      <div className="bg-gray-800 rounded-lg shadow-md p-4">
+        <label className="block text-sm font-medium text-gray-300 mb-2">
           Select Competition
         </label>
         <div className="flex flex-wrap gap-3">
@@ -627,7 +628,7 @@ const ModelPerformance = () => {
       {/* ERROR MESSAGE */}
       {/* ============================================ */}
       {error && (
-        <div className="bg-red-50 text-red-600 p-4 rounded-md">
+        <div className="bg-red-900/30 text-red-400 p-4 rounded-md">
           {error}
         </div>
       )}
@@ -636,8 +637,8 @@ const ModelPerformance = () => {
       {/* LOADING STATE */}
       {/* ============================================ */}
       {loading && (
-        <div className="text-center py-12 text-gray-500">
-          <div className="inline-block w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mb-4" />
+        <div className="text-center py-12 text-gray-400">
+          <div className="inline-block w-8 h-8 border-4 border-amber-500 border-t-transparent rounded-full animate-spin mb-4" />
           <p>Loading prediction model data...</p>
         </div>
       )}
@@ -646,7 +647,7 @@ const ModelPerformance = () => {
       {/* MAIN UNIFIED TABLE */}
       {/* ============================================ */}
       {!loading && !error && historicalLogLoss && modelLogLoss && (
-        <div className="bg-white rounded-lg shadow-md overflow-hidden">
+        <div className="bg-gray-800 rounded-lg shadow-md overflow-hidden">
           {/* Header */}
           <div className="bg-gray-900 text-white px-6 py-4">
             <h2 className="text-lg font-semibold flex items-center gap-3">
@@ -664,10 +665,10 @@ const ModelPerformance = () => {
           {/* Table */}
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-gray-50 border-b border-gray-200">
+              <thead className="bg-gray-700 border-b border-gray-700">
                 <tr>
                   {/* Market - not sortable */}
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
                     Market
                   </th>
                   
@@ -742,24 +743,24 @@ const ModelPerformance = () => {
                   const trend = trendData?.[marketKey];
                   
                   return (
-                    <tr key={marketKey} className="hover:bg-gray-50 transition-colors">
+                    <tr key={marketKey} className="hover:bg-gray-700 transition-colors">
                       {/* Market Name */}
                       <td className="px-4 py-4">
-                        <span className="font-medium text-gray-900">
+                        <span className="font-medium text-gray-100">
                           {MARKET_LABELS[marketKey] || marketKey}
                         </span>
                       </td>
                       
                       {/* Historical Log Loss (rounded to 2 decimals) */}
                       <td className="px-4 py-4 text-center">
-                        <span className="text-sm text-gray-600 font-mono">
+                        <span className="text-sm text-gray-400 font-mono">
                           {historical.toFixed(2)}
                         </span>
                       </td>
                       
                       {/* Model Log Loss (rounded to 2 decimals) */}
                       <td className="px-4 py-4 text-center">
-                        <span className="text-sm text-gray-900 font-mono font-semibold">
+                        <span className="text-sm text-gray-100 font-mono font-semibold">
                           {model.toFixed(2)}
                         </span>
                       </td>
@@ -778,7 +779,7 @@ const ModelPerformance = () => {
                       
                       {/* Accuracy */}
                       <td className="px-4 py-4 text-center">
-                        <span className="text-sm font-semibold text-gray-700">
+                        <span className="text-sm font-semibold text-gray-300">
                           {Math.round(accuracy * 100)}%
                         </span>
                       </td>
@@ -800,11 +801,14 @@ const ModelPerformance = () => {
       {/* UNDERSTANDING AI PREDICTION MODEL PERFORMANCE */}
       {/* ============================================ */}
       {!loading && !error && historicalLogLoss && modelLogLoss && (
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-          <h3 className="text-lg font-semibold text-blue-900 mb-4">📊 Understanding AI Prediction Model Performance</h3>
+        <div className="bg-blue-900/30 border border-gray-600 rounded-lg p-4">
+          <h3 className="text-lg font-semibold text-amber-400 mb-4 flex items-center gap-2">
+            <AppIcon name="stats" size="lg" className="text-gray-400" />
+            <span>Understanding AI Prediction Model Performance</span>
+          </h3>
           
           {/* Intro paragraph */}
-          <div className="text-sm text-blue-800 space-y-3 mb-4">
+          <div className="text-sm text-gray-300 space-y-3 mb-4">
             <p>
               This section details how we evaluate the AI Prediction Model's performance.
             </p>
@@ -813,7 +817,7 @@ const ModelPerformance = () => {
               how it works alongside additional performance measures to assess how reliable, well‑calibrated, 
               and consistent the model is across different competitions and betting markets.
             </p>
-            <p className="text-blue-600 italic">
+            <p className="text-amber-500 italic">
               Click any topic below to learn more.
             </p>
           </div>
@@ -862,15 +866,15 @@ const ModelPerformance = () => {
                 <li>SportsMonks assigns a <strong>rating</strong> based on the difference (Differential) between the Model Log Loss and the Historical Log Loss</li>
                 <li>Essentially SportsMonks is grading the model's actual performance versus the baseline</li>
               </ul>
-              <div className="bg-blue-100 p-3 rounded mt-2 w-fit">
-                <ul className="list-none space-y-1">
-                  <li><span className="text-green-700 font-semibold">High</span> — 8% or more</li>
-                  <li><span className="text-blue-700 font-semibold">Good</span> — 5% to 8%</li>
-                  <li><span className="text-yellow-700 font-semibold">Medium</span> — 3% to 5%</li>
-                  <li><span className="text-red-700 font-semibold">Poor</span> — Under 3%</li>
+              <div className="bg-gray-700 p-3 rounded mt-2 w-fit">
+                <ul className="list-none space-y-1 text-gray-300">
+                  <li><span className="text-green-400 font-semibold">High</span> — 8% or more</li>
+                  <li><span className="text-blue-400 font-semibold">Good</span> — 5% to 8%</li>
+                  <li><span className="text-yellow-400 font-semibold">Medium</span> — 3% to 5%</li>
+                  <li><span className="text-red-400 font-semibold">Poor</span> — Under 3%</li>
                 </ul>
               </div>
-              <p className="bg-blue-100 p-2 rounded mt-2">
+              <p className="bg-blue-900/30 p-2 rounded mt-2">
                 <strong>Note:</strong> A Medium rating doesn't mean the model is performing poorly, it 
                 simply means the model's prediction accuracy is only slightly better than the baseline
               </p>
@@ -889,14 +893,14 @@ const ModelPerformance = () => {
               <p>
                 The trend shows whether the model's performance is <strong>improving, declining, or stable</strong> over the most recent 50 matches
               </p>
-              <div className="bg-blue-100 p-3 rounded mt-2 w-fit">
-                <ul className="list-none space-y-1">
-                  <li><span className="text-green-600 font-bold text-xl">↑</span> — Improving</li>
-                  <li><span className="text-red-600 font-bold text-xl">↓</span> — Declining</li>
-                  <li><span className="text-gray-500 font-bold text-xl">→</span> — Stable</li>
+              <div className="bg-gray-700 p-3 rounded mt-2 w-fit">
+                <ul className="list-none space-y-1 text-gray-300">
+                  <li><span className="text-green-400 font-bold text-xl">↑</span> — Improving</li>
+                  <li><span className="text-red-400 font-bold text-xl">↓</span> — Declining</li>
+                  <li><span className="text-gray-400 font-bold text-xl">→</span> — Stable</li>
                 </ul>
               </div>
-              <p className="bg-blue-100 p-2 rounded mt-2">
+              <p className="bg-blue-900/30 p-2 rounded mt-2">
                 <strong>Note:</strong> An upward trend suggests the model is adapting well to 
                 current conditions; a downward trend might indicate changing patterns the model hasn't 
                 caught up with yet
@@ -906,17 +910,20 @@ const ModelPerformance = () => {
           </div>
           
           {/* Putting It All Together - Standalone callout box */}
-          <div className="bg-blue-200 rounded-lg p-4 mt-4">
-            <h4 className="font-semibold text-blue-900 mb-3">💡 Putting It All Together</h4>
-            <ul className="list-disc list-inside space-y-2 ml-1 text-sm text-blue-800">
-              <li><strong>Rating</strong> gives you a quick-glance assessment of model quality for each market — start here to identify the strongest predictions</li>
-              <li><strong>Differential</strong> shows the actual percentage improvement — useful when comparing markets with the same rating</li>
-              <li><strong>Accuracy</strong> is easy to understand (% correct), but remember: a model can have high accuracy and still be poorly calibrated</li>
-              <li><strong>Trend</strong> tells you if the model is improving or declining — a "High" rating with a declining trend may warrant caution</li>
+          <div className="bg-amber-900/30 border border-amber-700 rounded-lg p-4 mt-4">
+            <h4 className="font-semibold text-amber-400 mb-3 flex items-center gap-2">
+              <AppIcon name="lightbulb" size="md" className="text-gray-400" />
+              <span>Putting It All Together</span>
+            </h4>
+            <ul className="list-disc list-inside space-y-2 ml-1 text-sm text-gray-200">
+              <li><strong className="text-gray-100">Rating</strong> gives you a quick-glance assessment of model quality for each market — start here to identify the strongest predictions</li>
+              <li><strong className="text-gray-100">Differential</strong> shows the actual percentage improvement — useful when comparing markets with the same rating</li>
+              <li><strong className="text-gray-100">Accuracy</strong> is easy to understand (% correct), but remember: a model can have high accuracy and still be poorly calibrated</li>
+              <li><strong className="text-gray-100">Trend</strong> tells you if the model is improving or declining — a "High" rating with a declining trend may warrant caution</li>
             </ul>
-            <div className="bg-white p-3 rounded mt-3">
-              <p className="text-sm text-gray-700">
-                <strong>In practice:</strong> Focus on markets with <span className="text-green-600 font-semibold">High</span> or <span className="text-blue-600 font-semibold">Good</span> ratings 
+            <div className="bg-gray-800 p-3 rounded mt-3">
+              <p className="text-sm text-gray-300">
+                <strong>In practice:</strong> Focus on markets with <span className="text-green-400 font-semibold">High</span> or <span className="text-amber-400 font-semibold">Good</span> ratings
                 and stable or improving trends for the most reliable predictions.
               </p>
             </div>
@@ -930,7 +937,8 @@ const ModelPerformance = () => {
       {!loading && !error && historicalLogLoss && modelLogLoss && (
         <div className="bg-gray-900 text-gray-100 rounded-lg p-6">
           <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
-            <span>🔬</span> Technical Deep Dive
+            <AppIcon name="microscope" size="lg" className="text-gray-400" />
+            <span>Technical Deep Dive</span>
           </h3>
           <p className="text-gray-400 text-sm mb-6">
             For those who want the full statistical picture. Here's the math and theory behind the metrics.
@@ -941,7 +949,7 @@ const ModelPerformance = () => {
             <h4 className="text-lg font-semibold text-blue-400 mb-2">Log Loss (Cross-Entropy Loss)</h4>
             <div className="bg-gray-800 p-4 rounded-lg font-mono text-sm mb-3">
               <p className="text-yellow-300">Log Loss = -1/N × Σ [y × log(p) + (1-y) × log(1-p)]</p>
-              <p className="text-gray-500 mt-2">Where:</p>
+              <p className="text-gray-400 mt-2">Where:</p>
               <ul className="text-gray-400 ml-4 space-y-1">
                 <li>N = number of predictions</li>
                 <li>y = actual outcome (1 if event occurred, 0 if not)</li>
@@ -984,7 +992,7 @@ const ModelPerformance = () => {
               <p>P(Home Win) ≈ 0.45</p>
               <p>P(Draw) ≈ 0.26</p>
               <p>P(Away Win) ≈ 0.29</p>
-              <p className="text-gray-500 mt-2">// Baseline predicts these same probabilities for EVERY match</p>
+              <p className="text-gray-400 mt-2">// Baseline predicts these same probabilities for EVERY match</p>
             </div>
             <p className="text-gray-300 text-sm">
               This baseline ignores all context — team form, home/away records, injuries, head-to-head. If the AI model can't beat this baseline, it's not adding value.
@@ -996,7 +1004,7 @@ const ModelPerformance = () => {
             <h4 className="text-lg font-semibold text-blue-400 mb-2">Differential Percentage</h4>
             <div className="bg-gray-800 p-4 rounded-lg font-mono text-sm mb-3">
               <p className="text-yellow-300">Differential % = (|Historical LL| - |Model LL|) / |Historical LL| × 100</p>
-              <p className="text-gray-500 mt-2">Example:</p>
+              <p className="text-gray-400 mt-2">Example:</p>
               <p className="text-gray-400">Historical LL = -0.65</p>
               <p className="text-gray-400">Model LL = -0.60</p>
               <p className="text-green-400">Differential = (0.65 - 0.60) / 0.65 × 100 = +7.7%</p>
@@ -1056,7 +1064,7 @@ const ModelPerformance = () => {
             <div className="bg-gray-800 p-4 rounded-lg text-sm mb-3">
               <p className="text-gray-400 mb-2"><strong className="text-white">Model A:</strong> Always predicts 51% heads</p>
               <p className="text-gray-400 mb-2"><strong className="text-white">Model B:</strong> Predicts 90% heads when confident, 10% when not</p>
-              <p className="text-gray-500 mt-3">Both might achieve ~50% accuracy on a fair coin, but:</p>
+              <p className="text-gray-400 mt-3">Both might achieve ~50% accuracy on a fair coin, but:</p>
               <p className="text-green-400">Model A: Lower log loss (well-calibrated uncertainty)</p>
               <p className="text-red-400">Model B: Higher log loss (overconfident and wrong)</p>
             </div>
@@ -1083,9 +1091,12 @@ const ModelPerformance = () => {
       {/* ADDITIONAL ANALYSIS (Random & Edge) */}
       {/* ============================================ */}
       {!loading && !error && accuracyData && (
-        <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">🎯 Additional Analysis: Edge vs Random Chance</h3>
-          <div className="text-sm text-gray-600 mb-4 space-y-2">
+        <div className="bg-gray-700 border border-gray-700 rounded-lg p-4">
+          <h3 className="text-lg font-semibold text-gray-100 mb-4 flex items-center gap-2">
+            <AppIcon name="target" size="lg" className="text-gray-400" />
+            <span>Additional Analysis: Edge vs Random Chance</span>
+          </h3>
+          <div className="text-sm text-gray-400 mb-4 space-y-2">
             <p>
               This section compares the model's accuracy against pure random guessing.
             </p>
@@ -1107,9 +1118,9 @@ const ModelPerformance = () => {
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-gray-300">
+                <tr className="border-b border-gray-600">
                   {/* Market - not sortable */}
-                  <th className="text-left py-2 pr-4 text-gray-700 font-semibold">Market</th>
+                  <th className="text-left py-2 pr-4 text-gray-300 font-semibold">Market</th>
                   
                   {/* Accuracy - sortable */}
                   <SortableHeader
@@ -1151,14 +1162,14 @@ const ModelPerformance = () => {
                   const edge = calculateEdge(marketKey, accuracy);
                   
                   return (
-                    <tr key={marketKey} className="hover:bg-gray-100">
-                      <td className="py-2 pr-4 text-gray-800">
+                    <tr key={marketKey} className="hover:bg-gray-700">
+                      <td className="py-2 pr-4 text-gray-100">
                         {MARKET_LABELS[marketKey] || marketKey}
                       </td>
-                      <td className="py-2 px-4 text-center font-semibold text-gray-700">
+                      <td className="py-2 px-4 text-center font-semibold text-gray-300">
                         {Math.round(accuracy * 100)}%
                       </td>
-                      <td className="py-2 px-4 text-center text-gray-500">
+                      <td className="py-2 px-4 text-center text-gray-400">
                         {Math.round(randomChance * 100)}%
                       </td>
                       <td className="py-2 pl-4 text-center">
@@ -1177,8 +1188,8 @@ const ModelPerformance = () => {
       {/* NO DATA STATE */}
       {/* ============================================ */}
       {!loading && !error && !historicalLogLoss && (
-        <div className="text-center py-12 bg-white rounded-lg shadow-md">
-          <p className="text-gray-500 text-lg">No prediction data available</p>
+        <div className="text-center py-12 bg-gray-800 rounded-lg shadow-md">
+          <p className="text-gray-400 text-lg">No prediction data available</p>
           <p className="text-gray-400 text-sm mt-1">
             Try selecting a different competition
           </p>

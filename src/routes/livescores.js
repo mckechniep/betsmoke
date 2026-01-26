@@ -15,7 +15,7 @@ import {
 } from '../services/sportsmonks.js';
 
 // Import auth middleware - all routes require authentication
-import { authMiddleware } from '../middleware/auth.js';
+import authMiddleware from '../middleware/auth.js';
 
 // Create a router
 const router = express.Router();

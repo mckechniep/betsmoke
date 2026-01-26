@@ -35,7 +35,7 @@ const Teams = () => {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-gray-900">Teams</h1>
+      <h1 className="text-2xl font-bold text-gray-100">Teams</h1>
 
       <form onSubmit={handleSearch} className="flex gap-4">
         <input
@@ -43,31 +43,31 @@ const Teams = () => {
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Search teams..."
-          className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="flex-1 px-3 py-2 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-amber-500"
         />
         <button
           type="submit"
           disabled={loading}
-          className="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 disabled:opacity-50"
+          className="bg-amber-500 text-gray-900 px-6 py-2 rounded-md hover:bg-amber-600 disabled:opacity-50"
         >
           {loading ? 'Searching...' : 'Search'}
         </button>
       </form>
 
       {error && (
-        <div className="bg-red-50 text-red-600 p-3 rounded-md">
+        <div className="bg-red-900/30 text-red-400 p-3 rounded-md">
           {error}
         </div>
       )}
 
       {!searched ? (
-        <div className="text-center py-12 text-gray-500">
+        <div className="text-center py-12 text-gray-400">
           Search for a team to see results.
         </div>
       ) : loading ? (
-        <div className="text-center py-12 text-gray-500">Searching...</div>
+        <div className="text-center py-12 text-gray-400">Searching...</div>
       ) : teams.length === 0 ? (
-        <div className="text-center py-12 text-gray-500">
+        <div className="text-center py-12 text-gray-400">
           No teams found for "{query}".
         </div>
       ) : (
@@ -76,7 +76,7 @@ const Teams = () => {
             <Link
               key={team.id}
               to={`/teams/${team.id}`}
-              className="bg-white rounded-lg shadow-md p-4 hover:shadow-lg transition-shadow"
+              className="bg-gray-800 rounded-lg shadow-md p-4 hover:shadow-lg transition-shadow"
             >
               <div className="flex items-center space-x-4">
                 {team.image_path && (
@@ -87,8 +87,8 @@ const Teams = () => {
                   />
                 )}
                 <div>
-                  <h3 className="font-semibold text-gray-900">{team.name}</h3>
-                  <p className="text-sm text-gray-500">{team.country?.name}</p>
+                  <h3 className="font-semibold text-gray-100">{team.name}</h3>
+                  <p className="text-sm text-gray-400">{team.country?.name}</p>
                 </div>
               </div>
             </Link>

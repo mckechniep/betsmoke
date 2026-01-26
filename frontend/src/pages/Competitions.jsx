@@ -86,20 +86,20 @@ const Competitions = () => {
   // ============================================
   const renderLogo = (leagueId, fallbackText, colorClass) => {
     const logoUrl = leagueLogos[leagueId];
-    
+
     if (logoUrl) {
       return (
-        <img 
-          src={logoUrl} 
+        <img
+          src={logoUrl}
           alt={fallbackText}
-          className="w-10 h-10 object-contain"
+          className="w-12 h-12 md:w-10 md:h-10 object-contain"
         />
       );
     }
-    
+
     // Fallback: show initials
     return (
-      <span className={`${colorClass} font-bold text-lg`}>
+      <span className={`${colorClass} font-bold text-xl md:text-lg`}>
         {fallbackText}
       </span>
     );
@@ -112,8 +112,8 @@ const Competitions = () => {
     <div className="space-y-8">
       {/* Page Header */}
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Competitions</h1>
-        <p className="text-gray-600 mt-1">
+        <h1 className="text-2xl font-bold text-gray-100">Competitions</h1>
+        <p className="text-gray-400 mt-1">
           View league tables and cup competition fixtures.
         </p>
       </div>
@@ -129,7 +129,7 @@ const Competitions = () => {
                      rounded-lg shadow-md hover:shadow-lg hover:from-purple-700 hover:to-purple-900 
                      transition-all duration-200 group"
         >
-          <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center flex-shrink-0 p-1">
+          <div className="w-14 h-14 md:w-12 md:h-12 bg-white rounded-full flex items-center justify-center flex-shrink-0 p-1">
             {renderLogo(PREMIER_LEAGUE_ID, 'PL', 'text-purple-700')}
           </div>
           <div className="text-left">
@@ -147,7 +147,7 @@ const Competitions = () => {
                      rounded-lg shadow-md hover:shadow-lg hover:from-red-700 hover:to-red-900 
                      transition-all duration-200 group"
         >
-          <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center flex-shrink-0 p-1">
+          <div className="w-14 h-14 md:w-12 md:h-12 bg-white rounded-full flex items-center justify-center flex-shrink-0 p-1">
             {renderLogo(FA_CUP_ID, 'FA', 'text-red-700')}
           </div>
           <div className="text-left">
@@ -165,7 +165,7 @@ const Competitions = () => {
                      rounded-lg shadow-md hover:shadow-lg hover:from-green-700 hover:to-green-900 
                      transition-all duration-200 group"
         >
-          <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center flex-shrink-0 p-1">
+          <div className="w-14 h-14 md:w-12 md:h-12 bg-white rounded-full flex items-center justify-center flex-shrink-0 p-1">
             {renderLogo(CARABAO_CUP_ID, 'CC', 'text-green-700')}
           </div>
           <div className="text-left">

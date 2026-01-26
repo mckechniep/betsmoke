@@ -1,38 +1,34 @@
 // ============================================
 // NAVBAR COMPONENT
 // ============================================
+// Responsive navbar with mobile hamburger menu
 
 import { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { adminApi } from '../api/client';
+import AppIcon from './AppIcon';
 
 const Navbar = () => {
   const { isAuthenticated, user, logout, token } = useAuth();
   const navigate = useNavigate();
 
   // ============================================
-  // "MORE" DROPDOWN STATE
+  // STATE
   // ============================================
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-
-  // Ref for detecting clicks outside the dropdown
-  const dropdownRef = useRef(null);
-
-  // ============================================
-  // ADMIN DROPDOWN STATE
-  // ============================================
   const [isAdminDropdownOpen, setIsAdminDropdownOpen] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncMessage, setSyncMessage] = useState(null);
 
-  // Ref for admin dropdown
+  // Refs for detecting clicks outside dropdowns
+  const dropdownRef = useRef(null);
   const adminDropdownRef = useRef(null);
 
   // ============================================
   // CLICK OUTSIDE HANDLER
   // ============================================
-  // Close dropdowns when clicking outside of them
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (isDropdownOpen && dropdownRef.current && !dropdownRef.current.contains(event.target)) {
@@ -43,37 +39,46 @@ const Navbar = () => {
       }
     };
 
-    // Add listener when any dropdown is open
     if (isDropdownOpen || isAdminDropdownOpen) {
       document.addEventListener('mousedown', handleClickOutside);
     }
 
-    // Cleanup listener
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, [isDropdownOpen, isAdminDropdownOpen]);
+
+  // Close mobile menu on route change
+  useEffect(() => {
+    setIsMobileMenuOpen(false);
+  }, [navigate]);
 
   // ============================================
   // HANDLERS
   // ============================================
   const handleLogout = () => {
     logout();
+    setIsMobileMenuOpen(false);
     navigate('/');
   };
 
-  // Toggle dropdown open/closed
   const toggleDropdown = () => {
     setIsDropdownOpen(!isDropdownOpen);
   };
 
-  // Toggle admin dropdown
   const toggleAdminDropdown = () => {
     setIsAdminDropdownOpen(!isAdminDropdownOpen);
-    setSyncMessage(null); // Clear any previous message
+    setSyncMessage(null);
   };
 
-  // Handle sync types
+  const toggleMobileMenu = () => {
+    setIsMobileMenuOpen(!isMobileMenuOpen);
+  };
+
+  const closeMobileMenu = () => {
+    setIsMobileMenuOpen(false);
+  };
+
   const handleSyncTypes = async () => {
     setIsSyncing(true);
     setSyncMessage(null);
@@ -94,88 +99,62 @@ const Navbar = () => {
     }
   };
 
+  // ============================================
+  // RENDER
+  // ============================================
   return (
-    <nav className="bg-gray-900 text-white">
+    <nav className="bg-gray-950 text-white border-b border-gray-700">
       <div className="max-w-7xl mx-auto px-4">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
-          <Link to="/" className="text-xl font-bold text-blue-400">
-            BetSmoke
+          <Link to="/" className="text-xl font-bold">
+            <span className="text-amber-500">Bet</span><span className="text-white">Smoke</span>
           </Link>
 
-          {/* Main Navigation - Only show for authenticated users */}
+          {/* Desktop Navigation - Hidden on mobile */}
           {isAuthenticated && (
-            <div className="flex items-center space-x-6">
-              <Link to="/fixtures" className="hover:text-blue-400 transition-colors">
+            <div className="hidden md:flex items-center space-x-6">
+              <Link to="/fixtures" className="hover:text-amber-400 transition-colors">
                 Fixtures
               </Link>
-              <Link to="/teams" className="hover:text-blue-400 transition-colors">
+              <Link to="/teams" className="hover:text-amber-400 transition-colors">
                 Teams
               </Link>
-              <Link to="/competitions" className="hover:text-blue-400 transition-colors">
+              <Link to="/competitions" className="hover:text-amber-400 transition-colors">
                 Competitions
               </Link>
-              <Link to="/notes" className="hover:text-blue-400 transition-colors">
+              <Link to="/notes" className="hover:text-amber-400 transition-colors">
                 Notes
               </Link>
 
-              {/* ============================================ */}
-              {/* "MORE" DROPDOWN */}
-              {/* ============================================ */}
+              {/* "More" Dropdown */}
               <div className="relative" ref={dropdownRef}>
-                {/* Dropdown Trigger Button */}
                 <button
                   onClick={toggleDropdown}
                   className={`flex items-center space-x-1 transition-colors ${
-                    isDropdownOpen ? 'text-blue-400' : 'hover:text-blue-400'
+                    isDropdownOpen ? 'text-amber-400' : 'hover:text-amber-400'
                   }`}
                 >
                   <span>More</span>
-                  {/* X icon when open, chevron when closed */}
-                  {isDropdownOpen ? (
-                    <svg
-                      className="w-4 h-4"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M6 18L18 6M6 6l12 12"
-                      />
-                    </svg>
-                  ) : (
-                    <svg
-                      className="w-4 h-4"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M19 9l-7 7-7-7"
-                      />
-                    </svg>
-                  )}
+                  <AppIcon
+                    name={isDropdownOpen ? 'close' : 'chevron-down'}
+                    size="xs"
+                    className="text-current"
+                  />
                 </button>
 
-                {/* Dropdown Menu */}
                 {isDropdownOpen && (
                   <div className="absolute top-full left-0 mt-2 w-48 bg-gray-800 rounded-md shadow-lg py-1 z-50">
                     <Link
                       to="/model-performance"
-                      className="block px-4 py-2 text-sm hover:bg-gray-700 hover:text-blue-400 transition-colors"
+                      className="block px-4 py-2 text-sm hover:bg-gray-700 hover:text-amber-400 transition-colors"
                       onClick={() => setIsDropdownOpen(false)}
                     >
                       Model Performance
                     </Link>
                     <Link
                       to="/model-architecture"
-                      className="block px-4 py-2 text-sm hover:bg-gray-700 hover:text-blue-400 transition-colors"
+                      className="block px-4 py-2 text-sm hover:bg-gray-700 hover:text-amber-400 transition-colors"
                       onClick={() => setIsDropdownOpen(false)}
                     >
                       Model Architecture
@@ -186,19 +165,20 @@ const Navbar = () => {
             </div>
           )}
 
-          {/* Auth Section */}
-          <div className="flex items-center space-x-4">
+          {/* Desktop Auth Section - Hidden on mobile */}
+          <div className="hidden md:flex items-center space-x-4">
             {isAuthenticated ? (
               <>
                 <Link
                   to="/settings"
-                  className="text-sm text-gray-400 hover:text-blue-400 transition-colors"
+                  className="text-sm text-gray-400 hover:text-amber-400 transition-colors"
                   title="Account Settings"
                 >
-                  ⚙️ {user?.email}
+                  <AppIcon name="settings" size="sm" className="inline mr-1 text-gray-400" />
+                  {user?.email}
                 </Link>
 
-                {/* Admin Dropdown - Only visible to admins */}
+                {/* Admin Dropdown */}
                 {user?.isAdmin && (
                   <div className="relative" ref={adminDropdownRef}>
                     <button
@@ -212,14 +192,12 @@ const Navbar = () => {
                       Admin
                     </button>
 
-                    {/* Admin Dropdown Menu */}
                     {isAdminDropdownOpen && (
                       <div className="absolute top-full right-0 mt-2 w-64 bg-gray-800 rounded-md shadow-lg py-2 z-50">
                         <div className="px-4 py-2 border-b border-gray-700">
                           <span className="text-xs text-gray-400 uppercase tracking-wide">Admin Actions</span>
                         </div>
 
-                        {/* Sync Types Button */}
                         <button
                           onClick={handleSyncTypes}
                           disabled={isSyncing}
@@ -238,7 +216,6 @@ const Navbar = () => {
                           )}
                         </button>
 
-                        {/* Sync Result Message */}
                         {syncMessage && (
                           <div className={`mx-4 mt-2 p-2 rounded text-xs ${
                             syncMessage.type === 'success'
@@ -264,13 +241,162 @@ const Navbar = () => {
               <>
                 <Link
                   to="/login"
-                  className="text-sm hover:text-blue-400 transition-colors"
+                  className="text-sm hover:text-amber-400 transition-colors"
                 >
                   Login
                 </Link>
                 <Link
                   to="/register"
-                  className="text-sm bg-blue-600 px-3 py-1.5 rounded hover:bg-blue-700 transition-colors"
+                  className="text-sm bg-amber-500 text-gray-900 px-3 py-1.5 rounded hover:bg-amber-400 transition-colors font-semibold"
+                >
+                  Register
+                </Link>
+              </>
+            )}
+          </div>
+
+          {/* Mobile Menu Button - Visible only on mobile */}
+          <button
+            onClick={toggleMobileMenu}
+            className="md:hidden p-2 rounded-md hover:bg-gray-800 transition-colors"
+            aria-label="Toggle menu"
+          >
+            <AppIcon
+              name={isMobileMenuOpen ? 'close' : 'menu'}
+              size="lg"
+              className="text-white"
+            />
+          </button>
+        </div>
+      </div>
+
+      {/* ============================================ */}
+      {/* MOBILE MENU - Slides down when open */}
+      {/* ============================================ */}
+      {isMobileMenuOpen && (
+        <div className="md:hidden bg-gray-900 border-t border-gray-700">
+          <div className="px-4 py-4 space-y-3">
+            {isAuthenticated ? (
+              <>
+                {/* User Info */}
+                <div className="pb-3 border-b border-gray-700">
+                  <Link
+                    to="/settings"
+                    onClick={closeMobileMenu}
+                    className="flex items-center text-sm text-gray-400 hover:text-amber-400"
+                  >
+                    <AppIcon name="settings" size="sm" className="mr-2 text-gray-400" />
+                    {user?.email}
+                  </Link>
+                </div>
+
+                {/* Main Navigation Links */}
+                <Link
+                  to="/fixtures"
+                  onClick={closeMobileMenu}
+                  className="flex items-center py-2 text-white hover:text-amber-400 transition-colors"
+                >
+                  <AppIcon name="calendar" size="md" className="mr-3 text-gray-400" />
+                  Fixtures
+                </Link>
+                <Link
+                  to="/teams"
+                  onClick={closeMobileMenu}
+                  className="flex items-center py-2 text-white hover:text-amber-400 transition-colors"
+                >
+                  <AppIcon name="team" size="md" className="mr-3 text-gray-400" />
+                  Teams
+                </Link>
+                <Link
+                  to="/competitions"
+                  onClick={closeMobileMenu}
+                  className="flex items-center py-2 text-white hover:text-amber-400 transition-colors"
+                >
+                  <AppIcon name="trophy" size="md" className="mr-3 text-gray-400" />
+                  Competitions
+                </Link>
+                <Link
+                  to="/notes"
+                  onClick={closeMobileMenu}
+                  className="flex items-center py-2 text-white hover:text-amber-400 transition-colors"
+                >
+                  <AppIcon name="notes" size="md" className="mr-3 text-gray-400" />
+                  Notes
+                </Link>
+
+                {/* Divider */}
+                <div className="border-t border-gray-700 pt-3">
+                  <span className="text-xs text-gray-500 uppercase tracking-wide">More</span>
+                </div>
+
+                <Link
+                  to="/model-performance"
+                  onClick={closeMobileMenu}
+                  className="flex items-center py-2 text-white hover:text-amber-400 transition-colors"
+                >
+                  <AppIcon name="stats" size="md" className="mr-3 text-gray-400" />
+                  Model Performance
+                </Link>
+                <Link
+                  to="/model-architecture"
+                  onClick={closeMobileMenu}
+                  className="flex items-center py-2 text-white hover:text-amber-400 transition-colors"
+                >
+                  <AppIcon name="brain" size="md" className="mr-3 text-gray-400" />
+                  Model Architecture
+                </Link>
+
+                {/* Admin Section */}
+                {user?.isAdmin && (
+                  <>
+                    <div className="border-t border-gray-700 pt-3">
+                      <span className="text-xs text-amber-500 uppercase tracking-wide">Admin</span>
+                    </div>
+                    <button
+                      onClick={handleSyncTypes}
+                      disabled={isSyncing}
+                      className="flex items-center w-full py-2 text-white hover:text-amber-400 transition-colors disabled:opacity-50"
+                    >
+                      <AppIcon name="sync" size="md" className={`mr-3 text-gray-400 ${isSyncing ? 'animate-spin' : ''}`} />
+                      {isSyncing ? 'Syncing...' : 'Sync SportsMonks Types'}
+                    </button>
+                    {syncMessage && (
+                      <div className={`p-2 rounded text-xs ${
+                        syncMessage.type === 'success'
+                          ? 'bg-green-900 text-green-200'
+                          : 'bg-red-900 text-red-200'
+                      }`}>
+                        {syncMessage.text}
+                      </div>
+                    )}
+                  </>
+                )}
+
+                {/* Logout Button */}
+                <div className="border-t border-gray-700 pt-3">
+                  <button
+                    onClick={handleLogout}
+                    className="flex items-center w-full py-2 text-red-400 hover:text-red-300 transition-colors"
+                  >
+                    <AppIcon name="arrow-right" size="md" className="mr-3 text-red-400" />
+                    Logout
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                {/* Non-authenticated mobile menu */}
+                <Link
+                  to="/login"
+                  onClick={closeMobileMenu}
+                  className="block py-3 text-center text-white hover:text-amber-400 transition-colors"
+                >
+                  Login
+                </Link>
+                <Link
+                  to="/register"
+                  onClick={closeMobileMenu}
+                  className="block py-3 text-center bg-amber-500 text-gray-900 rounded-md font-semibold hover:bg-amber-400 transition-colors"
                 >
                   Register
                 </Link>
@@ -278,7 +404,7 @@ const Navbar = () => {
             )}
           </div>
         </div>
-      </div>
+      )}
     </nav>
   );
 };

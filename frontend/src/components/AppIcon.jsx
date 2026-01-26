@@ -33,6 +33,11 @@ const ICONS = {
   'stadium': 'mdi:stadium',
   'whistle': 'game-icons:whistle',
   'goal': 'mdi:goal',
+  'own-goal': 'mdi:soccer', // Used with red styling
+  'penalty': 'mdi:soccer', // Used with target styling
+  'penalty-miss': 'mdi:close-circle', // Missed penalty
+  'head-to-head': 'mdi:sword-cross',
+  'versus': 'mdi:sword-cross',
 
   // Cards
   'yellow-card': 'mdi:card',
@@ -44,6 +49,8 @@ const ICONS = {
   'substitution-in': 'mdi:arrow-up-bold',
   'substitution-out': 'mdi:arrow-down-bold',
   'injury': 'mdi:bandage',
+  'ambulance': 'mdi:ambulance',
+  'medical': 'mdi:medical-bag',
 
   // Team / Players
   'team': 'mdi:shield-outline',
@@ -51,18 +58,28 @@ const ICONS = {
   'players': 'mdi:account-group',
   'formation': 'mdi:strategy',
   'jersey': 'mdi:tshirt-crew',
+  'attacker': 'mdi:run-fast',
 
   // Stats
+  'fire': 'mdi:fire',
   'stats': 'mdi:chart-bar',
+  'chart': 'mdi:chart-bar',
   'trophy': 'mdi:trophy',
   'medal': 'mdi:medal',
   'ranking': 'mdi:podium',
+  'target': 'mdi:target',
+  'accuracy': 'mdi:target',
 
   // Match info
   'clock': 'mdi:clock-outline',
+  'timer': 'mdi:timer-outline',
+  'stopwatch': 'mdi:timer-outline',
   'calendar': 'mdi:calendar',
   'location': 'mdi:map-marker',
   'venue': 'mdi:stadium-variant',
+  'home': 'mdi:home',
+  'away': 'mdi:airplane',
+  'overall': 'mdi:chart-box-outline',
 
   // Weather
   'weather-sunny': 'mdi:weather-sunny',
@@ -77,6 +94,7 @@ const ICONS = {
   'sort': 'mdi:sort',
   'settings': 'mdi:cog',
   'close': 'mdi:close',
+  'close-circle': 'mdi:close-circle',
   'menu': 'mdi:menu',
   'chevron-down': 'mdi:chevron-down',
   'chevron-up': 'mdi:chevron-up',
@@ -84,15 +102,28 @@ const ICONS = {
   'chevron-right': 'mdi:chevron-right',
   'arrow-left': 'mdi:arrow-left',
   'arrow-right': 'mdi:arrow-right',
+  'arrow-up': 'mdi:arrow-up',
+  'arrow-down': 'mdi:arrow-down',
   'refresh': 'mdi:refresh',
+  'sync': 'mdi:sync',
   'info': 'mdi:information-outline',
   'warning': 'mdi:alert-outline',
   'error': 'mdi:alert-circle-outline',
   'success': 'mdi:check-circle-outline',
+  'check': 'mdi:check',
+  'checkmark': 'mdi:check-circle',
+  'lightbulb': 'mdi:lightbulb-outline',
+  'tip': 'mdi:lightbulb-on-outline',
 
   // Theme
   'sun': 'mdi:weather-sunny',
   'moon': 'mdi:weather-night',
+
+  // Results / Match outcomes
+  'star': 'mdi:star',
+  'handshake': 'mdi:handshake',
+  'swap-horizontal': 'mdi:swap-horizontal',
+  'shield': 'mdi:shield',
 
   // Betting / Odds
   'odds': 'mdi:chart-timeline-variant',
@@ -100,6 +131,18 @@ const ICONS = {
   'money': 'mdi:currency-usd',
   'trend-up': 'mdi:trending-up',
   'trend-down': 'mdi:trending-down',
+
+  // Notes
+  'note': 'mdi:note-text-outline',
+  'notes': 'mdi:notebook-outline',
+  'edit': 'mdi:pencil',
+  'delete': 'mdi:delete-outline',
+
+  // AI / Model
+  'brain': 'mdi:brain',
+  'robot': 'mdi:robot-outline',
+  'ai': 'mdi:robot-outline',
+  'microscope': 'mdi:microscope',
 };
 
 // ============================================

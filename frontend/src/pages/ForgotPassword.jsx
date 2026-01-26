@@ -92,25 +92,25 @@ const ForgotPassword = () => {
   // RENDER
   // -----------------------------------------
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4">
-      <div className="max-w-md w-full bg-white rounded-lg shadow-md p-8">
-        <h1 className="text-2xl font-bold text-center text-gray-900 mb-2">
+    <div className="min-h-screen flex items-center justify-center bg-gray-700 py-12 px-4">
+      <div className="max-w-md w-full bg-gray-800 rounded-lg shadow-md p-8">
+        <h1 className="text-2xl font-bold text-center text-gray-100 mb-2">
           Forgot Password
         </h1>
-        <p className="text-center text-gray-600 mb-6">
+        <p className="text-center text-gray-400 mb-6">
           {showSecurityQuestion 
             ? 'Answer your security question to reset your password.'
             : 'Enter your email to receive a password reset link.'}
         </p>
 
         {error && (
-          <div className="bg-red-50 text-red-600 p-3 rounded-md mb-4 text-sm">
+          <div className="bg-red-900/30 text-red-400 p-3 rounded-md mb-4 text-sm">
             {error}
           </div>
         )}
 
         {success && (
-          <div className="bg-green-50 text-green-600 p-3 rounded-md mb-4 text-sm">
+          <div className="bg-green-900/30 text-green-400 p-3 rounded-md mb-4 text-sm">
             {success}
           </div>
         )}
@@ -121,7 +121,7 @@ const ForgotPassword = () => {
         {!showSecurityQuestion && !success && (
           <form onSubmit={handleEmailReset} className="space-y-4">
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="email" className="block text-sm font-medium text-gray-300 mb-1">
                 Email Address
               </label>
               <input
@@ -130,7 +130,7 @@ const ForgotPassword = () => {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-amber-500 bg-gray-700 text-gray-100"
                 placeholder="you@example.com"
               />
             </div>
@@ -138,21 +138,21 @@ const ForgotPassword = () => {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 disabled:opacity-50"
+              className="w-full bg-amber-500 text-gray-900 py-2 px-4 rounded-md hover:bg-amber-600 disabled:opacity-50"
             >
               {loading ? 'Sending...' : 'Send Reset Link'}
             </button>
 
             {/* Alternative: Security Question */}
             <div className="text-center pt-4 border-t">
-              <p className="text-sm text-gray-600 mb-2">
+              <p className="text-sm text-gray-400 mb-2">
                 Can't access your email?
               </p>
               <button
                 type="button"
                 onClick={handleTrySecurityQuestion}
                 disabled={loading}
-                className="text-blue-600 hover:underline text-sm"
+                className="text-amber-500 hover:underline text-sm"
               >
                 Try Security Question Instead
               </button>
@@ -166,16 +166,16 @@ const ForgotPassword = () => {
         {showSecurityQuestion && !resetToken && (
           <form onSubmit={handleVerifySecurityAnswer} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-300 mb-1">
                 Security Question
               </label>
-              <p className="w-full px-3 py-2 bg-gray-100 border border-gray-300 rounded-md text-gray-700">
+              <p className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-gray-300">
                 {securityQuestion}
               </p>
             </div>
 
             <div>
-              <label htmlFor="securityAnswer" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="securityAnswer" className="block text-sm font-medium text-gray-300 mb-1">
                 Your Answer
               </label>
               <input
@@ -184,10 +184,10 @@ const ForgotPassword = () => {
                 value={securityAnswer}
                 onChange={(e) => setSecurityAnswer(e.target.value)}
                 required
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-amber-500 bg-gray-700 text-gray-100"
                 placeholder="Enter your answer"
               />
-              <p className="text-xs text-gray-500 mt-1">
+              <p className="text-xs text-gray-400 mt-1">
                 Answer is case-insensitive
               </p>
             </div>
@@ -195,7 +195,7 @@ const ForgotPassword = () => {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 disabled:opacity-50"
+              className="w-full bg-amber-500 text-gray-900 py-2 px-4 rounded-md hover:bg-amber-600 disabled:opacity-50"
             >
               {loading ? 'Verifying...' : 'Verify Answer'}
             </button>
@@ -208,7 +208,7 @@ const ForgotPassword = () => {
                 setSecurityAnswer('');
                 setError('');
               }}
-              className="w-full text-gray-600 hover:text-gray-800 text-sm"
+              className="w-full text-gray-400 hover:text-gray-200 text-sm"
             >
               ← Back to email reset
             </button>
@@ -218,9 +218,9 @@ const ForgotPassword = () => {
         {/* ============================================ */}
         {/* BACK TO LOGIN */}
         {/* ============================================ */}
-        <p className="mt-6 text-center text-sm text-gray-600">
+        <p className="mt-6 text-center text-sm text-gray-400">
           Remember your password?{' '}
-          <Link to="/login" className="text-blue-600 hover:underline">
+          <Link to="/login" className="text-amber-500 hover:underline">
             Login
           </Link>
         </p>

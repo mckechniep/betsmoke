@@ -26,6 +26,52 @@ import {
 } from '../utils/formatters';
 
 // ============================================
+// HELPER: Format match state for display
+// ============================================
+// Converts raw SportsMonks state values to user-friendly text
+// e.g., "INPLAY_2ND_HALF" or "2nd" → "2nd Half"
+function formatMatchState(stateObj) {
+  if (!stateObj) return 'Scheduled';
+
+  // Get the short_name (most reliable) or fall back to state
+  const shortName = (stateObj.short_name || '').toLowerCase();
+  const stateName = (stateObj.state || '').toLowerCase();
+
+  // Map short codes to friendly names
+  const stateMap = {
+    '1st': '1st Half',
+    '1h': '1st Half',
+    '2nd': '2nd Half',
+    '2h': '2nd Half',
+    'ht': 'Half Time',
+    'et': 'Extra Time',
+    'pen': 'Penalties',
+    'ft': 'Full Time',
+    'aet': 'After Extra Time',
+    'ftp': 'Full Time (Pens)',
+    'break': 'Break',
+    'live': 'Live',
+    'inplay': 'Live',
+  };
+
+  // Try short_name first
+  if (shortName && stateMap[shortName]) {
+    return stateMap[shortName];
+  }
+
+  // Try parsing the full state name (e.g., "INPLAY_2ND_HALF")
+  if (stateName.includes('1st_half') || stateName.includes('1st-half')) return '1st Half';
+  if (stateName.includes('2nd_half') || stateName.includes('2nd-half')) return '2nd Half';
+  if (stateName.includes('half_time') || stateName.includes('half-time')) return 'Half Time';
+  if (stateName.includes('extra_time') || stateName.includes('extra-time')) return 'Extra Time';
+  if (stateName.includes('penalties') || stateName.includes('penalty')) return 'Penalties';
+  if (stateName.includes('inplay') || stateName.includes('in_play')) return 'Live';
+
+  // Fall back to short_name in uppercase if available, otherwise 'Live'
+  return shortName ? shortName.toUpperCase() : 'Live';
+}
+
+// ============================================
 // DEFAULT BOOKMAKERS (prepopulated)
 // ============================================
 // These are common bookmakers with good coverage
@@ -281,21 +327,21 @@ function AccordionSection({ title, icon, children, defaultOpen = false }) {
   const isAppIconName = icon && !/[\u{1F300}-\u{1F9FF}]/u.test(icon);
 
   return (
-    <div className="border border-gray-200 rounded-lg overflow-hidden">
+    <div className="border border-gray-700 rounded-lg overflow-hidden">
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full px-4 py-3 bg-gray-50 hover:bg-gray-100 flex items-center justify-between transition-colors"
+        className="w-full px-4 py-3 bg-gray-700 hover:bg-gray-700 flex items-center justify-between transition-colors"
       >
         <div className="flex items-center space-x-2">
           {isAppIconName ? <AppIcon name={icon} size="md" /> : <span>{icon}</span>}
-          <span className="font-medium text-gray-900">{title}</span>
+          <span className="font-medium text-gray-100">{title}</span>
         </div>
         <span className={`transform transition-transform ${isOpen ? 'rotate-180' : ''}`}>
           <AppIcon name="chevron-down" size="sm" />
         </span>
       </button>
       {isOpen && (
-        <div className="p-4 bg-white border-t border-gray-200">
+        <div className="p-4 bg-gray-800 border-t border-gray-700">
           {children}
         </div>
       )}
@@ -354,11 +400,12 @@ function HeadToHeadSection({ h2h, h2hLoading, timezone, dateFormat }) {
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-md p-4">
-      <h2 className="text-lg font-semibold text-gray-900 mb-4">
-        ⚔️ Head to Head
+    <div className="bg-gray-800 rounded-lg shadow-md p-4">
+      <h2 className="text-lg font-semibold text-gray-100 mb-4 flex items-center gap-2">
+        <AppIcon name="head-to-head" size="lg" className="text-gray-400" />
+        <span>Head to Head</span>
         {safeH2h.length > 0 && (
-          <span className="text-sm font-normal text-gray-500 ml-2">
+          <span className="text-sm font-normal text-gray-500">
             ({safeH2h.length} {safeH2h.length === 1 ? 'meeting' : 'meetings'})
           </span>
         )}
@@ -381,7 +428,7 @@ function HeadToHeadSection({ h2h, h2hLoading, timezone, dateFormat }) {
               <Link
                 key={match.id}
                 to={`/fixtures/${match.id}`}
-                className="block bg-gray-50 hover:bg-gray-100 rounded-lg p-3 transition-colors"
+                className="block bg-gray-700 hover:bg-gray-700 rounded-lg p-3 transition-colors"
               >
                 <div className="flex items-center justify-between">
                   <div className="text-xs text-gray-500 w-20">
@@ -391,7 +438,7 @@ function HeadToHeadSection({ h2h, h2hLoading, timezone, dateFormat }) {
                     <span className={`text-right ${mHomeScore > mAwayScore ? 'font-bold' : ''}`}>
                       {mHomeTeam?.name}
                     </span>
-                    <span className="font-bold text-gray-900 bg-white px-2 py-1 rounded min-w-[50px] text-center">
+                    <span className="font-bold text-gray-100 bg-gray-800 px-2 py-1 rounded min-w-[50px] text-center">
                       {mHomeScore ?? '?'} - {mAwayScore ?? '?'}
                     </span>
                     <span className={mAwayScore > mHomeScore ? 'font-bold' : ''}>
@@ -411,8 +458,8 @@ function HeadToHeadSection({ h2h, h2hLoading, timezone, dateFormat }) {
             <div className="pt-2">
               <button
                 onClick={() => setShowAll(!showAll)}
-                className="w-full py-2 text-sm text-blue-600 hover:text-blue-800 
-                           hover:bg-blue-50 rounded-md transition-colors
+                className="w-full py-2 text-sm text-amber-500 hover:text-amber-400
+                           hover:bg-gray-700 rounded-md transition-colors
                            flex items-center justify-center space-x-1"
               >
                 {showAll ? (
@@ -440,6 +487,7 @@ function HeadToHeadSection({ h2h, h2hLoading, timezone, dateFormat }) {
 // ============================================
 // Shows injured and suspended players for both teams
 // Critical for betting research - key player absence affects odds
+// Enhanced with: player photos, position, start date, severity badges
 function SidelinedPlayersSection({ sidelined, homeTeam, awayTeam }) {
   // If no sidelined data, don't render the section
   if (!sidelined || sidelined.length === 0) {
@@ -452,24 +500,42 @@ function SidelinedPlayersSection({ sidelined, homeTeam, awayTeam }) {
   const homeSidelined = sidelined.filter(s => s.participant_id === homeTeam?.id);
   const awaySidelined = sidelined.filter(s => s.participant_id === awayTeam?.id);
 
-  // Helper to get injury/suspension icon based on type info
-  // SportsMonks provides a `type` object with specific reason (e.g., "Red Card", "Hamstring Injury")
+  // ============================================
+  // HELPER: Get injury/suspension icon based on type info
+  // ============================================
+  // SportsMonks type IDs for suspensions:
+  // - 1608: Red Card Suspension
+  // - 1611: Yellow Card Suspension (card accumulation)
+  // - 1610: Indirect Card Suspension
   const getStatusIcon = (sidelinedEntry) => {
-    // First check the specific type name (most accurate)
+    // First check by type_id (most reliable)
+    const typeId = sidelinedEntry.type?.id;
+    if (typeId === 1608) return '🟥'; // Red Card Suspension
+    if (typeId === 1611) return '🟨'; // Yellow Card Accumulation Suspension
+    if (typeId === 1610) return '🟧'; // Indirect Card Suspension
+
+    // Fall back to checking type name/code
     const typeName = sidelinedEntry.type?.name?.toLowerCase() || '';
     const typeCode = sidelinedEntry.type?.code?.toLowerCase() || '';
-    
-    // Check for red card specifically
+
+    // Check for red card
     if (typeName.includes('red card') || typeCode.includes('red-card')) {
-      return '🟥'; // Actual red card
+      return '🟥';
     }
-    
+
+    // Check for yellow card suspension
+    if (typeName.includes('yellow card') || typeCode.includes('yellow-card')) {
+      return '🟨';
+    }
+
     // Check for illness
     if (typeName.includes('illness') || typeCode.includes('illness') ||
-        typeName.includes('sick') || typeCode.includes('sick')) {
+        typeName.includes('sick') || typeCode.includes('sick') ||
+        typeName.includes('flu') || typeName.includes('virus') ||
+        typeName.includes('covid')) {
       return '🤒';
     }
-    
+
     // Check for injury (most injury types contain "injury" or specific body parts)
     if (typeName.includes('injury') || typeCode.includes('injury') ||
         typeName.includes('hamstring') || typeName.includes('knee') ||
@@ -478,39 +544,38 @@ function SidelinedPlayersSection({ sidelined, homeTeam, awayTeam }) {
         typeName.includes('ligament') || typeName.includes('acl') ||
         typeName.includes('mcl') || typeName.includes('calf') ||
         typeName.includes('thigh') || typeName.includes('back') ||
-        typeName.includes('shoulder') || typeName.includes('concussion')) {
-      return '🏥'; // Injury
+        typeName.includes('shoulder') || typeName.includes('concussion') ||
+        typeName.includes('hip') || typeName.includes('foot') ||
+        typeName.includes('quad') || typeName.includes('achilles') ||
+        typeName.includes('broken') || typeName.includes('strain') ||
+        typeName.includes('sprain') || typeName.includes('tear')) {
+      return '🏥';
     }
-    
+
     // Fall back to category if type isn't available
     const category = sidelinedEntry.sideline?.category?.toLowerCase() || '';
     if (category.includes('injury')) return '🏥';
     if (category.includes('illness')) return '🤒';
-    
-    // Everything else (suspension without red card, not registered, other)
+    if (category.includes('suspension')) return '⛔';
+
+    // Default for unknown
     return '⚠️';
   };
 
-  // Helper to format the reason - use the specific type name when available
+  // ============================================
+  // HELPER: Format the reason - use specific type name when available
+  // ============================================
   const formatReason = (player) => {
-    // First priority: use the specific type name (e.g., "Hamstring Injury", "Red Card")
-    if (player.type?.name) {
-      return player.type.name;
-    }
-    
-    // Second priority: use category from sideline data
-    if (player.sideline?.category) {
-      return player.sideline.category;
-    }
-    
-    // Fallback
+    if (player.type?.name) return player.type.name;
+    if (player.sideline?.category) return player.sideline.category;
     if (player.category) return player.category;
     return 'Unavailable';
   };
 
-  // Helper to get player name
+  // ============================================
+  // HELPER: Get player name
+  // ============================================
   const getPlayerName = (sidelinedEntry) => {
-    // Player data might be nested under 'player' include
     if (sidelinedEntry.player?.display_name) return sidelinedEntry.player.display_name;
     if (sidelinedEntry.player?.name) return sidelinedEntry.player.name;
     if (sidelinedEntry.player?.common_name) return sidelinedEntry.player.common_name;
@@ -518,13 +583,52 @@ function SidelinedPlayersSection({ sidelined, homeTeam, awayTeam }) {
     return 'Unknown Player';
   };
 
-  // Helper to format expected return
+  // ============================================
+  // HELPER: Get player photo URL
+  // ============================================
+  const getPlayerPhoto = (sidelinedEntry) => {
+    return sidelinedEntry.player?.image_path || null;
+  };
+
+  // ============================================
+  // HELPER: Get player position name
+  // ============================================
+  // Maps common SportsMonks position_id values to short names
+  const getPositionName = (sidelinedEntry) => {
+    const positionId = sidelinedEntry.player?.position_id;
+    if (!positionId) return null;
+
+    // Common SportsMonks position IDs
+    const positions = {
+      24: 'GK',   // Goalkeeper
+      25: 'DEF',  // Defender
+      26: 'MID',  // Midfielder
+      27: 'FWD',  // Attacker/Forward
+      148: 'DEF', // Centre-Back
+      149: 'DEF', // Left-Back
+      150: 'DEF', // Right-Back
+      151: 'MID', // Defensive Midfielder
+      152: 'MID', // Central Midfielder
+      153: 'MID', // Attacking Midfielder
+      154: 'MID', // Left Midfielder
+      155: 'MID', // Right Midfielder
+      156: 'FWD', // Centre-Forward
+      157: 'FWD', // Left Winger
+      158: 'FWD', // Right Winger
+    };
+
+    return positions[positionId] || null;
+  };
+
+  // ============================================
+  // HELPER: Format expected return date
+  // ============================================
   const formatExpectedReturn = (endDate) => {
     if (!endDate) return null;
     const end = new Date(endDate);
     const now = new Date();
     const diffDays = Math.ceil((end - now) / (1000 * 60 * 60 * 24));
-    
+
     if (diffDays < 0) return 'Expected back';
     if (diffDays === 0) return 'Returns today';
     if (diffDays === 1) return 'Returns tomorrow';
@@ -533,67 +637,211 @@ function SidelinedPlayersSection({ sidelined, homeTeam, awayTeam }) {
     return end.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   };
 
-  // Render a single team's sidelined players
+  // ============================================
+  // HELPER: Format start date of absence
+  // ============================================
+  const formatStartDate = (startDate) => {
+    if (!startDate) return null;
+    const start = new Date(startDate);
+    return start.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  };
+
+  // ============================================
+  // HELPER: Check if this is a card-related suspension
+  // ============================================
+  const isCardSuspension = (sidelinedEntry) => {
+    const typeId = sidelinedEntry.type?.id;
+    // 1608: Red Card, 1611: Yellow Card Accumulation, 1610: Indirect Card
+    if ([1608, 1611, 1610].includes(typeId)) return true;
+
+    const typeName = sidelinedEntry.type?.name?.toLowerCase() || '';
+    const typeCode = sidelinedEntry.type?.code?.toLowerCase() || '';
+    return typeName.includes('card') || typeCode.includes('card');
+  };
+
+  // ============================================
+  // HELPER: Get severity badge (short-term vs long-term)
+  // ============================================
+  // Note: Only shown for injuries, not for card suspensions
+  const getSeverityBadge = (sidelinedEntry) => {
+    // Don't show severity for card suspensions - they have fixed durations
+    if (isCardSuspension(sidelinedEntry)) return null;
+
+    const startDate = sidelinedEntry.sideline?.start_date;
+    const endDate = sidelinedEntry.sideline?.end_date;
+
+    // If no dates, can't determine severity
+    if (!startDate && !endDate) return null;
+
+    // Calculate duration if both dates available
+    if (startDate && endDate) {
+      const start = new Date(startDate);
+      const end = new Date(endDate);
+      const durationDays = Math.ceil((end - start) / (1000 * 60 * 60 * 24));
+
+      if (durationDays <= 7) {
+        return { label: 'Short', color: 'bg-yellow-600/50 text-yellow-300' };
+      } else if (durationDays <= 30) {
+        return { label: 'Medium', color: 'bg-orange-600/50 text-orange-300' };
+      } else {
+        return { label: 'Long-term', color: 'bg-red-600/50 text-red-300' };
+      }
+    }
+
+    // If only end date, check how far out it is
+    if (endDate) {
+      const now = new Date();
+      const end = new Date(endDate);
+      const daysRemaining = Math.ceil((end - now) / (1000 * 60 * 60 * 24));
+
+      if (daysRemaining <= 3) {
+        return { label: 'Soon', color: 'bg-green-600/50 text-green-300' };
+      } else if (daysRemaining <= 14) {
+        return { label: 'Short', color: 'bg-yellow-600/50 text-yellow-300' };
+      } else if (daysRemaining <= 60) {
+        return { label: 'Medium', color: 'bg-orange-600/50 text-orange-300' };
+      } else {
+        return { label: 'Long-term', color: 'bg-red-600/50 text-red-300' };
+      }
+    }
+
+    return null;
+  };
+
+  // ============================================
+  // RENDER: Single team's sidelined players
+  // ============================================
   const renderTeamSidelined = (players, teamName, teamLogo) => (
     <div className="flex-1">
       <div className="flex items-center space-x-2 mb-3">
         {teamLogo && (
           <img src={teamLogo} alt={teamName} className="w-6 h-6 object-contain" />
         )}
-        <h3 className="font-medium text-gray-800">{teamName}</h3>
+        <h3 className="font-medium text-gray-200">{teamName}</h3>
         <span className="text-xs text-gray-500">({players.length})</span>
       </div>
-      
+
       {players.length === 0 ? (
-        <div className="text-sm text-green-600 bg-green-50 p-2 rounded">
+        <div className="text-sm text-green-400 bg-green-900/30 p-2 rounded">
           ✓ No reported absences
         </div>
       ) : (
         <div className="space-y-2">
-          {players.map((player, idx) => (
-            <div 
-              key={player.id || idx} 
-              className="bg-gray-50 rounded-lg p-2 text-sm"
-            >
-              <div className="flex items-start justify-between">
-                <div className="flex items-center space-x-2">
-                  <span>{getStatusIcon(player)}</span>
-                  <span className="font-medium">{getPlayerName(player)}</span>
+          {players.map((player, idx) => {
+            const photo = getPlayerPhoto(player);
+            const position = getPositionName(player);
+            const severity = getSeverityBadge(player);
+            const startDate = formatStartDate(player.sideline?.start_date);
+
+            return (
+              <div
+                key={player.id || idx}
+                className="bg-gray-700 rounded-lg p-3 text-sm"
+              >
+                {/* Top row: Photo, Name, Position, Severity, Games Missed */}
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    {/* Player Photo */}
+                    {photo ? (
+                      <img
+                        src={photo}
+                        alt={getPlayerName(player)}
+                        className="w-10 h-10 rounded-full object-cover bg-white"
+                        onError={(e) => { e.target.style.display = 'none'; }}
+                      />
+                    ) : (
+                      <div className="w-10 h-10 rounded-full bg-gray-600 flex items-center justify-center text-gray-400 text-lg">
+                        {getStatusIcon(player)}
+                      </div>
+                    )}
+
+                    {/* Name and Position */}
+                    <div>
+                      <div className="flex items-center space-x-2">
+                        <span className="font-medium text-gray-100">{getPlayerName(player)}</span>
+                        {position && (
+                          <span className="text-xs px-1.5 py-0.5 rounded bg-gray-600 text-gray-300">
+                            {position}
+                          </span>
+                        )}
+                      </div>
+                      {/* Reason with icon */}
+                      <div className="flex items-center space-x-1 text-xs text-gray-400 mt-0.5">
+                        <span>{getStatusIcon(player)}</span>
+                        <span>{formatReason(player)}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Right side: Severity badge and games missed (injuries only) */}
+                  <div className="text-right">
+                    {severity && (
+                      <span className={`text-xs px-1.5 py-0.5 rounded ${severity.color}`}>
+                        {severity.label}
+                      </span>
+                    )}
+                    {/* Show games missed here for injuries only; suspensions show it in bottom row */}
+                    {!isCardSuspension(player) && player.sideline?.games_missed > 0 && (
+                      <div className="text-xs text-gray-400 mt-1">
+                        {player.sideline.games_missed} {player.sideline.games_missed === 1 ? 'game' : 'games'} missed
+                      </div>
+                    )}
+                  </div>
                 </div>
-                {player.sideline?.games_missed > 0 && (
-                  <span className="text-xs text-gray-400">
-                    {player.sideline.games_missed} {player.sideline.games_missed === 1 ? 'game' : 'games'} missed
-                  </span>
-                )}
+
+                {/* Bottom row: Dates / Suspension info */}
+                <div className="mt-2 pt-2 border-t border-gray-600 flex items-center justify-between text-xs text-gray-500">
+                  {isCardSuspension(player) ? (
+                    // Card suspensions: show games missed, no return estimation
+                    <>
+                      {startDate && (
+                        <span>Suspended: {startDate}</span>
+                      )}
+                      {player.sideline?.games_missed > 0 && (
+                        <span className="text-red-400">
+                          {player.sideline.games_missed} {player.sideline.games_missed === 1 ? 'game' : 'games'} missed
+                        </span>
+                      )}
+                    </>
+                  ) : (
+                    // Injuries: show start date and return estimation
+                    <>
+                      {startDate && (
+                        <span>Since: {startDate}</span>
+                      )}
+                      {player.sideline?.end_date && (
+                        <span className="text-amber-400">
+                          Return: {formatExpectedReturn(player.sideline.end_date)}
+                        </span>
+                      )}
+                      {!startDate && !player.sideline?.end_date && (
+                        <span className="text-gray-500">No return date available</span>
+                      )}
+                    </>
+                  )}
+                </div>
               </div>
-              <div className="ml-6 text-xs text-gray-500 mt-1">
-                <span>{formatReason(player)}</span>
-                {player.sideline?.end_date && (
-                  <span className="ml-2 text-blue-600">
-                    • {formatExpectedReturn(player.sideline.end_date)}
-                  </span>
-                )}
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>
   );
 
   return (
-    <div className="bg-white rounded-lg shadow-md p-4">
-      <h2 className="text-lg font-semibold text-gray-900 mb-4">
-        🚑 Injuries & Suspensions
-        <span className="text-sm font-normal text-gray-500 ml-2">
+    <div className="bg-gray-800 rounded-lg shadow-md p-4">
+      <h2 className="text-lg font-semibold text-gray-100 mb-4 flex items-center gap-2">
+        <AppIcon name="medical" size="lg" className="text-gray-400" />
+        <span>Injuries & Suspensions</span>
+        <span className="text-sm font-normal text-gray-500">
           ({sidelined.length} {sidelined.length === 1 ? 'player' : 'players'} out)
         </span>
       </h2>
 
       <div className="flex flex-col md:flex-row gap-4">
         {renderTeamSidelined(homeSidelined, homeTeam?.name, homeTeam?.image_path)}
-        <div className="hidden md:block w-px bg-gray-200" />
-        <div className="md:hidden h-px bg-gray-200" />
+        <div className="hidden md:block w-px bg-gray-600" />
+        <div className="md:hidden h-px bg-gray-600" />
         {renderTeamSidelined(awaySidelined, awayTeam?.name, awayTeam?.image_path)}
       </div>
     </div>
@@ -650,8 +898,11 @@ function ScoringPatternsSection({ homeStats, awayStats, homeTeam, awayTeam, load
   
   if (loading) {
     return (
-      <div className="bg-white rounded-lg shadow-md p-4">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">⏱️ Scoring Patterns</h2>
+      <div className="bg-gray-800 rounded-lg shadow-md p-4">
+        <h2 className="text-lg font-semibold text-gray-100 mb-4 flex items-center gap-2">
+          <AppIcon name="timer" size="lg" className="text-gray-400" />
+          <span>Scoring Patterns</span>
+        </h2>
         <div className="text-center py-4 text-gray-500">Loading scoring data...</div>
       </div>
     );
@@ -705,7 +956,7 @@ function ScoringPatternsSection({ homeStats, awayStats, homeTeam, awayTeam, load
         {teamLogo && (
           <img src={teamLogo} alt={teamName} className="w-6 h-6 object-contain" />
         )}
-        <h3 className="font-medium text-gray-800">{teamName}</h3>
+        <h3 className="font-medium text-gray-200">{teamName}</h3>
       </div>
 
       {/* Goals Scored */}
@@ -721,7 +972,7 @@ function ScoringPatternsSection({ homeStats, awayStats, homeTeam, awayTeam, load
             return (
               <div key={period.key} className="flex items-center space-x-2">
                 <span className="text-xs text-gray-500 w-12">{period.label}</span>
-                <div className="flex-1 bg-gray-100 rounded-full h-4 overflow-hidden">
+                <div className="flex-1 bg-gray-700 rounded-full h-4 overflow-hidden">
                   <div 
                     className="h-full bg-green-500 rounded-full transition-all duration-300"
                     style={{ width: `${width}%` }}
@@ -748,7 +999,7 @@ function ScoringPatternsSection({ homeStats, awayStats, homeTeam, awayTeam, load
               return (
                 <div key={period.key} className="flex items-center space-x-2">
                   <span className="text-xs text-gray-500 w-12">{period.label}</span>
-                  <div className="flex-1 bg-gray-100 rounded-full h-4 overflow-hidden">
+                  <div className="flex-1 bg-gray-700 rounded-full h-4 overflow-hidden">
                     <div 
                       className="h-full bg-red-400 rounded-full transition-all duration-300"
                       style={{ width: `${width}%` }}
@@ -765,10 +1016,11 @@ function ScoringPatternsSection({ homeStats, awayStats, homeTeam, awayTeam, load
   );
 
   return (
-    <div className="bg-white rounded-lg shadow-md p-4">
-      <h2 className="text-lg font-semibold text-gray-900 mb-4">
-        ⏱️ Scoring Patterns
-        <span className="text-sm font-normal text-gray-500 ml-2">
+    <div className="bg-gray-800 rounded-lg shadow-md p-4">
+      <h2 className="text-lg font-semibold text-gray-100 mb-4 flex items-center gap-2">
+        <AppIcon name="timer" size="lg" className="text-gray-400" />
+        <span>Scoring Patterns</span>
+        <span className="text-sm font-normal text-gray-500">
           (this season)
         </span>
       </h2>
@@ -781,8 +1033,8 @@ function ScoringPatternsSection({ homeStats, awayStats, homeTeam, awayTeam, load
           homeTeam?.image_path, 
           true
         )}
-        <div className="hidden md:block w-px bg-gray-200" />
-        <div className="md:hidden h-px bg-gray-200" />
+        <div className="hidden md:block w-px bg-gray-600" />
+        <div className="md:hidden h-px bg-gray-600" />
         {renderTeamPattern(
           awayScoringMinutes, 
           awayConcededMinutes, 
@@ -803,8 +1055,8 @@ function ScoringPatternsSection({ homeStats, awayStats, homeTeam, awayTeam, load
 function TopScorersSection({ seasonTopScorers, homeTeam, awayTeam, loading }) {
   if (loading) {
     return (
-      <div className="bg-white rounded-lg shadow-md p-4">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2"><AppIcon name="trophy" /> Top Scorers</h2>
+      <div className="bg-gray-800 rounded-lg shadow-md p-4">
+        <h2 className="text-lg font-semibold text-gray-100 mb-4 flex items-center gap-2"><AppIcon name="trophy" /> Top Scorers</h2>
         <div className="text-center py-4 text-gray-500">Loading scorers...</div>
       </div>
     );
@@ -845,14 +1097,14 @@ function TopScorersSection({ seasonTopScorers, homeTeam, awayTeam, loading }) {
     return (
       <div key={scorer.player_id || rank} className="flex items-center justify-between py-1">
         <div className="flex items-center space-x-2">
-          <span className="w-5 h-5 rounded-full bg-gray-100 flex items-center justify-center text-xs font-medium text-gray-600">
+          <span className="w-5 h-5 rounded-full bg-gray-600 flex items-center justify-center text-xs font-medium text-gray-300">
             {rank}
           </span>
           <span className="text-sm truncate max-w-[120px]">{playerName}</span>
         </div>
         <div className="flex items-center space-x-2">
           <span className="text-sm font-bold text-green-600">{goals}</span>
-          <span className="text-xs text-gray-400">⚽</span>
+          <AppIcon name="soccer-ball" size="xs" className="text-gray-400" />
         </div>
       </div>
     );
@@ -865,7 +1117,7 @@ function TopScorersSection({ seasonTopScorers, homeTeam, awayTeam, loading }) {
         {teamLogo && (
           <img src={teamLogo} alt={teamName} className="w-6 h-6 object-contain" />
         )}
-        <h3 className="font-medium text-gray-800">{teamName}</h3>
+        <h3 className="font-medium text-gray-200">{teamName}</h3>
       </div>
       
       {scorers.length === 0 ? (
@@ -879,8 +1131,8 @@ function TopScorersSection({ seasonTopScorers, homeTeam, awayTeam, loading }) {
   );
 
   return (
-    <div className="bg-white rounded-lg shadow-md p-4">
-      <h2 className="text-lg font-semibold text-gray-900 mb-4">
+    <div className="bg-gray-800 rounded-lg shadow-md p-4">
+      <h2 className="text-lg font-semibold text-gray-100 mb-4">
         Top Scorers
         <span className="text-sm font-normal text-gray-500 ml-2">
           (this season)
@@ -889,15 +1141,15 @@ function TopScorersSection({ seasonTopScorers, homeTeam, awayTeam, loading }) {
 
       <div className="flex flex-col md:flex-row gap-6">
         {renderTeamScorers(homeScorers, homeTeam?.name, homeTeam?.image_path)}
-        <div className="hidden md:block w-px bg-gray-200" />
-        <div className="md:hidden h-px bg-gray-200" />
+        <div className="hidden md:block w-px bg-gray-600" />
+        <div className="md:hidden h-px bg-gray-600" />
         {renderTeamScorers(awayScorers, awayTeam?.name, awayTeam?.image_path)}
       </div>
 
       {/* Betting Insight */}
-      <div className="mt-4 p-3 bg-purple-50 rounded-lg text-sm text-purple-800">
-        💡 <strong>Goalscorer Markets:</strong> These players are the most likely to score. 
-        Check anytime goalscorer odds for value.
+      <div className="mt-4 p-3 bg-purple-900/30 rounded-lg text-sm text-purple-300 flex items-start gap-2">
+        <AppIcon name="lightbulb" size="md" className="text-purple-300 mt-0.5 flex-shrink-0" />
+        <span><strong>Goalscorer Markets:</strong> These players are the most likely to score. Check anytime goalscorer odds for value.</span>
       </div>
     </div>
   );
@@ -913,8 +1165,8 @@ function TopScorersAssistsSection({ homeTopStats, awayTopStats, homeTeam, awayTe
   // If loading, show loading state
   if (loading) {
     return (
-      <div className="bg-white rounded-lg shadow-md p-4">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Top Scorers & Assists</h2>
+      <div className="bg-gray-800 rounded-lg shadow-md p-4">
+        <h2 className="text-lg font-semibold text-gray-100 mb-4">Top Scorers & Assists</h2>
         <div className="text-center py-4 text-gray-500">Loading player stats...</div>
       </div>
     );
@@ -930,10 +1182,10 @@ function TopScorersAssistsSection({ homeTopStats, awayTopStats, homeTeam, awayTe
 
   // Render a single player row
   const renderPlayer = (player, stat, icon) => (
-    <div key={player.playerId} className="flex items-center justify-between py-1 px-2 bg-gray-50 rounded">
+    <div key={player.playerId} className="flex items-center justify-between py-1 px-2 bg-gray-700 rounded">
       <div className="flex items-center space-x-2 flex-1 min-w-0">
         {/* Jersey number */}
-        <span className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center text-xs font-medium text-gray-600">
+        <span className="w-6 h-6 rounded-full bg-gray-600 flex items-center justify-center text-xs font-medium text-gray-300">
           {player.jerseyNumber || '-'}
         </span>
         {/* Player name */}
@@ -955,18 +1207,18 @@ function TopScorersAssistsSection({ homeTopStats, awayTopStats, homeTeam, awayTe
         {teamLogo && (
           <img src={teamLogo} alt={teamName} className="w-6 h-6 object-contain" />
         )}
-        <h3 className="font-medium text-gray-800">{teamName}</h3>
+        <h3 className="font-medium text-gray-200">{teamName}</h3>
       </div>
 
       {/* Top Scorers */}
       <div className="mb-4">
-        <div className="text-xs font-semibold text-gray-600 uppercase tracking-wider mb-2 flex items-center">
+        <div className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 flex items-center">
           <span className="w-2 h-2 rounded-full bg-green-500 mr-2"></span>
           Top Scorers
         </div>
         {topStats?.topScorers?.length > 0 ? (
           <div className="space-y-1">
-            {topStats.topScorers.map(player => renderPlayer(player, player.goals, '⚽'))}
+            {topStats.topScorers.map(player => renderPlayer(player, player.goals, <AppIcon name="soccer-ball" size="xs" className="text-gray-400" />))}
           </div>
         ) : (
           <div className="text-sm text-gray-500 italic">No scorers found</div>
@@ -975,8 +1227,8 @@ function TopScorersAssistsSection({ homeTopStats, awayTopStats, homeTeam, awayTe
 
       {/* Top Assists */}
       <div>
-        <div className="text-xs font-semibold text-gray-600 uppercase tracking-wider mb-2 flex items-center">
-          <span className="w-2 h-2 rounded-full bg-blue-500 mr-2"></span>
+        <div className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 flex items-center">
+          <span className="w-2 h-2 rounded-full bg-amber-500 mr-2"></span>
           Top Assists
         </div>
         {topStats?.topAssists?.length > 0 ? (
@@ -991,8 +1243,8 @@ function TopScorersAssistsSection({ homeTopStats, awayTopStats, homeTeam, awayTe
   );
 
   return (
-    <div className="bg-white rounded-lg shadow-md p-4">
-      <h2 className="text-lg font-semibold text-gray-900 mb-4">
+    <div className="bg-gray-800 rounded-lg shadow-md p-4">
+      <h2 className="text-lg font-semibold text-gray-100 mb-4">
         Top Scorers & Assists
         <span className="text-sm font-normal text-gray-500 ml-2">
           (this season)
@@ -1001,8 +1253,8 @@ function TopScorersAssistsSection({ homeTopStats, awayTopStats, homeTeam, awayTe
 
       <div className="flex flex-col md:flex-row gap-6">
         {renderTeamStats(homeTopStats, homeTeam?.name, homeTeam?.image_path)}
-        <div className="hidden md:block w-px bg-gray-200" />
-        <div className="md:hidden h-px bg-gray-200" />
+        <div className="hidden md:block w-px bg-gray-600" />
+        <div className="md:hidden h-px bg-gray-600" />
         {renderTeamStats(awayTopStats, awayTeam?.name, awayTeam?.image_path)}
       </div>
     </div>
@@ -1087,13 +1339,13 @@ function EnhancedLineupsSection({ lineups, homeTeam, awayTeam }) {
   const homeLineup = organizeLineup(lineups, homeTeam?.id);
   const awayLineup = organizeLineup(lineups, awayTeam?.id);
 
-  // Position colors for visual distinction
+  // Position colors for visual distinction (dark theme)
   const positionStyles = {
-    GK: { bg: 'bg-yellow-50', text: 'text-yellow-700', label: '🧤 Goalkeeper' },
-    DEF: { bg: 'bg-blue-50', text: 'text-blue-700', label: '🛡️ Defenders' },
-    MID: { bg: 'bg-green-50', text: 'text-green-700', label: '⚙️ Midfielders' },
-    ATT: { bg: 'bg-red-50', text: 'text-red-700', label: '⚽ Attackers' },
-    OTHER: { bg: 'bg-gray-50', text: 'text-gray-700', label: '📋 Other' }
+    GK: { bg: 'bg-yellow-900/30', text: 'text-yellow-400', icon: 'jersey', label: 'Goalkeeper' },
+    DEF: { bg: 'bg-blue-900/30', text: 'text-blue-400', icon: 'team', label: 'Defenders' },
+    MID: { bg: 'bg-green-900/30', text: 'text-green-400', icon: 'formation', label: 'Midfielders' },
+    ATT: { bg: 'bg-red-900/30', text: 'text-red-400', icon: 'attacker', label: 'Attackers' },
+    OTHER: { bg: 'bg-gray-700', text: 'text-gray-300', icon: 'note', label: 'Other' }
   };
 
   // Render a single position group
@@ -1103,12 +1355,15 @@ function EnhancedLineupsSection({ lineups, homeTeam, awayTeam }) {
     
     return (
       <div key={position} className={`${style.bg} rounded-lg p-2 mb-2`}>
-        <div className={`text-xs font-medium ${style.text} mb-1`}>{style.label}</div>
+        <div className={`text-xs font-medium ${style.text} mb-1 flex items-center gap-1`}>
+          <AppIcon name={style.icon} size="xs" className={style.text} />
+          <span>{style.label}</span>
+        </div>
         <div className="space-y-1">
           {players.map((player, idx) => (
             <div key={player.player_id || idx} className="text-sm flex items-center space-x-2">
-              <span className="w-6 text-gray-500 font-medium">{player.jersey_number || '-'}</span>
-              <span className="flex-1 truncate">{player.player_name || 'Unknown'}</span>
+              <span className="w-6 text-gray-400 font-medium">{player.jersey_number || '-'}</span>
+              <span className="flex-1 truncate text-gray-100">{player.player_name || 'Unknown'}</span>
             </div>
           ))}
         </div>
@@ -1123,13 +1378,13 @@ function EnhancedLineupsSection({ lineups, homeTeam, awayTeam }) {
         {teamLogo && (
           <img src={teamLogo} alt={teamName} className="w-6 h-6 object-contain" />
         )}
-        <h3 className="font-medium text-gray-800">{teamName}</h3>
+        <h3 className="font-medium text-gray-200">{teamName}</h3>
         <span className="text-xs text-gray-500">({lineup.startingCount} + {lineup.benchCount})</span>
       </div>
 
       {/* Starting XI */}
       <div className="mb-4">
-        <div className="text-xs font-semibold text-gray-600 uppercase tracking-wider mb-2 flex items-center">
+        <div className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 flex items-center">
           <span className="w-2 h-2 rounded-full bg-green-500 mr-2"></span>
           Starting XI
         </div>
@@ -1141,18 +1396,18 @@ function EnhancedLineupsSection({ lineups, homeTeam, awayTeam }) {
       {/* Bench */}
       {lineup.benchCount > 0 && (
         <div>
-          <div className="text-xs font-semibold text-gray-600 uppercase tracking-wider mb-2 flex items-center">
+          <div className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 flex items-center">
             <span className="w-2 h-2 rounded-full bg-gray-400 mr-2"></span>
             Substitutes ({lineup.benchCount})
           </div>
-          <div className="bg-gray-50 rounded-lg p-2">
+          <div className="bg-gray-700 rounded-lg p-2">
             <div className="grid grid-cols-2 gap-1">
               {Object.entries(lineup.bench)
                 .flatMap(([pos, players]) => players)
                 .map((player, idx) => (
                   <div key={player.player_id || idx} className="text-xs flex items-center space-x-1">
                     <span className="w-5 text-gray-400">{player.jersey_number || '-'}</span>
-                    <span className="truncate">{player.player_name || 'Unknown'}</span>
+                    <span className="truncate text-gray-200">{player.player_name || 'Unknown'}</span>
                   </div>
                 ))}
             </div>
@@ -1163,8 +1418,8 @@ function EnhancedLineupsSection({ lineups, homeTeam, awayTeam }) {
   );
 
   return (
-    <div className="bg-white rounded-lg shadow-md p-4">
-      <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+    <div className="bg-gray-800 rounded-lg shadow-md p-4">
+      <h2 className="text-lg font-semibold text-gray-100 mb-4 flex items-center">
         <AppIcon name="players" className="mr-2" /> Lineups
         <span className="text-sm font-normal text-gray-500 ml-2">
           (by position)
@@ -1173,8 +1428,8 @@ function EnhancedLineupsSection({ lineups, homeTeam, awayTeam }) {
 
       <div className="flex flex-col md:flex-row gap-6">
         {renderTeamLineup(homeLineup, homeTeam?.name, homeTeam?.image_path)}
-        <div className="hidden md:block w-px bg-gray-200" />
-        <div className="md:hidden h-px bg-gray-200" />
+        <div className="hidden md:block w-px bg-gray-600" />
+        <div className="md:hidden h-px bg-gray-600" />
         {renderTeamLineup(awayLineup, awayTeam?.name, awayTeam?.image_path)}
       </div>
     </div>
@@ -1201,7 +1456,7 @@ function RecentFormSection({ homeForm, awayForm, homeTeam, awayTeam, loading }) 
       case 'L':
         return <span className="w-6 h-6 rounded-full bg-red-500 text-white text-xs font-bold flex items-center justify-center">L</span>;
       default:
-        return <span className="w-6 h-6 rounded-full bg-gray-200 text-gray-500 text-xs font-bold flex items-center justify-center">?</span>;
+        return <span className="w-6 h-6 rounded-full bg-gray-600 text-gray-300 text-xs font-bold flex items-center justify-center">?</span>;
     }
   };
 
@@ -1232,8 +1487,11 @@ function RecentFormSection({ homeForm, awayForm, homeTeam, awayTeam, loading }) 
 
   if (loading) {
     return (
-      <div className="bg-white rounded-lg shadow-md p-4">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">🔥 Recent Form</h2>
+      <div className="bg-gray-800 rounded-lg shadow-md p-4">
+        <h2 className="text-lg font-semibold text-gray-100 mb-4 flex items-center gap-2">
+          <AppIcon name="fire" size="lg" className="text-gray-400" />
+          <span>Recent Form</span>
+        </h2>
         <div className="text-center py-4 text-gray-500">Loading form...</div>
       </div>
     );
@@ -1253,7 +1511,7 @@ function RecentFormSection({ homeForm, awayForm, homeTeam, awayTeam, loading }) 
         {teamLogo && (
           <img src={teamLogo} alt={teamName} className="w-6 h-6 object-contain" />
         )}
-        <h3 className="font-medium text-gray-800">{teamName}</h3>
+        <h3 className="font-medium text-gray-200">{teamName}</h3>
       </div>
 
       {/* Form badges - reversed so most recent is on the RIGHT (standard PL format) */}
@@ -1272,15 +1530,15 @@ function RecentFormSection({ homeForm, awayForm, homeTeam, awayTeam, loading }) 
       {/* Summary stats */}
       {form && form.length > 0 && (
         <div className="grid grid-cols-3 gap-2 text-center text-xs">
-          <div className="bg-gray-50 rounded p-2">
+          <div className="bg-gray-700 rounded p-2">
             <div className="font-bold text-green-600">{summary.points}</div>
             <div className="text-gray-500">Points</div>
           </div>
-          <div className="bg-gray-50 rounded p-2">
+          <div className="bg-gray-700 rounded p-2">
             <div className="font-bold">{summary.gf}</div>
             <div className="text-gray-500">GF</div>
           </div>
-          <div className="bg-gray-50 rounded p-2">
+          <div className="bg-gray-700 rounded p-2">
             <div className="font-bold">{summary.ga}</div>
             <div className="text-gray-500">GA</div>
           </div>
@@ -1290,9 +1548,10 @@ function RecentFormSection({ homeForm, awayForm, homeTeam, awayTeam, loading }) 
   );
 
   return (
-    <div className="bg-white rounded-lg shadow-md p-4">
-      <h2 className="text-lg font-semibold text-gray-900 mb-4">
-        🔥 Recent Form
+    <div className="bg-gray-800 rounded-lg shadow-md p-4">
+      <h2 className="text-lg font-semibold text-gray-100 mb-4 flex items-center gap-2">
+        <AppIcon name="fire" size="lg" className="text-gray-400" />
+        <span>Recent Form</span>
         <span className="text-sm font-normal text-gray-500 ml-2">
           (Last 5 matches)
         </span>
@@ -1300,8 +1559,8 @@ function RecentFormSection({ homeForm, awayForm, homeTeam, awayTeam, loading }) 
 
       <div className="flex flex-col md:flex-row gap-6">
         {renderTeamForm(safeHomeForm, homeSummary, homeTeam?.name, homeTeam?.image_path)}
-        <div className="hidden md:block w-px bg-gray-200" />
-        <div className="md:hidden h-px bg-gray-200" />
+        <div className="hidden md:block w-px bg-gray-600" />
+        <div className="md:hidden h-px bg-gray-600" />
         {renderTeamForm(safeAwayForm, awaySummary, awayTeam?.name, awayTeam?.image_path)}
       </div>
     </div>
@@ -1322,8 +1581,11 @@ function CornersBreakdownSection({ homeCornerAvg, awayCornerAvg, homeTeam, awayT
   // ============================================
   if (loading) {
     return (
-      <div className="bg-white rounded-lg shadow-md p-4">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">🚩 Corner Kicks</h2>
+      <div className="bg-gray-800 rounded-lg shadow-md p-4">
+        <h2 className="text-lg font-semibold text-gray-100 mb-4 flex items-center gap-2">
+          <AppIcon name="corner-flag" size="lg" className="text-gray-400" />
+          <span>Corner Kicks</span>
+        </h2>
         <div className="text-center py-4 text-gray-500">Loading corners data...</div>
       </div>
     );
@@ -1351,16 +1613,17 @@ function CornersBreakdownSection({ homeCornerAvg, awayCornerAvg, homeTeam, awayT
   // RENDER
   // ============================================
   return (
-    <div className="bg-white rounded-lg shadow-md p-4">
-      <h2 className="text-lg font-semibold text-gray-900 mb-4">
-        🚩 Corner Kicks
+    <div className="bg-gray-800 rounded-lg shadow-md p-4">
+      <h2 className="text-lg font-semibold text-gray-100 mb-4 flex items-center gap-2">
+        <AppIcon name="corner-flag" size="lg" className="text-gray-400" />
+        <span>Corner Kicks</span>
       </h2>
 
       {/* Two-column layout for team comparison */}
       <div className="flex flex-col md:flex-row gap-6">
         
         {/* Home Team - Their HOME corners */}
-        <div className="flex-1 bg-blue-50 rounded-lg p-4 border border-blue-100">
+        <div className="flex-1 bg-blue-900/30 rounded-lg p-4 border border-blue-700">
           <div className="flex items-center space-x-2 mb-3">
             {homeTeam?.image_path && (
               <img 
@@ -1370,23 +1633,26 @@ function CornersBreakdownSection({ homeCornerAvg, awayCornerAvg, homeTeam, awayT
               />
             )}
             <div>
-              <h3 className="font-medium text-gray-800">{homeTeam?.name || 'Home'}</h3>
-              <span className="text-xs text-blue-600 font-medium">🏠 Playing at Home</span>
+              <h3 className="font-medium text-gray-200">{homeTeam?.name || 'Home'}</h3>
+              <span className="text-xs text-amber-500 font-medium flex items-center gap-1">
+                <AppIcon name="home" size="xs" className="text-amber-500" />
+                <span>Playing at Home</span>
+              </span>
             </div>
           </div>
           
           <div className="grid grid-cols-2 gap-3">
             {/* Corners at Home */}
-            <div className="bg-white rounded-lg p-3 text-center shadow-sm">
-              <div className="text-2xl font-bold text-blue-600">
+            <div className="bg-gray-800 rounded-lg p-3 text-center shadow-sm">
+              <div className="text-2xl font-bold text-amber-500">
                 {homeTeamHomeData?.total ?? '-'}
               </div>
               <div className="text-xs text-gray-500 mt-1">Corners at Home</div>
             </div>
             
             {/* Average Per Home Game */}
-            <div className="bg-white rounded-lg p-3 text-center shadow-sm">
-              <div className="text-2xl font-bold text-blue-600">
+            <div className="bg-gray-800 rounded-lg p-3 text-center shadow-sm">
+              <div className="text-2xl font-bold text-amber-500">
                 {homeTeamHomeData?.average ?? '-'}
               </div>
               <div className="text-xs text-gray-500 mt-1">Per Home Game</div>
@@ -1401,11 +1667,11 @@ function CornersBreakdownSection({ homeCornerAvg, awayCornerAvg, homeTeam, awayT
         </div>
 
         {/* Divider */}
-        <div className="hidden md:block w-px bg-gray-200" />
-        <div className="md:hidden h-px bg-gray-200" />
+        <div className="hidden md:block w-px bg-gray-600" />
+        <div className="md:hidden h-px bg-gray-600" />
 
         {/* Away Team - Their AWAY corners */}
-        <div className="flex-1 bg-red-50 rounded-lg p-4 border border-red-100">
+        <div className="flex-1 bg-red-900/30 rounded-lg p-4 border border-red-700">
           <div className="flex items-center space-x-2 mb-3">
             {awayTeam?.image_path && (
               <img 
@@ -1415,14 +1681,17 @@ function CornersBreakdownSection({ homeCornerAvg, awayCornerAvg, homeTeam, awayT
               />
             )}
             <div>
-              <h3 className="font-medium text-gray-800">{awayTeam?.name || 'Away'}</h3>
-              <span className="text-xs text-red-600 font-medium">✈️ Playing Away</span>
+              <h3 className="font-medium text-gray-200">{awayTeam?.name || 'Away'}</h3>
+              <span className="text-xs text-red-600 font-medium flex items-center gap-1">
+                <AppIcon name="away" size="xs" className="text-red-600" />
+                <span>Playing Away</span>
+              </span>
             </div>
           </div>
           
           <div className="grid grid-cols-2 gap-3">
             {/* Corners Away */}
-            <div className="bg-white rounded-lg p-3 text-center shadow-sm">
+            <div className="bg-gray-800 rounded-lg p-3 text-center shadow-sm">
               <div className="text-2xl font-bold text-red-600">
                 {awayTeamAwayData?.total ?? '-'}
               </div>
@@ -1430,7 +1699,7 @@ function CornersBreakdownSection({ homeCornerAvg, awayCornerAvg, homeTeam, awayT
             </div>
             
             {/* Average Per Away Game */}
-            <div className="bg-white rounded-lg p-3 text-center shadow-sm">
+            <div className="bg-gray-800 rounded-lg p-3 text-center shadow-sm">
               <div className="text-2xl font-bold text-red-600">
                 {awayTeamAwayData?.average ?? '-'}
               </div>
@@ -1448,11 +1717,11 @@ function CornersBreakdownSection({ homeCornerAvg, awayCornerAvg, homeTeam, awayT
 
       {/* Combined Expected Corners */}
       {combinedExpected && (
-        <div className="mt-4 p-4 bg-gradient-to-r from-blue-50 to-red-50 rounded-lg border border-gray-200">
+        <div className="mt-4 p-4 bg-gradient-to-r from-blue-900/50 to-red-900/50 rounded-lg border border-gray-600">
           <div className="flex items-center justify-center space-x-4">
             <div className="text-center">
-              <div className="text-3xl font-bold text-gray-800">{combinedExpected}</div>
-              <div className="text-sm text-gray-600">Expected Total Corners</div>
+              <div className="text-3xl font-bold text-gray-100">{combinedExpected}</div>
+              <div className="text-sm text-gray-300">Expected Total Corners</div>
             </div>
           </div>
         </div>
@@ -1550,8 +1819,8 @@ function TeamStatsComparisonSection(props) {
 
   if (loading) {
     return (
-      <div className="bg-white rounded-lg shadow-md p-4">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Season Stats</h2>
+      <div className="bg-gray-800 rounded-lg shadow-md p-4">
+        <h2 className="text-lg font-semibold text-gray-100 mb-4">Season Stats</h2>
         <div className="text-center py-4 text-gray-500">Loading stats...</div>
       </div>
     );
@@ -1571,7 +1840,7 @@ function TeamStatsComparisonSection(props) {
       label: 'Goals Scored',
       home: extractStat(homeStats, 52),
       away: extractStat(awayStats, 52),
-      icon: '⚽',
+      iconName: 'soccer-ball',
       better: 'higher',
       hidePercentage: true  // Percentage doesn't make sense for goals
     },
@@ -1579,7 +1848,7 @@ function TeamStatsComparisonSection(props) {
       label: 'Goals Conceded',
       home: extractStat(homeStats, 88),
       away: extractStat(awayStats, 88),
-      icon: '🥅',
+      iconName: 'goal',
       better: 'lower',
       hidePercentage: true  // Percentage doesn't make sense for goals
     },
@@ -1587,42 +1856,42 @@ function TeamStatsComparisonSection(props) {
       label: 'Clean Sheets',
       home: extractStat(homeStats, 194),
       away: extractStat(awayStats, 194),
-      icon: '🛡️',
+      iconName: 'shield',
       better: 'higher'
     },
     {
       label: 'Failed to Score',
       home: extractStat(homeStats, 575),
       away: extractStat(awayStats, 575),
-      icon: '❌',
+      iconName: 'close-circle',
       better: 'lower'
     },
     {
       label: 'BTTS (Both Score)',
       home: extractStat(homeStats, 192),
       away: extractStat(awayStats, 192),
-      icon: '↔️',
+      iconName: 'swap-horizontal',
       better: 'neutral'
     },
     {
       label: 'Wins',
       home: extractStat(homeStats, 214),
       away: extractStat(awayStats, 214),
-      icon: '🌟',
+      iconName: 'star',
       better: 'higher'
     },
     {
       label: 'Draws',
       home: extractStat(homeStats, 215),
       away: extractStat(awayStats, 215),
-      icon: '🤝',
+      iconName: 'handshake',
       better: 'neutral'
     },
     {
       label: 'Losses',
       home: extractStat(homeStats, 216),
       away: extractStat(awayStats, 216),
-      icon: '📉',
+      iconName: 'trend-down',
       better: 'lower'
     }
   ];
@@ -1648,8 +1917,8 @@ function TeamStatsComparisonSection(props) {
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-md p-4">
-      <h2 className="text-lg font-semibold text-gray-900 mb-4">
+    <div className="bg-gray-800 rounded-lg shadow-md p-4">
+      <h2 className="text-lg font-semibold text-gray-100 mb-4">
         Season Stats Comparison
         <span className="text-sm font-normal text-gray-500 ml-2">
           ({homeGames || '?'} vs {awayGames || '?'} games)
@@ -1657,7 +1926,7 @@ function TeamStatsComparisonSection(props) {
       </h2>
 
       {/* Team Headers */}
-      <div className="flex items-center justify-between mb-4 pb-2 border-b border-gray-200">
+      <div className="flex items-center justify-between mb-4 pb-2 border-b border-gray-700">
         <div className="flex items-center space-x-2 flex-1">
           {homeTeam?.image_path && (
             <img src={homeTeam.image_path} alt={homeTeam.name} className="w-6 h-6 object-contain" />
@@ -1695,7 +1964,7 @@ function TeamStatsComparisonSection(props) {
             <div key={idx} className="flex items-center justify-between py-1">
               {/* Home Value */}
               <div className={`flex-1 text-left font-medium ${
-                better === 'home' ? 'text-green-600' : 'text-gray-700'
+                better === 'home' ? 'text-green-500' : 'text-gray-400'
               }`}>
                 {homeValue}
                 {/* Show percentage for most stats, but not for goals */}
@@ -1707,14 +1976,14 @@ function TeamStatsComparisonSection(props) {
               </div>
 
               {/* Stat Label */}
-              <div className="w-32 text-center text-xs text-gray-600 flex items-center justify-center">
-                <span className="mr-1">{stat.icon}</span>
-                {stat.label}
+              <div className="w-32 text-center text-xs text-gray-400 flex items-center justify-center gap-1">
+                <AppIcon name={stat.iconName} size="xs" className="text-gray-400" />
+                <span>{stat.label}</span>
               </div>
 
               {/* Away Value */}
               <div className={`flex-1 text-right font-medium ${
-                better === 'away' ? 'text-green-600' : 'text-gray-700'
+                better === 'away' ? 'text-green-500' : 'text-gray-400'
               }`}>
                 {/* Show percentage for most stats, but not for goals */}
                 {!stat.hidePercentage && awayGames > 0 && typeof awayValue === 'number' && (
@@ -1890,14 +2159,14 @@ function AllBettingMarketsContent({ odds, bookmakers, oddsFormat, formatOddLabel
       <div className="flex justify-end space-x-3 text-sm mb-2">
         <button
           onClick={expandAll}
-          className="text-blue-600 hover:text-blue-800 hover:underline"
+          className="text-amber-500 hover:text-amber-400 hover:underline"
         >
           Expand All
         </button>
         <span className="text-gray-300">|</span>
         <button
           onClick={collapseAll}
-          className="text-gray-600 hover:text-gray-800 hover:underline"
+          className="text-gray-400 hover:text-gray-200 hover:underline"
         >
           Collapse All
         </button>
@@ -1964,18 +2233,18 @@ function AllBettingMarketsContent({ odds, bookmakers, oddsFormat, formatOddLabel
         const previewLabels = sortedLabels.slice(0, 4).map(norm => formatOddLabel(allNormalizedLabels.get(norm), mId));
 
         return (
-          <div key={marketId} className="border border-gray-200 rounded-lg overflow-hidden">
+          <div key={marketId} className="border border-gray-700 rounded-lg overflow-hidden">
             {/* Market Header */}
             <button
               onClick={() => toggleMarket(mId)}
-              className="w-full px-4 py-3 bg-gray-50 hover:bg-gray-100 flex items-center justify-between transition-colors"
+              className="w-full px-4 py-3 bg-gray-700 hover:bg-gray-700 flex items-center justify-between transition-colors"
             >
               <div className="flex items-center space-x-3">
                 <span className={`transform transition-transform text-gray-400 ${isExpanded ? 'rotate-90' : ''}`}>
                   ▶
                 </span>
-                <span className="font-medium text-gray-800">{marketName}</span>
-                <span className="text-xs text-gray-500 bg-gray-200 px-2 py-0.5 rounded">
+                <span className="font-medium text-gray-200">{marketName}</span>
+                <span className="text-xs text-gray-300 bg-gray-600 px-2 py-0.5 rounded">
                   {bookmakerCount} bookmaker{bookmakerCount !== 1 ? 's' : ''}
                 </span>
               </div>
@@ -1988,9 +2257,9 @@ function AllBettingMarketsContent({ odds, bookmakers, oddsFormat, formatOddLabel
 
             {/* Expanded Content - Table Layout */}
             {isExpanded && (
-              <div className="bg-white border-t border-gray-200">
+              <div className="bg-gray-800 border-t border-gray-700">
                 {/* Column Headers */}
-                <div className="grid bg-gray-100 border-b border-gray-200 text-xs font-medium text-gray-600"
+                <div className="grid bg-gray-700 border-b border-gray-700 text-xs font-medium text-gray-400"
                   style={{ gridTemplateColumns: `140px repeat(${sortedLabels.length}, minmax(80px, 1fr))` }}
                 >
                   <div className="px-3 py-2">Bookmaker</div>
@@ -2022,10 +2291,10 @@ function AllBettingMarketsContent({ odds, bookmakers, oddsFormat, formatOddLabel
                     return (
                       <div
                         key={bmId}
-                        className={`grid items-center ${idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'} hover:bg-blue-50 transition-colors`}
+                        className={`grid items-center ${idx % 2 === 0 ? 'bg-gray-800' : 'bg-gray-700'} hover:bg-gray-600 transition-colors`}
                         style={{ gridTemplateColumns: `140px repeat(${sortedLabels.length}, minmax(80px, 1fr))` }}
                       >
-                        <div className="px-3 py-2 text-sm font-medium text-gray-700 truncate" title={bookmakerName}>
+                        <div className="px-3 py-2 text-sm font-medium text-gray-300 truncate" title={bookmakerName}>
                           {bookmakerName}
                         </div>
                         {sortedLabels.map(normLabel => {
@@ -2034,7 +2303,7 @@ function AllBettingMarketsContent({ odds, bookmakers, oddsFormat, formatOddLabel
 
                           return (
                             <div key={normLabel} className="px-2 py-2 text-center">
-                              <span className={`font-semibold ${formattedOdd === '-' ? 'text-gray-300' : 'text-gray-800'}`}>
+                              <span className={`font-semibold ${formattedOdd === '-' ? 'text-gray-300' : 'text-gray-200'}`}>
                                 {formattedOdd}
                               </span>
                             </div>
@@ -2478,7 +2747,7 @@ const FixtureDetail = () => {
     return (
       <div className="text-center py-12">
         <div className="text-red-500 mb-4">{error || 'Fixture not found'}</div>
-        <Link to="/fixtures" className="text-blue-600 hover:underline">
+        <Link to="/fixtures" className="text-amber-500 hover:underline">
           ← Back to Fixtures
         </Link>
       </div>
@@ -2519,14 +2788,14 @@ const FixtureDetail = () => {
   return (
     <div className="space-y-6 max-w-4xl mx-auto">
       {/* Back link */}
-      <Link to="/fixtures" className="text-blue-600 hover:underline text-sm">
+      <Link to="/fixtures" className="text-amber-500 hover:underline text-sm">
         ← Back to Fixtures
       </Link>
 
       {/* ============================================ */}
       {/* MATCH HEADER */}
       {/* ============================================ */}
-      <div className="bg-white rounded-lg shadow-md overflow-hidden">
+      <div className="bg-gray-800 rounded-lg shadow-md overflow-hidden">
         {/* League banner */}
         <div className="bg-gradient-to-r from-purple-700 to-purple-900 px-4 py-2 text-white text-sm flex items-center justify-between">
           <span>{fixture.league?.name || 'League'}</span>
@@ -2543,7 +2812,7 @@ const FixtureDetail = () => {
             {/* Home team */}
             <Link 
               to={`/teams/${homeTeam?.id}`}
-              className="flex-1 flex flex-col items-center text-center hover:text-blue-600"
+              className="flex-1 flex flex-col items-center text-center hover:text-amber-500"
             >
               {homeTeam?.image_path && (
                 <img
@@ -2562,19 +2831,19 @@ const FixtureDetail = () => {
                   {homeScore} - {awayScore}
                 </div>
               ) : (
-                <div className="text-2xl font-medium text-gray-700">
+                <div className="text-2xl font-medium text-gray-300">
                   {formatTimeUtil(fixture.starting_at, timezone)}
                 </div>
               )}
               <div className="text-sm text-gray-500 mt-2">
-                {isFinished ? 'Full Time' : isLive ? fixture.state?.state : 'Scheduled'}
+                {isFinished ? 'Full Time' : isLive ? formatMatchState(fixture.state) : 'Scheduled'}
               </div>
             </div>
 
             {/* Away team */}
             <Link 
               to={`/teams/${awayTeam?.id}`}
-              className="flex-1 flex flex-col items-center text-center hover:text-blue-600"
+              className="flex-1 flex flex-col items-center text-center hover:text-amber-500"
             >
               {awayTeam?.image_path && (
                 <img
@@ -2614,7 +2883,7 @@ const FixtureDetail = () => {
               if (!formations || (!formations.home && !formations.away)) return null;
 
               return (
-                <div className="text-center text-gray-600">
+                <div className="text-center text-gray-400">
                   <div>
                     <span className="font-medium">{formations.home || '?'}</span>
                     <span className="mx-2 text-gray-400">vs</span>
@@ -2690,22 +2959,22 @@ const FixtureDetail = () => {
       {/* ============================================ */}
       {/* Only show odds for upcoming fixtures - no point after match is finished */}
       {isUpcoming && (
-      <div className="bg-white rounded-lg shadow-md p-4">
+      <div className="bg-gray-800 rounded-lg shadow-md p-4">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2"><AppIcon name="odds" /> Odds</h2>
+          <h2 className="text-lg font-semibold text-gray-100 flex items-center gap-2"><AppIcon name="odds" /> Odds</h2>
           
           {/* Bookmaker filter */}
           <div className="relative group">
-            <button className="text-sm text-blue-600 hover:underline">
+            <button className="text-sm text-amber-500 hover:underline">
               Filter Bookmakers ({selectedBookmakerIds.length})
             </button>
             
             {/* Dropdown */}
-            <div className="absolute right-0 top-full mt-1 w-64 bg-white border border-gray-200 rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-10">
-              <div className="p-2 border-b border-gray-200 flex justify-between">
+            <div className="absolute right-0 top-full mt-1 w-64 bg-gray-800 border border-gray-700 rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-10">
+              <div className="p-2 border-b border-gray-700 flex justify-between">
                 <button 
                   onClick={selectAllBookmakers}
-                  className="text-xs text-blue-600 hover:underline"
+                  className="text-xs text-amber-500 hover:underline"
                 >
                   Select All
                 </button>
@@ -2718,12 +2987,12 @@ const FixtureDetail = () => {
               </div>
               <div className="max-h-48 overflow-y-auto p-2 space-y-1">
                 {bookmakers.map(bm => (
-                  <label key={bm.id} className="flex items-center space-x-2 cursor-pointer hover:bg-gray-50 p-1 rounded">
+                  <label key={bm.id} className="flex items-center space-x-2 cursor-pointer hover:bg-gray-700 p-1 rounded">
                     <input
                       type="checkbox"
                       checked={selectedBookmakerIds.includes(bm.id)}
                       onChange={() => toggleBookmaker(bm.id)}
-                      className="rounded border-gray-300"
+                      className="rounded border-gray-600"
                     />
                     <span className="text-sm">{bm.name}</span>
                   </label>
@@ -2739,7 +3008,7 @@ const FixtureDetail = () => {
             {/* Group by bookmaker for 1X2 market (market_id = 1) */}
             {oddsByMarket[1] && (
               <div>
-                <h3 className="text-sm font-medium text-gray-600 mb-2">Match Result (1X2)</h3>
+                <h3 className="text-sm font-medium text-gray-400 mb-2">Match Result (1X2)</h3>
                 <div className="space-y-2">
                   {/* Group by bookmaker - filter out bookmakers with no valid odds */}
                   {Array.from(new Set(oddsByMarket[1].map(o => o.bookmaker_id)))
@@ -2766,20 +3035,20 @@ const FixtureDetail = () => {
                     const awayOdd = bmOdds.find(o => o.label === '2' || o.name?.toLowerCase().includes('away'));
 
                     return (
-                      <div key={bmId} className="flex items-center justify-between bg-gray-50 rounded-lg p-3">
-                        <span className="text-sm font-medium text-gray-700 w-32">
+                      <div key={bmId} className="flex items-center justify-between bg-gray-700 rounded-lg p-3">
+                        <span className="text-sm font-medium text-gray-300 w-32">
                           {bm?.name || `Bookmaker ${bmId}`}
                         </span>
                         <div className="flex space-x-4">
                           <div className="text-center">
                             <div className="text-xs text-gray-500">Home</div>
-                            <div className="font-bold text-blue-600">
+                            <div className="font-bold text-amber-500">
                               {formatOdds(homeOdd, oddsFormat)}
                             </div>
                           </div>
                           <div className="text-center">
                             <div className="text-xs text-gray-500">Draw</div>
-                            <div className="font-bold text-gray-600">
+                            <div className="font-bold text-gray-400">
                               {formatOdds(drawOdd, oddsFormat)}
                             </div>
                           </div>
@@ -2832,8 +3101,8 @@ const FixtureDetail = () => {
       {/* ============================================ */}
       {/* For live matches, show stats at the top for easy access */}
       {isLive && fixture.statistics && fixture.statistics.length > 0 && (
-        <div className="bg-white rounded-lg shadow-md p-4">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+        <div className="bg-gray-800 rounded-lg shadow-md p-4">
+          <h2 className="text-lg font-semibold text-gray-100 mb-4 flex items-center gap-2">
             <AppIcon name="trend-up" /> Match Statistics
           </h2>
           <div className="space-y-3">
@@ -2890,12 +3159,12 @@ const FixtureDetail = () => {
                   <div key={idx} className="space-y-1">
                     <div className="flex justify-between text-sm">
                       <span>{homeVal}</span>
-                      <span className="text-gray-600">{stat.typeName}</span>
+                      <span className="text-gray-400">{stat.typeName}</span>
                       <span>{awayVal}</span>
                     </div>
                     <div className="flex h-2 rounded overflow-hidden">
                       <div
-                        className="bg-blue-500"
+                        className="bg-amber-500"
                         style={{ width: `${homePercent}%` }}
                       />
                       <div
@@ -3073,7 +3342,7 @@ const FixtureDetail = () => {
                     <div key={idx} className="flex items-center space-x-3 text-sm">
                       <span className="w-8 text-gray-500">{event.minute}'</span>
                       <span className="w-8">{eventIcon}</span>
-                      <span className="text-gray-600 w-24 text-xs">{displayName}</span>
+                      <span className="text-gray-400 w-24 text-xs">{displayName}</span>
                       <span className="font-medium">{event.player_name || 'Player'}</span>
                     </div>
                   );
@@ -3168,12 +3437,12 @@ const FixtureDetail = () => {
                     <div key={idx} className="space-y-1">
                       <div className="flex justify-between text-sm">
                         <span>{homeVal}</span>
-                        <span className="text-gray-600">{stat.typeName}</span>
+                        <span className="text-gray-400">{stat.typeName}</span>
                         <span>{awayVal}</span>
                       </div>
                       <div className="flex h-2 rounded overflow-hidden">
                         <div 
-                          className="bg-blue-500" 
+                          className="bg-amber-500" 
                           style={{ width: `${homePercent}%` }}
                         />
                         <div 

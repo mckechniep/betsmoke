@@ -20,6 +20,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { dataApi } from '../api/client';
+import AppIcon from './AppIcon';
 
 // ============================================
 // HELPER: Format date for display
@@ -166,35 +167,35 @@ const CupCompetition = ({
   const colorClasses = {
     red: {
       gradient: 'from-red-700 to-red-900',
-      badge: 'bg-red-100 text-red-800',
+      badge: 'bg-red-900/50 text-red-400',
       button: 'bg-red-600 hover:bg-red-700',
       buttonActive: 'bg-red-700 border-red-300',
       buttonInactive: 'bg-white/10 hover:bg-white/20 border-white/30',
-      accent: 'text-red-600',
+      accent: 'text-red-400',
     },
     green: {
       gradient: 'from-green-700 to-green-900',
-      badge: 'bg-green-100 text-green-800',
+      badge: 'bg-green-900/50 text-green-400',
       button: 'bg-green-600 hover:bg-green-700',
       buttonActive: 'bg-green-700 border-green-300',
       buttonInactive: 'bg-white/10 hover:bg-white/20 border-white/30',
-      accent: 'text-green-600',
+      accent: 'text-green-400',
     },
     blue: {
       gradient: 'from-blue-700 to-blue-900',
-      badge: 'bg-blue-100 text-blue-800',
+      badge: 'bg-blue-900/50 text-blue-400',
       button: 'bg-blue-600 hover:bg-blue-700',
       buttonActive: 'bg-blue-700 border-blue-300',
       buttonInactive: 'bg-white/10 hover:bg-white/20 border-white/30',
-      accent: 'text-blue-600',
+      accent: 'text-blue-400',
     },
     purple: {
       gradient: 'from-purple-700 to-purple-900',
-      badge: 'bg-purple-100 text-purple-800',
+      badge: 'bg-purple-900/50 text-purple-400',
       button: 'bg-purple-600 hover:bg-purple-700',
       buttonActive: 'bg-purple-700 border-purple-300',
       buttonInactive: 'bg-white/10 hover:bg-white/20 border-white/30',
-      accent: 'text-purple-600',
+      accent: 'text-purple-400',
     },
   };
   
@@ -426,12 +427,12 @@ const CupCompetition = ({
       <Link
         key={fixture.id}
         to={`/fixtures/${fixture.id}`}
-        className="block bg-gray-50 hover:bg-gray-100 rounded-lg p-4 transition-colors"
+        className="block bg-gray-700 hover:bg-gray-600 rounded-lg p-4 transition-colors"
       >
         <div className="flex items-center justify-between">
           {/* Home Team */}
           <div className="flex-1 flex items-center justify-end space-x-3">
-            <span className="font-medium text-gray-900 text-right">
+            <span className="font-medium text-gray-100 text-right">
               {homeTeam?.name || 'TBD'}
             </span>
             {homeTeam?.image_path && (
@@ -447,13 +448,13 @@ const CupCompetition = ({
           <div className="w-32 flex flex-col items-center mx-4">
             {isFinished ? (
               <div className="flex items-center space-x-2">
-                <span className="text-2xl font-bold text-gray-900">{score.home}</span>
+                <span className="text-2xl font-bold text-gray-100">{score.home}</span>
                 <span className="text-gray-400">-</span>
-                <span className="text-2xl font-bold text-gray-900">{score.away}</span>
+                <span className="text-2xl font-bold text-gray-100">{score.away}</span>
               </div>
             ) : (
               <div className="text-center">
-                <div className="text-sm font-medium text-gray-600">
+                <div className="text-sm font-medium text-gray-300">
                   {formatDate(fixture.starting_at)}
                 </div>
                 <div className="text-xs text-gray-500">
@@ -475,7 +476,7 @@ const CupCompetition = ({
                 className="w-8 h-8 object-contain"
               />
             )}
-            <span className="font-medium text-gray-900">
+            <span className="font-medium text-gray-100">
               {awayTeam?.name || 'TBD'}
             </span>
           </div>
@@ -483,8 +484,9 @@ const CupCompetition = ({
 
         {/* Venue */}
         {fixture.venue?.name && (
-          <div className="mt-2 text-center text-xs text-gray-500">
-            📍 {fixture.venue.name}
+          <div className="mt-2 text-center text-xs text-gray-500 flex items-center justify-center gap-1">
+            <AppIcon name="location" size="xs" className="text-gray-500" />
+            <span>{fixture.venue.name}</span>
           </div>
         )}
       </Link>
@@ -495,7 +497,7 @@ const CupCompetition = ({
   // RENDER
   // ============================================
   return (
-    <div className="bg-white rounded-lg shadow-md overflow-hidden">
+    <div className="bg-gray-800 rounded-lg shadow-md overflow-hidden">
       {/* Header with Season Selector */}
       <div className={`px-4 py-4 bg-gradient-to-r ${colors.gradient} flex items-center justify-between`}>
         <div className="flex items-center space-x-3">
@@ -577,16 +579,16 @@ const CupCompetition = ({
 
       {/* Team Filter Input */}
       {!stagesLoading && allFixtures.length > 0 && (
-        <div className="px-4 py-3 bg-gray-100 border-b border-gray-200">
+        <div className="px-4 py-3 bg-gray-700 border-b border-gray-600">
           <div className="relative">
             <input
               type="text"
               placeholder="Filter by team name (e.g. 'ful' for Fulham)..."
               value={teamFilter}
               onChange={(e) => setTeamFilter(e.target.value)}
-              className="w-full px-4 py-2 pl-10 border border-gray-300 rounded-lg 
-                         focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent
-                         text-sm"
+              className="w-full px-4 py-2 pl-10 border border-gray-600 rounded-lg bg-gray-800 text-gray-100
+                         focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent
+                         text-sm placeholder-gray-500"
             />
             {/* Search Icon */}
             <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
@@ -597,7 +599,7 @@ const CupCompetition = ({
               <button
                 onClick={() => setTeamFilter('')}
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 
-                           hover:text-gray-600 text-sm font-medium"
+                           hover:text-gray-300 text-sm font-medium"
               >
                 ✕
               </button>
@@ -629,7 +631,7 @@ const CupCompetition = ({
 
       {/* Error Message */}
       {error && (
-        <div className="bg-red-50 text-red-600 p-3 border-b">
+        <div className="bg-red-900/30 text-red-400 p-3 border-b border-gray-700">
           {error}
         </div>
       )}
@@ -655,8 +657,8 @@ const CupCompetition = ({
       ) : isShowingCrossStageResults && crossStageResults.length > 0 ? (
         /* Cross-Stage Search Results */
         <div className="p-4 space-y-6">
-          <div className="text-center pb-3 border-b border-gray-200">
-            <p className="text-sm text-gray-600">
+          <div className="text-center pb-3 border-b border-gray-700">
+            <p className="text-sm text-gray-400">
               🔍 Showing all "{teamFilter}" fixtures across rounds
             </p>
           </div>
@@ -665,7 +667,7 @@ const CupCompetition = ({
             <div key={stage.id} className="space-y-3">
               {/* Stage Header */}
               <div className="flex items-center justify-between">
-                <h3 className="font-semibold text-gray-900">{stage.name}</h3>
+                <h3 className="font-semibold text-gray-100">{stage.name}</h3>
                 <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${colors.badge}`}>
                   {stageFixtures.length} {stageFixtures.length === 1 ? 'Match' : 'Matches'}
                 </span>
@@ -685,9 +687,9 @@ const CupCompetition = ({
         <div className="p-4 space-y-3">
           {/* Stage Info Header */}
           {selectedStage && (
-            <div className="flex items-center justify-between mb-4 pb-3 border-b border-gray-200">
+            <div className="flex items-center justify-between mb-4 pb-3 border-b border-gray-700">
               <div>
-                <h3 className="font-semibold text-gray-900">{selectedStage.name}</h3>
+                <h3 className="font-semibold text-gray-100">{selectedStage.name}</h3>
                 {selectedStage.starting_at && (
                   <p className="text-sm text-gray-500">
                     {formatDate(selectedStage.starting_at)}
@@ -710,9 +712,9 @@ const CupCompetition = ({
 
       {/* Footer with Stage Stats - Hide when showing cross-stage results */}
       {!stagesLoading && stages.length > 0 && selectedStage && !isShowingCrossStageResults && fixtures.length > 0 && (
-        <div className="px-4 py-3 bg-gray-50 border-t text-xs text-gray-500">
+        <div className="px-4 py-3 bg-gray-700 border-t border-gray-600 text-xs text-gray-400">
           <p>
-            📊 <strong>Stage Status:</strong> {selectedStage.finished ? 'Completed' : 'In Progress'}
+            <AppIcon name="stats" size="xs" className="text-gray-400 inline-block" /> <strong>Stage Status:</strong> {selectedStage.finished ? 'Completed' : 'In Progress'}
             {selectedStage.finished && fixtures.length > 0 && (
               <span> • All {fixtures.length} matches played</span>
             )}

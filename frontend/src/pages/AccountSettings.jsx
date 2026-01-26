@@ -237,7 +237,7 @@ const AccountSettings = () => {
   // -----------------------------------------
   if (!user) {
     return (
-      <div className="text-center py-12 text-gray-500">
+      <div className="text-center py-12 text-gray-400">
         Loading...
       </div>
     );
@@ -247,8 +247,8 @@ const AccountSettings = () => {
     <div className="max-w-2xl mx-auto space-y-8">
       {/* Page Header */}
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Account Settings</h1>
-        <p className="text-gray-600 mt-1">
+        <h1 className="text-2xl font-bold text-gray-100">Account Settings</h1>
+        <p className="text-gray-400 mt-1">
           Manage your account preferences and security settings.
         </p>
       </div>
@@ -256,22 +256,22 @@ const AccountSettings = () => {
       {/* ============================================ */}
       {/* DISPLAY PREFERENCES */}
       {/* ============================================ */}
-      <div className="bg-white rounded-lg shadow-md p-6">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">
+      <div className="bg-gray-800 rounded-lg shadow-md p-6">
+        <h2 className="text-lg font-semibold text-gray-100 mb-4">
           ⚙️ Display Preferences
         </h2>
 
         <form onSubmit={handleSavePreferences} className="space-y-4">
           {/* Odds Format */}
           <div>
-            <label htmlFor="oddsFormat" className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="oddsFormat" className="block text-sm font-medium text-gray-300 mb-1">
               Odds Format
             </label>
             <select
               id="oddsFormat"
               value={oddsFormat}
               onChange={(e) => setOddsFormat(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-amber-500"
             >
               <option value="AMERICAN">American (+150, -110)</option>
               <option value="DECIMAL">Decimal (2.50, 1.91)</option>
@@ -281,14 +281,14 @@ const AccountSettings = () => {
 
           {/* Timezone */}
           <div>
-            <label htmlFor="timezone" className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="timezone" className="block text-sm font-medium text-gray-300 mb-1">
               Timezone
             </label>
             <select
               id="timezone"
               value={timezone}
               onChange={(e) => setTimezone(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-amber-500"
             >
               {timezoneOptions.map((tz) => (
                 <option key={tz} value={tz}>
@@ -296,21 +296,21 @@ const AccountSettings = () => {
                 </option>
               ))}
             </select>
-            <p className="text-xs text-gray-500 mt-1">
+            <p className="text-xs text-gray-400 mt-1">
               Your browser timezone: {getBrowserTimezone()}
             </p>
           </div>
 
           {/* Date Format */}
           <div>
-            <label htmlFor="dateFormat" className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="dateFormat" className="block text-sm font-medium text-gray-300 mb-1">
               Date Format
             </label>
             <select
               id="dateFormat"
               value={dateFormat}
               onChange={(e) => setDateFormat(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-amber-500"
             >
               <option value="US">US (MM/DD/YYYY - January 25, 2026)</option>
               <option value="EU">European (DD/MM/YYYY - 25 January 2026)</option>
@@ -319,14 +319,14 @@ const AccountSettings = () => {
 
           {/* Temperature Unit */}
           <div>
-            <label htmlFor="temperatureUnit" className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="temperatureUnit" className="block text-sm font-medium text-gray-300 mb-1">
               Temperature Unit
             </label>
             <select
               id="temperatureUnit"
               value={temperatureUnit}
               onChange={(e) => setTemperatureUnit(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-amber-500"
             >
               <option value="FAHRENHEIT">Fahrenheit (°F)</option>
               <option value="CELSIUS">Celsius (°C)</option>
@@ -335,12 +335,12 @@ const AccountSettings = () => {
 
           {/* Messages */}
           {preferencesError && (
-            <div className="bg-red-50 text-red-600 p-3 rounded-md text-sm">
+            <div className="bg-red-900/30 text-red-400 p-3 rounded-md text-sm">
               {preferencesError}
             </div>
           )}
           {preferencesSuccess && (
-            <div className="bg-green-50 text-green-600 p-3 rounded-md text-sm">
+            <div className="bg-green-900/30 text-green-400 p-3 rounded-md text-sm">
               {preferencesSuccess}
             </div>
           )}
@@ -348,7 +348,7 @@ const AccountSettings = () => {
           <button
             type="submit"
             disabled={preferencesLoading}
-            className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 disabled:opacity-50"
+            className="bg-amber-500 text-gray-900 px-4 py-2 rounded-md hover:bg-amber-600 disabled:opacity-50"
           >
             {preferencesLoading ? 'Saving...' : 'Save Preferences'}
           </button>
@@ -358,17 +358,17 @@ const AccountSettings = () => {
       {/* ============================================ */}
       {/* CHANGE EMAIL */}
       {/* ============================================ */}
-      <div className="bg-white rounded-lg shadow-md p-6">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">
+      <div className="bg-gray-800 rounded-lg shadow-md p-6">
+        <h2 className="text-lg font-semibold text-gray-100 mb-4">
           ✉️ Change Email
         </h2>
-        <p className="text-sm text-gray-600 mb-4">
+        <p className="text-sm text-gray-400 mb-4">
           Current email: <strong>{user.email}</strong>
         </p>
 
         <form onSubmit={handleChangeEmail} className="space-y-4">
           <div>
-            <label htmlFor="newEmail" className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="newEmail" className="block text-sm font-medium text-gray-300 mb-1">
               New Email Address
             </label>
             <input
@@ -377,13 +377,13 @@ const AccountSettings = () => {
               value={newEmail}
               onChange={(e) => setNewEmail(e.target.value)}
               required
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-amber-500"
               placeholder="newemail@example.com"
             />
           </div>
 
           <div>
-            <label htmlFor="emailPassword" className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="emailPassword" className="block text-sm font-medium text-gray-300 mb-1">
               Current Password
             </label>
             <input
@@ -392,18 +392,18 @@ const AccountSettings = () => {
               value={emailPassword}
               onChange={(e) => setEmailPassword(e.target.value)}
               required
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-amber-500"
               placeholder="Enter your current password"
             />
           </div>
 
           {emailError && (
-            <div className="bg-red-50 text-red-600 p-3 rounded-md text-sm">
+            <div className="bg-red-900/30 text-red-400 p-3 rounded-md text-sm">
               {emailError}
             </div>
           )}
           {emailSuccess && (
-            <div className="bg-green-50 text-green-600 p-3 rounded-md text-sm">
+            <div className="bg-green-900/30 text-green-400 p-3 rounded-md text-sm">
               {emailSuccess}
             </div>
           )}
@@ -411,7 +411,7 @@ const AccountSettings = () => {
           <button
             type="submit"
             disabled={emailLoading}
-            className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 disabled:opacity-50"
+            className="bg-amber-500 text-gray-900 px-4 py-2 rounded-md hover:bg-amber-600 disabled:opacity-50"
           >
             {emailLoading ? 'Updating...' : 'Update Email'}
           </button>
@@ -421,14 +421,14 @@ const AccountSettings = () => {
       {/* ============================================ */}
       {/* CHANGE PASSWORD */}
       {/* ============================================ */}
-      <div className="bg-white rounded-lg shadow-md p-6">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">
+      <div className="bg-gray-800 rounded-lg shadow-md p-6">
+        <h2 className="text-lg font-semibold text-gray-100 mb-4">
           🔑 Change Password
         </h2>
 
         <form onSubmit={handleChangePassword} className="space-y-4">
           <div>
-            <label htmlFor="currentPassword" className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="currentPassword" className="block text-sm font-medium text-gray-300 mb-1">
               Current Password
             </label>
             <input
@@ -437,12 +437,12 @@ const AccountSettings = () => {
               value={currentPassword}
               onChange={(e) => setCurrentPassword(e.target.value)}
               required
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-amber-500"
             />
           </div>
 
           <div>
-            <label htmlFor="newPassword" className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="newPassword" className="block text-sm font-medium text-gray-300 mb-1">
               New Password
             </label>
             <input
@@ -451,13 +451,13 @@ const AccountSettings = () => {
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
               required
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-amber-500"
               placeholder="At least 6 characters"
             />
           </div>
 
           <div>
-            <label htmlFor="confirmNewPassword" className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="confirmNewPassword" className="block text-sm font-medium text-gray-300 mb-1">
               Confirm New Password
             </label>
             <input
@@ -466,17 +466,17 @@ const AccountSettings = () => {
               value={confirmNewPassword}
               onChange={(e) => setConfirmNewPassword(e.target.value)}
               required
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-amber-500"
             />
           </div>
 
           {passwordError && (
-            <div className="bg-red-50 text-red-600 p-3 rounded-md text-sm">
+            <div className="bg-red-900/30 text-red-400 p-3 rounded-md text-sm">
               {passwordError}
             </div>
           )}
           {passwordSuccess && (
-            <div className="bg-green-50 text-green-600 p-3 rounded-md text-sm">
+            <div className="bg-green-900/30 text-green-400 p-3 rounded-md text-sm">
               {passwordSuccess}
             </div>
           )}
@@ -484,7 +484,7 @@ const AccountSettings = () => {
           <button
             type="submit"
             disabled={passwordLoading}
-            className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 disabled:opacity-50"
+            className="bg-amber-500 text-gray-900 px-4 py-2 rounded-md hover:bg-amber-600 disabled:opacity-50"
           >
             {passwordLoading ? 'Updating...' : 'Update Password'}
           </button>
@@ -494,11 +494,11 @@ const AccountSettings = () => {
       {/* ============================================ */}
       {/* SECURITY QUESTION */}
       {/* ============================================ */}
-      <div className="bg-white rounded-lg shadow-md p-6">
-        <h2 className="text-lg font-semibold text-gray-900 mb-2">
+      <div className="bg-gray-800 rounded-lg shadow-md p-6">
+        <h2 className="text-lg font-semibold text-gray-100 mb-2">
           🔐 Security Question
         </h2>
-        <p className="text-sm text-gray-600 mb-4">
+        <p className="text-sm text-gray-400 mb-4">
           {user.hasSecurityQuestion 
             ? 'You have a security question set. You can update or remove it below.'
             : 'Set a backup security question in case you lose access to your email.'}
@@ -506,14 +506,14 @@ const AccountSettings = () => {
 
         <form onSubmit={handleUpdateSecurityQuestion} className="space-y-4">
           <div>
-            <label htmlFor="securityQuestion" className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="securityQuestion" className="block text-sm font-medium text-gray-300 mb-1">
               Security Question
             </label>
             <select
               id="securityQuestion"
               value={securityQuestion}
               onChange={(e) => setSecurityQuestion(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-amber-500"
             >
               <option value="">
                 {user.hasSecurityQuestion ? '(Remove security question)' : 'Select a question...'}
@@ -526,7 +526,7 @@ const AccountSettings = () => {
 
           {securityQuestion && (
             <div>
-              <label htmlFor="securityAnswer" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="securityAnswer" className="block text-sm font-medium text-gray-300 mb-1">
                 Your Answer
               </label>
               <input
@@ -534,14 +534,14 @@ const AccountSettings = () => {
                 id="securityAnswer"
                 value={securityAnswer}
                 onChange={(e) => setSecurityAnswer(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-amber-500"
                 placeholder="Your answer (case-insensitive)"
               />
             </div>
           )}
 
           <div>
-            <label htmlFor="securityPassword" className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="securityPassword" className="block text-sm font-medium text-gray-300 mb-1">
               Current Password
             </label>
             <input
@@ -550,18 +550,18 @@ const AccountSettings = () => {
               value={securityPassword}
               onChange={(e) => setSecurityPassword(e.target.value)}
               required
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-amber-500"
               placeholder="Required to change security question"
             />
           </div>
 
           {securityError && (
-            <div className="bg-red-50 text-red-600 p-3 rounded-md text-sm">
+            <div className="bg-red-900/30 text-red-400 p-3 rounded-md text-sm">
               {securityError}
             </div>
           )}
           {securitySuccess && (
-            <div className="bg-green-50 text-green-600 p-3 rounded-md text-sm">
+            <div className="bg-green-900/30 text-green-400 p-3 rounded-md text-sm">
               {securitySuccess}
             </div>
           )}
@@ -569,7 +569,7 @@ const AccountSettings = () => {
           <button
             type="submit"
             disabled={securityLoading}
-            className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 disabled:opacity-50"
+            className="bg-amber-500 text-gray-900 px-4 py-2 rounded-md hover:bg-amber-600 disabled:opacity-50"
           >
             {securityLoading ? 'Saving...' : 'Save Security Question'}
           </button>

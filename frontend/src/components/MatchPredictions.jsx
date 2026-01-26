@@ -21,6 +21,8 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { dataApi } from '../api/client';
+import aiPredictionsIcon from '../assets/ai-probability-betsmoke-3.png';
+import AppIcon from './AppIcon';
 
 // ============================================
 // PREDICTION TYPE IDS (from SportsMonks)
@@ -76,24 +78,29 @@ const PREDICTION_TYPES = {
 function AccordionSection({ title, icon, children, defaultOpen = false }) {
   const [isOpen, setIsOpen] = useState(defaultOpen);
 
+  // Check if icon is an AppIcon name (no emoji characters) or an emoji
+  const isAppIconName = icon && !/[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/u.test(icon);
+
   return (
     <div className={`border rounded-lg overflow-hidden transition-all ${
-      isOpen ? 'border-blue-300 ring-2 ring-blue-100' : 'border-gray-200'
+      isOpen ? 'border-amber-500 ring-2 ring-amber-500/20' : 'border-gray-600'
     }`}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full px-4 py-3 flex items-center justify-between transition-colors bg-gray-50 hover:bg-gray-100"
+        className="w-full px-4 py-3 flex items-center justify-between transition-colors bg-gray-700 hover:bg-gray-600"
       >
         <div className="flex items-center space-x-2">
-          <span className="text-lg">{icon}</span>
-          <span className="font-medium text-gray-900">{title}</span>
+          {isAppIconName ? (
+            <AppIcon name={icon} size="lg" className="text-gray-400" />
+          ) : (
+            <span className="text-lg">{icon}</span>
+          )}
+          <span className="font-medium text-gray-100">{title}</span>
         </div>
-        <span className={`transform transition-transform ${isOpen ? 'rotate-180' : ''}`}>
-          ▼
-        </span>
+        <AppIcon name="chevron-down" size="md" className={`transform transition-transform text-amber-500 ${isOpen ? 'rotate-180' : ''}`} />
       </button>
       {isOpen && (
-        <div className="p-4 bg-white border-t border-gray-200">
+        <div className="p-4 bg-gray-800 border-t border-gray-600">
           {children}
         </div>
       )}
@@ -121,15 +128,15 @@ function ProbabilityBar({ label, value, color = 'blue', showPercentage = true })
 
   return (
     <div className="flex items-center space-x-2">
-      <span className="text-sm text-gray-600 w-24 truncate">{label}</span>
-      <div className="flex-1 bg-gray-100 rounded-full h-4 overflow-hidden">
-        <div 
+      <span className="text-sm text-gray-400 w-24 truncate">{label}</span>
+      <div className="flex-1 bg-gray-600 rounded-full h-4 overflow-hidden">
+        <div
           className={`h-full ${colorClasses[color] || colorClasses.blue} rounded-full transition-all duration-300`}
           style={{ width: `${percentage}%` }}
         />
       </div>
       {showPercentage && (
-        <span className="text-sm font-medium w-12 text-right">{percentage.toFixed(1)}%</span>
+        <span className="text-sm font-medium text-gray-200 w-12 text-right">{percentage.toFixed(1)}%</span>
       )}
     </div>
   );
@@ -142,17 +149,17 @@ function ProbabilityBar({ label, value, color = 'blue', showPercentage = true })
 function ThreeWayProbability({ home, draw, away, homeLabel = 'Home', drawLabel = 'Draw', awayLabel = 'Away' }) {
   return (
     <div className="grid grid-cols-3 gap-4 text-center">
-      <div className="bg-blue-50 rounded-lg p-3">
-        <div className="text-2xl font-bold text-blue-600">{parseFloat(home).toFixed(1)}%</div>
-        <div className="text-xs text-gray-500 mt-1">{homeLabel}</div>
+      <div className="bg-blue-900/30 rounded-lg p-3">
+        <div className="text-2xl font-bold text-blue-400">{parseFloat(home).toFixed(1)}%</div>
+        <div className="text-xs text-gray-400 mt-1">{homeLabel}</div>
       </div>
-      <div className="bg-gray-50 rounded-lg p-3">
-        <div className="text-2xl font-bold text-gray-600">{parseFloat(draw).toFixed(1)}%</div>
-        <div className="text-xs text-gray-500 mt-1">{drawLabel}</div>
+      <div className="bg-gray-700 rounded-lg p-3">
+        <div className="text-2xl font-bold text-gray-300">{parseFloat(draw).toFixed(1)}%</div>
+        <div className="text-xs text-gray-400 mt-1">{drawLabel}</div>
       </div>
-      <div className="bg-red-50 rounded-lg p-3">
-        <div className="text-2xl font-bold text-red-600">{parseFloat(away).toFixed(1)}%</div>
-        <div className="text-xs text-gray-500 mt-1">{awayLabel}</div>
+      <div className="bg-red-900/30 rounded-lg p-3">
+        <div className="text-2xl font-bold text-red-400">{parseFloat(away).toFixed(1)}%</div>
+        <div className="text-xs text-gray-400 mt-1">{awayLabel}</div>
       </div>
     </div>
   );
@@ -165,13 +172,13 @@ function ThreeWayProbability({ home, draw, away, homeLabel = 'Home', drawLabel =
 function YesNoProbability({ yes, no, yesLabel = 'Yes', noLabel = 'No' }) {
   return (
     <div className="grid grid-cols-2 gap-4 text-center">
-      <div className="bg-green-50 rounded-lg p-3">
-        <div className="text-2xl font-bold text-green-600">{parseFloat(yes).toFixed(1)}%</div>
-        <div className="text-xs text-gray-500 mt-1">{yesLabel}</div>
+      <div className="bg-green-900/30 rounded-lg p-3">
+        <div className="text-2xl font-bold text-green-400">{parseFloat(yes).toFixed(1)}%</div>
+        <div className="text-xs text-gray-400 mt-1">{yesLabel}</div>
       </div>
-      <div className="bg-red-50 rounded-lg p-3">
-        <div className="text-2xl font-bold text-red-600">{parseFloat(no).toFixed(1)}%</div>
-        <div className="text-xs text-gray-500 mt-1">{noLabel}</div>
+      <div className="bg-red-900/30 rounded-lg p-3">
+        <div className="text-2xl font-bold text-red-400">{parseFloat(no).toFixed(1)}%</div>
+        <div className="text-xs text-gray-400 mt-1">{noLabel}</div>
       </div>
     </div>
   );
@@ -194,7 +201,7 @@ function MatchResultSection({ predictions, homeTeam, awayTeam }) {
     <div className="space-y-6">
       {/* Fulltime Result */}
       <div>
-        <h4 className="text-sm font-medium text-gray-700 mb-3">Full Time Result</h4>
+        <h4 className="text-sm font-medium text-gray-300 mb-3">Full Time Result</h4>
         <ThreeWayProbability 
           home={fulltimeResult.predictions?.home || 0}
           draw={fulltimeResult.predictions?.draw || 0}
@@ -207,25 +214,25 @@ function MatchResultSection({ predictions, homeTeam, awayTeam }) {
       {/* Double Chance */}
       {doubleChance && (
         <div>
-          <h4 className="text-sm font-medium text-gray-700 mb-3">Double Chance</h4>
+          <h4 className="text-sm font-medium text-gray-300 mb-3">Double Chance</h4>
           <div className="grid grid-cols-3 gap-2 text-center">
-            <div className="bg-blue-50 rounded-lg p-2">
-              <div className="text-lg font-bold text-blue-600">
+            <div className="bg-blue-900/30 rounded-lg p-2">
+              <div className="text-lg font-bold text-blue-400">
                 {parseFloat(doubleChance.predictions?.draw_home || 0).toFixed(1)}%
               </div>
-              <div className="text-xs text-gray-500">Home or Draw</div>
+              <div className="text-xs text-gray-400">Home or Draw</div>
             </div>
-            <div className="bg-purple-50 rounded-lg p-2">
-              <div className="text-lg font-bold text-purple-600">
+            <div className="bg-purple-900/30 rounded-lg p-2">
+              <div className="text-lg font-bold text-purple-400">
                 {parseFloat(doubleChance.predictions?.home_away || 0).toFixed(1)}%
               </div>
-              <div className="text-xs text-gray-500">Home or Away</div>
+              <div className="text-xs text-gray-400">Home or Away</div>
             </div>
-            <div className="bg-red-50 rounded-lg p-2">
-              <div className="text-lg font-bold text-red-600">
+            <div className="bg-red-900/30 rounded-lg p-2">
+              <div className="text-lg font-bold text-red-400">
                 {parseFloat(doubleChance.predictions?.draw_away || 0).toFixed(1)}%
               </div>
-              <div className="text-xs text-gray-500">Away or Draw</div>
+              <div className="text-xs text-gray-400">Away or Draw</div>
             </div>
           </div>
         </div>
@@ -234,7 +241,7 @@ function MatchResultSection({ predictions, homeTeam, awayTeam }) {
       {/* First Half Winner */}
       {firstHalfWinner && (
         <div>
-          <h4 className="text-sm font-medium text-gray-700 mb-3">First Half Winner</h4>
+          <h4 className="text-sm font-medium text-gray-300 mb-3">First Half Winner</h4>
           <ThreeWayProbability 
             home={firstHalfWinner.predictions?.home || 0}
             draw={firstHalfWinner.predictions?.draw || 0}
@@ -264,7 +271,7 @@ function GoalsSection({ predictions, homeTeam, awayTeam }) {
       {/* BTTS */}
       {btts && (
         <div>
-          <h4 className="text-sm font-medium text-gray-700 mb-3">Both Teams To Score (BTTS)</h4>
+          <h4 className="text-sm font-medium text-gray-300 mb-3">Both Teams To Score (BTTS)</h4>
           <YesNoProbability 
             yes={btts.predictions?.yes || 0}
             no={btts.predictions?.no || 0}
@@ -275,7 +282,7 @@ function GoalsSection({ predictions, homeTeam, awayTeam }) {
       {/* Team to Score First */}
       {teamToScoreFirst && (
         <div>
-          <h4 className="text-sm font-medium text-gray-700 mb-3">Team To Score First</h4>
+          <h4 className="text-sm font-medium text-gray-300 mb-3">Team To Score First</h4>
           <ThreeWayProbability 
             home={teamToScoreFirst.predictions?.home || 0}
             draw={teamToScoreFirst.predictions?.draw || 0}
@@ -289,7 +296,7 @@ function GoalsSection({ predictions, homeTeam, awayTeam }) {
 
       {/* Over/Under Goals */}
       <div>
-        <h4 className="text-sm font-medium text-gray-700 mb-3">Total Goals Over/Under</h4>
+        <h4 className="text-sm font-medium text-gray-300 mb-3">Total Goals Over/Under</h4>
         <div className="space-y-2">
           {over15 && (
             <ProbabilityBar 
@@ -349,7 +356,7 @@ function TeamGoalsSection({ predictions, homeTeam, awayTeam }) {
           {homeTeam?.image_path && (
             <img src={homeTeam.image_path} alt={homeTeam.name} className="w-5 h-5 object-contain" />
           )}
-          <h4 className="text-sm font-medium text-gray-700">{homeTeam?.name || 'Home'} Goals</h4>
+          <h4 className="text-sm font-medium text-gray-300">{homeTeam?.name || 'Home'} Goals</h4>
         </div>
         <div className="space-y-2">
           {homeOver05 && (
@@ -373,7 +380,7 @@ function TeamGoalsSection({ predictions, homeTeam, awayTeam }) {
           {awayTeam?.image_path && (
             <img src={awayTeam.image_path} alt={awayTeam.name} className="w-5 h-5 object-contain" />
           )}
-          <h4 className="text-sm font-medium text-gray-700">{awayTeam?.name || 'Away'} Goals</h4>
+          <h4 className="text-sm font-medium text-gray-300">{awayTeam?.name || 'Away'} Goals</h4>
         </div>
         <div className="space-y-2">
           {awayOver05 && (
@@ -425,19 +432,20 @@ function CorrectScoreSection({ predictions, homeTeam, awayTeam }) {
     <div className="space-y-4">
       {/* Top Scores */}
       <div>
-        <h4 className="text-sm font-medium text-gray-700 mb-3">Most Likely Scores</h4>
+        <h4 className="text-sm font-medium text-gray-300 mb-3">Most Likely Scores</h4>
         <div className="grid grid-cols-3 gap-2">
           {topScores.map(({ score, probability }) => {
             // Determine if home win, draw, or away win
             const [home, away] = score.split('-').map(Number);
-            let bgColor = 'bg-gray-50';
-            if (home > away) bgColor = 'bg-blue-50';
-            else if (away > home) bgColor = 'bg-red-50';
-            
+            let bgColor = 'bg-gray-700';
+            let textColor = 'text-gray-100';
+            if (home > away) { bgColor = 'bg-blue-900/30'; textColor = 'text-blue-400'; }
+            else if (away > home) { bgColor = 'bg-red-900/30'; textColor = 'text-red-400'; }
+
             return (
               <div key={score} className={`${bgColor} rounded-lg p-2 text-center`}>
-                <div className="text-lg font-bold text-gray-800">{score}</div>
-                <div className="text-xs text-gray-500">{probability.toFixed(1)}%</div>
+                <div className={`text-lg font-bold ${textColor}`}>{score}</div>
+                <div className="text-xs text-gray-400">{probability.toFixed(1)}%</div>
               </div>
             );
           })}
@@ -449,7 +457,7 @@ function CorrectScoreSection({ predictions, homeTeam, awayTeam }) {
         <>
           <button
             onClick={() => setShowAll(!showAll)}
-            className="w-full py-2 text-sm text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-md transition-colors flex items-center justify-center space-x-1"
+            className="w-full py-2 text-sm text-amber-500 hover:text-amber-400 hover:bg-gray-700 rounded-md transition-colors flex items-center justify-center space-x-1"
           >
             <span>{showAll ? '▲' : '▼'}</span>
             <span>{showAll ? 'Show Less' : `Show All Scores (${otherScores.length} more)`}</span>
@@ -458,7 +466,7 @@ function CorrectScoreSection({ predictions, homeTeam, awayTeam }) {
           {showAll && (
             <div className="grid grid-cols-4 gap-2">
               {otherScores.map(({ score, probability }) => (
-                <div key={score} className="bg-gray-50 rounded p-1.5 text-center text-xs">
+                <div key={score} className="bg-gray-700 rounded p-1.5 text-center text-xs">
                   <div className="font-medium">{score}</div>
                   <div className="text-gray-400">{probability.toFixed(1)}%</div>
                 </div>
@@ -540,14 +548,15 @@ function HalfTimeFullTimeSection({ predictions, homeTeam, awayTeam }) {
       <div className="grid grid-cols-3 gap-2">
         {sortedCombinations.map(({ label, probability, ft }) => {
           // Color based on full time result
-          let bgColor = 'bg-gray-50';
-          if (ft === 'home') bgColor = 'bg-blue-50';
-          else if (ft === 'away') bgColor = 'bg-red-50';
-          
+          let bgColor = 'bg-gray-700';
+          let textColor = 'text-gray-100';
+          if (ft === 'home') { bgColor = 'bg-blue-900/30'; textColor = 'text-blue-400'; }
+          else if (ft === 'away') { bgColor = 'bg-red-900/30'; textColor = 'text-red-400'; }
+
           return (
             <div key={label} className={`${bgColor} rounded-lg p-2 text-center`}>
-              <div className="text-sm font-bold text-gray-800">{label}</div>
-              <div className="text-xs text-gray-500">{probability.toFixed(1)}%</div>
+              <div className={`text-sm font-bold ${textColor}`}>{label}</div>
+              <div className="text-xs text-gray-400">{probability.toFixed(1)}%</div>
             </div>
           );
         })}
@@ -593,10 +602,10 @@ export default function MatchPredictions({ fixtureId, homeTeam, awayTeam }) {
   // Loading state
   if (loading) {
     return (
-      <div className="bg-white rounded-lg shadow-md p-6">
+      <div className="bg-gray-800 rounded-lg shadow-md p-6">
         <div className="flex items-center space-x-2 mb-4">
-          <span className="text-xl">🔮</span>
-          <h2 className="text-lg font-semibold text-gray-900">AI Predictions</h2>
+          <img src={aiPredictionsIcon} alt="AI Predictions" className="w-16 h-16 object-contain" />
+          <h2 className="text-lg font-semibold text-gray-100">AI Predictions</h2>
         </div>
         <div className="text-center py-8 text-gray-500">
           <div className="animate-pulse">Loading predictions...</div>
@@ -608,10 +617,10 @@ export default function MatchPredictions({ fixtureId, homeTeam, awayTeam }) {
   // Error state
   if (error) {
     return (
-      <div className="bg-white rounded-lg shadow-md p-6">
+      <div className="bg-gray-800 rounded-lg shadow-md p-6">
         <div className="flex items-center space-x-2 mb-4">
-          <span className="text-xl">🔮</span>
-          <h2 className="text-lg font-semibold text-gray-900">AI Predictions</h2>
+          <img src={aiPredictionsIcon} alt="AI Predictions" className="w-16 h-16 object-contain" />
+          <h2 className="text-lg font-semibold text-gray-100">AI Predictions</h2>
         </div>
         <div className="text-center py-4 text-red-500">
           {error}
@@ -623,10 +632,10 @@ export default function MatchPredictions({ fixtureId, homeTeam, awayTeam }) {
   // No predictions available
   if (predictions.length === 0) {
     return (
-      <div className="bg-white rounded-lg shadow-md p-6">
+      <div className="bg-gray-800 rounded-lg shadow-md p-6">
         <div className="flex items-center space-x-2 mb-4">
-          <span className="text-xl">🔮</span>
-          <h2 className="text-lg font-semibold text-gray-900">AI Predictions</h2>
+          <img src={aiPredictionsIcon} alt="AI Predictions" className="w-16 h-16 object-contain" />
+          <h2 className="text-lg font-semibold text-gray-100">AI Predictions</h2>
         </div>
         <div className="text-center py-4 text-gray-500">
           No predictions available for this fixture yet.
@@ -637,46 +646,46 @@ export default function MatchPredictions({ fixtureId, homeTeam, awayTeam }) {
 
   // Main render
   return (
-    <div className="bg-white rounded-lg shadow-md p-6">
+    <div className="bg-gray-800 rounded-lg shadow-md p-6">
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center space-x-2">
-          <span className="text-xl">🔮</span>
-          <h2 className="text-lg font-semibold text-gray-900">AI Predictions</h2>
-          <span className="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded">
+          <img src={aiPredictionsIcon} alt="AI Predictions" className="w-16 h-16 object-contain" />
+          <h2 className="text-lg font-semibold text-gray-100">AI Predictions</h2>
+          <span className="text-xs text-gray-400 bg-gray-600 px-2 py-0.5 rounded">
             {predictions.length} markets
           </span>
         </div>
       </div>
 
       {/* AI Predictions Info */}
-      <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg text-sm text-blue-800">
+      <div className="mb-4 p-4 bg-blue-900/30 border border-blue-700 rounded-lg text-sm text-blue-300">
         <p className="mb-3">
           AI Predictions are from Sportsmonks'{' '}
-          <a 
-            href="https://www.sportmonks.com/football-api/football-predictions-api/" 
-            target="_blank" 
+          <a
+            href="https://www.sportmonks.com/football-api/football-predictions-api/"
+            target="_blank"
             rel="noopener noreferrer"
-            className="text-blue-600 hover:text-blue-800 underline font-medium"
+            className="text-amber-500 hover:text-amber-400 underline font-medium"
           >
             Football Predictions API
           </a>
-          , a state-of-the-art AI model that leverages advanced machine learning 
-          techniques and cutting-edge algorithms to generate probabilistic forecasts 
+          , a state-of-the-art AI model that leverages advanced machine learning
+          techniques and cutting-edge algorithms to generate probabilistic forecasts
           for football matches.
         </p>
         <div className="flex flex-col sm:flex-row sm:space-x-3 space-y-2 sm:space-y-0">
-          <Link 
-            to="/model-architecture" 
-            className="inline-flex items-center px-3 py-1.5 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-full text-sm font-medium transition-colors"
+          <Link
+            to="/model-architecture"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-900/50 hover:bg-blue-800/50 text-blue-300 rounded-full text-sm font-medium transition-colors"
           >
-            🧠 Model Architecture
+            <AppIcon name="brain" size="sm" className="text-blue-300" /> Model Architecture
           </Link>
-          <Link 
-            to="/model-performance" 
-            className="inline-flex items-center px-3 py-1.5 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-full text-sm font-medium transition-colors"
+          <Link
+            to="/model-performance"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-900/50 hover:bg-blue-800/50 text-blue-300 rounded-full text-sm font-medium transition-colors"
           >
-            📊 Model's Prediction Accuracy
+            <AppIcon name="stats" size="sm" className="text-blue-300" /> Model's Prediction Accuracy
           </Link>
         </div>
       </div>
@@ -684,32 +693,32 @@ export default function MatchPredictions({ fixtureId, homeTeam, awayTeam }) {
       {/* Accordion Sections */}
       <div className="space-y-3">
         {/* Match Result - Default Open (most important) */}
-        <AccordionSection title="Match Result" icon="⚽" defaultOpen={true}>
+        <AccordionSection title="Match Result" icon="soccer-ball" defaultOpen={true}>
           <MatchResultSection predictions={predictions} homeTeam={homeTeam} awayTeam={awayTeam} />
         </AccordionSection>
 
         {/* Goals */}
-        <AccordionSection title="Goals Over/Under" icon="🥅" defaultOpen={true}>
+        <AccordionSection title="Goals Over/Under" icon="goal" defaultOpen={true}>
           <GoalsSection predictions={predictions} homeTeam={homeTeam} awayTeam={awayTeam} />
         </AccordionSection>
 
         {/* Team Goals */}
-        <AccordionSection title="Team Goals" icon="📊">
+        <AccordionSection title="Team Goals" icon="stats" defaultOpen={false}>
           <TeamGoalsSection predictions={predictions} homeTeam={homeTeam} awayTeam={awayTeam} />
         </AccordionSection>
 
         {/* Correct Score */}
-        <AccordionSection title="Correct Score" icon="🎯">
+        <AccordionSection title="Correct Score" icon="target" defaultOpen={false}>
           <CorrectScoreSection predictions={predictions} homeTeam={homeTeam} awayTeam={awayTeam} />
         </AccordionSection>
 
         {/* Corners */}
-        <AccordionSection title="Corners" icon="🚩">
+        <AccordionSection title="Corners" icon="corner-flag" defaultOpen={false}>
           <CornersSection predictions={predictions} />
         </AccordionSection>
 
         {/* Half Time / Full Time */}
-        <AccordionSection title="Half Time / Full Time" icon="⏱️">
+        <AccordionSection title="Half Time / Full Time" icon="timer" defaultOpen={false}>
           <HalfTimeFullTimeSection predictions={predictions} homeTeam={homeTeam} awayTeam={awayTeam} />
         </AccordionSection>
       </div>

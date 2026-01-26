@@ -24,6 +24,7 @@
 
 import { useState, useEffect } from 'react';
 import { notesApi } from '../api/client';
+import AppIcon from './AppIcon';
 
 // ============================================
 // CONSTANTS
@@ -32,20 +33,20 @@ const MAX_LINKS = 6;  // Maximum links per note (1 primary + up to 5 secondary)
 
 // Available context types for the dropdown
 const CONTEXT_TYPES = [
-  { value: 'fixture', label: 'Match', icon: '⚽' },
-  { value: 'team', label: 'Team', icon: '🛡️' },
-  { value: 'player', label: 'Player', icon: '👤' },
-  { value: 'league', label: 'League', icon: '🏆' },
-  { value: 'betting', label: 'Betting', icon: '🎰' },
-  { value: 'general', label: 'General', icon: '📝' },
+  { value: 'fixture', label: 'Match', iconName: 'soccer-ball' },
+  { value: 'team', label: 'Team', iconName: 'team' },
+  { value: 'player', label: 'Player', iconName: 'player' },
+  { value: 'league', label: 'League', iconName: 'trophy' },
+  { value: 'betting', label: 'Betting', iconName: 'money' },
+  { value: 'general', label: 'General', iconName: 'notes' },
 ];
 
 // ============================================
-// HELPER: Get icon for context type
+// HELPER: Get icon name for context type
 // ============================================
-const getContextIcon = (contextType) => {
+const getContextIconName = (contextType) => {
   const found = CONTEXT_TYPES.find(t => t.value === contextType);
-  return found?.icon || '📎';
+  return found?.iconName || 'note';
 };
 
 // ============================================
@@ -77,11 +78,11 @@ const LinkTag = ({ link, isPrimary, onRemove, onSetPrimary, canRemove }) => {
     : typeLabel;                          // Category only
   
   return (
-    <div 
+    <div
       className={`inline-flex items-center rounded-full text-xs font-medium
-        ${isPrimary 
-          ? 'bg-blue-100 text-blue-800 ring-2 ring-blue-300' 
-          : 'bg-gray-100 text-gray-700'
+        ${isPrimary
+          ? 'bg-amber-900/30 text-amber-400 ring-2 ring-amber-500'
+          : 'bg-gray-700 text-gray-300'
         }`}
     >
       {/* Make Primary button (star icon) */}
@@ -96,8 +97,9 @@ const LinkTag = ({ link, isPrimary, onRemove, onSetPrimary, canRemove }) => {
       </button>
       
       {/* Link content */}
-      <span className="py-1">
-        {getContextIcon(link.contextType)} {displayLabel}
+      <span className="py-1 flex items-center gap-1">
+        <AppIcon name={getContextIconName(link.contextType)} size="xs" className="text-gray-400" />
+        <span>{displayLabel}</span>
       </span>
       
       {/* Remove button */}
@@ -164,17 +166,17 @@ const AddLinkForm = ({ onAdd, onCancel, existingTypes }) => {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="mt-2 p-2 bg-gray-50 rounded-lg border border-gray-200">
+    <form onSubmit={handleSubmit} className="mt-2 p-2 bg-gray-700 rounded-lg border border-gray-600">
       <div className="flex flex-col space-y-2">
         {/* Category dropdown (required) */}
         <select
           value={selectedType}
           onChange={(e) => setSelectedType(e.target.value)}
-          className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+          className="w-full px-2 py-1 text-sm border border-gray-600 rounded bg-gray-800 text-gray-100 focus:outline-none focus:ring-1 focus:ring-amber-500"
         >
           {CONTEXT_TYPES.map(type => (
             <option key={type.value} value={type.value}>
-              {type.icon} {type.label}
+              {type.label}
             </option>
           ))}
         </select>
@@ -186,7 +188,7 @@ const AddLinkForm = ({ onAdd, onCancel, existingTypes }) => {
             value={labelValue}
             onChange={(e) => setLabelValue(e.target.value)}
             placeholder={getPlaceholder()}
-            className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+            className="w-full px-2 py-1 text-sm border border-gray-600 rounded bg-gray-800 text-gray-100 focus:outline-none focus:ring-1 focus:ring-amber-500"
             autoFocus
           />
         )}
@@ -196,7 +198,7 @@ const AddLinkForm = ({ onAdd, onCancel, existingTypes }) => {
           <button
             type="button"
             onClick={onCancel}
-            className="px-2 py-1 text-xs text-gray-600 hover:text-gray-800"
+            className="px-2 py-1 text-xs text-gray-400 hover:text-gray-200"
           >
             Cancel
           </button>
@@ -468,7 +470,7 @@ const FloatingNoteWidget = ({
                    flex items-center space-x-2"
         title="Add a note"
       >
-        <span className="text-lg">📝</span>
+        <AppIcon name="notes" size="md" className="text-white" />
         <span>Add Note</span>
       </button>
     );
@@ -486,7 +488,7 @@ const FloatingNoteWidget = ({
   return (
     <div 
       className="fixed top-24 right-6 z-50 w-96
-                 bg-white rounded-lg shadow-2xl border border-gray-200
+                 bg-gray-800 rounded-lg shadow-2xl border border-gray-600
                  transition-all duration-200
                  flex flex-col"
       style={{ maxHeight: 'calc(100vh - 120px)' }}
@@ -496,7 +498,7 @@ const FloatingNoteWidget = ({
       {/* ============================================ */}
       <div className="px-4 py-3 bg-blue-600 rounded-t-lg flex items-center justify-between flex-shrink-0">
         <div className="flex items-center space-x-2">
-          <span className="text-lg">📝</span>
+          <AppIcon name="notes" size="md" className="text-white" />
           <h3 className="font-semibold text-white">Add Note</h3>
         </div>
         <div className="flex items-center space-x-1">
@@ -526,7 +528,7 @@ const FloatingNoteWidget = ({
         {/* ============================================ */}
         {/* LINKS SECTION - Editable */}
         {/* ============================================ */}
-        <div className="px-4 py-3 bg-gray-50 border-b border-gray-200">
+        <div className="px-4 py-3 bg-gray-700 border-b border-gray-600">
           <div className="flex items-center justify-between mb-2">
             <span className="text-xs text-gray-500 font-medium">
               Linked to ({links.length}/{MAX_LINKS}):
@@ -534,7 +536,7 @@ const FloatingNoteWidget = ({
             {links.length < MAX_LINKS && !showAddLink && (
               <button
                 onClick={() => setShowAddLink(true)}
-                className="text-xs text-blue-600 hover:text-blue-800 font-medium"
+                className="text-xs text-amber-500 hover:text-amber-400 font-medium"
               >
                 + Add Link
               </button>
@@ -576,48 +578,48 @@ const FloatingNoteWidget = ({
         <div className="p-4 space-y-4">
           {/* Error message */}
           {error && (
-            <div className="bg-red-50 text-red-600 p-2 rounded text-sm flex items-start space-x-2">
-              <span>⚠️</span>
+            <div className="bg-red-900/30 text-red-400 p-2 rounded text-sm flex items-start space-x-2">
+              <AppIcon name="warning" size="sm" className="text-red-400" />
               <span>{error}</span>
             </div>
           )}
 
           {/* Success message */}
           {success && (
-            <div className="bg-green-50 text-green-600 p-2 rounded text-sm flex items-center space-x-2">
-              <span>✅</span>
+            <div className="bg-green-900/30 text-green-400 p-2 rounded text-sm flex items-center space-x-2">
+              <AppIcon name="checkmark" size="sm" className="text-green-400" />
               <span>Note saved successfully!</span>
             </div>
           )}
 
           {/* Title field */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-300 mb-1">
               Title
             </label>
             <input
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md 
-                         focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500
-                         text-sm"
+              className="w-full px-3 py-2 border border-gray-600 rounded-md bg-gray-800 text-gray-100
+                         focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500
+                         text-sm placeholder-gray-500"
               placeholder="Note title..."
             />
           </div>
 
           {/* Content field */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-300 mb-1">
               Content
             </label>
             <textarea
               value={content}
               onChange={(e) => setContent(e.target.value)}
               rows={5}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md 
-                         focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500
-                         text-sm resize-none"
+              className="w-full px-3 py-2 border border-gray-600 rounded-md bg-gray-800 text-gray-100
+                         focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500
+                         text-sm resize-none placeholder-gray-500"
               placeholder="Your betting research notes..."
               autoFocus
             />
@@ -628,10 +630,10 @@ const FloatingNoteWidget = ({
       {/* ============================================ */}
       {/* FOOTER - Action buttons */}
       {/* ============================================ */}
-      <div className="px-4 py-3 border-t border-gray-200 flex justify-end space-x-2 flex-shrink-0">
+      <div className="px-4 py-3 border-t border-gray-600 flex justify-end space-x-2 flex-shrink-0">
         <button
           onClick={handleClose}
-          className="px-4 py-2 text-gray-600 hover:text-gray-800 text-sm"
+          className="px-4 py-2 text-gray-400 hover:text-gray-200 text-sm"
           disabled={saving}
         >
           Cancel

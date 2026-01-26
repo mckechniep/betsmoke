@@ -246,10 +246,10 @@ function HomeAwayPerformanceSection({ teamId }) {
   // RENDER STAT ROW
   // ============================================
   const StatRow = ({ label, home, away, highlight = false }) => (
-    <div className={`flex items-center py-2 ${highlight ? 'bg-gray-50 font-semibold' : ''}`}>
-      <div className="w-1/3 text-center text-green-700">{home}</div>
-      <div className="w-1/3 text-center text-gray-600 text-sm">{label}</div>
-      <div className="w-1/3 text-center text-blue-700">{away}</div>
+    <div className={`flex items-center py-2 ${highlight ? 'bg-gray-700 font-semibold' : ''}`}>
+      <div className="w-1/3 text-center text-green-400">{home}</div>
+      <div className="w-1/3 text-center text-gray-400 text-sm">{label}</div>
+      <div className="w-1/3 text-center text-blue-400">{away}</div>
     </div>
   );
 
@@ -257,16 +257,17 @@ function HomeAwayPerformanceSection({ teamId }) {
   // RENDER
   // ============================================
   return (
-    <div className="bg-white rounded-lg shadow-md p-6">
+    <div className="bg-gray-800 rounded-lg shadow-md p-6">
       {/* Header with Season Selector */}
       <div className="flex items-center justify-between mb-6">
-        <h2 className="text-xl font-semibold text-gray-900">
-          🏠 Home vs Away Performance
+        <h2 className="text-xl font-semibold text-gray-100 flex items-center gap-2">
+          <AppIcon name="home" size="lg" className="text-gray-400" />
+          <span>Home vs Away Performance</span>
         </h2>
         
         {/* Season Selector Dropdown */}
         <div className="flex items-center space-x-2">
-          <label className="text-sm text-gray-600">Season:</label>
+          <label className="text-sm text-gray-400">Season:</label>
           <select
             value={selectedSeasonId || ''}
             onChange={(e) => {
@@ -276,7 +277,7 @@ function HomeAwayPerformanceSection({ teamId }) {
               const selectedSeason = seasons.find(s => s.id === newSeasonId);
               setSelectedSeasonLeagueId(selectedSeason?.league_id || selectedSeason?.league?.id);
             }}
-            className="border border-gray-300 rounded-md px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+            className="border border-gray-600 rounded-md px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 bg-gray-800"
             disabled={seasons.length === 0}
           >
             {seasons.length === 0 ? (
@@ -302,14 +303,14 @@ function HomeAwayPerformanceSection({ teamId }) {
 
       {/* Loading State */}
       {loading && (
-        <div className="text-center py-8 text-gray-500">
+        <div className="text-center py-8 text-gray-400">
           <div className="animate-pulse">Loading statistics...</div>
         </div>
       )}
 
       {/* Error State */}
       {error && (
-        <div className="bg-red-50 text-red-600 p-3 rounded-md text-sm">
+        <div className="bg-red-900/30 text-red-400 p-3 rounded-md text-sm">
           {error}
         </div>
       )}
@@ -318,24 +319,24 @@ function HomeAwayPerformanceSection({ teamId }) {
       {!loading && !error && (
         <div>
           {/* Column Headers */}
-          <div className="flex items-center py-3 border-b-2 border-gray-200 mb-2">
+          <div className="flex items-center py-3 border-b-2 border-gray-700 mb-2">
             <div className="w-1/3 text-center">
-              <span className="inline-flex items-center px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm font-semibold">
-                🏠 Home
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-green-900/30 text-green-400 rounded-full text-sm font-semibold">
+                <AppIcon name="home" size="sm" className="text-green-400" /> Home
               </span>
             </div>
-            <div className="w-1/3 text-center text-gray-500 text-sm font-medium">
+            <div className="w-1/3 text-center text-gray-400 text-sm font-medium">
               Statistic
             </div>
             <div className="w-1/3 text-center">
-              <span className="inline-flex items-center px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-semibold">
-                ✈️ Away
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-blue-900/30 text-blue-400 rounded-full text-sm font-semibold">
+                <AppIcon name="away" size="sm" className="text-blue-400" /> Away
               </span>
             </div>
           </div>
 
           {/* Stats Rows */}
-          <div className="divide-y divide-gray-100">
+          <div className="divide-y divide-gray-700">
             <StatRow label="Matches Played" home={homeData.played} away={awayData.played} />
             <StatRow label="Wins" home={homeData.won} away={awayData.won} />
             <StatRow label="Draws" home={homeData.drawn} away={awayData.drawn} />
@@ -354,19 +355,19 @@ function HomeAwayPerformanceSection({ teamId }) {
 
           {/* Points Per Game - Only for league competitions (Premier League) */}
           {selectedSeasonLeagueId === 8 && homeData.played !== '-' && awayData.played !== '-' && (
-            <div className="mt-4 pt-4 border-t border-gray-200">
+            <div className="mt-4 pt-4 border-t border-gray-700">
               <div className="flex items-center">
-                <div className="w-1/3 text-center text-green-700 font-medium">
-                  {homeData.points !== '-' && homeData.played > 0 
-                    ? (homeData.points / homeData.played).toFixed(2) 
+                <div className="w-1/3 text-center text-green-400 font-medium">
+                  {homeData.points !== '-' && homeData.played > 0
+                    ? (homeData.points / homeData.played).toFixed(2)
                     : '-'}
                 </div>
-                <div className="w-1/3 text-center text-gray-500 text-sm">
+                <div className="w-1/3 text-center text-gray-400 text-sm">
                   Points Per Game
                 </div>
-                <div className="w-1/3 text-center text-blue-700 font-medium">
-                  {awayData.points !== '-' && awayData.played > 0 
-                    ? (awayData.points / awayData.played).toFixed(2) 
+                <div className="w-1/3 text-center text-blue-400 font-medium">
+                  {awayData.points !== '-' && awayData.played > 0
+                    ? (awayData.points / awayData.played).toFixed(2)
                     : '-'}
                 </div>
               </div>
@@ -519,16 +520,16 @@ function WinDrawLossDistributionSection({ teamId }) {
   // RENDER
   // ============================================
   return (
-    <div className="bg-white rounded-lg shadow-md p-6">
+    <div className="bg-gray-800 rounded-lg shadow-md p-6">
       {/* Header with Season Selector */}
       <div className="flex items-center justify-between mb-6">
-        <h2 className="text-xl font-semibold text-gray-900">
+        <h2 className="text-xl font-semibold text-gray-100">
           Win / Draw / Loss Distribution
         </h2>
         
         {/* Season Selector - Premier League seasons only */}
         <div className="flex items-center space-x-2">
-          <label className="text-sm text-gray-600">Season:</label>
+          <label className="text-sm text-gray-400">Season:</label>
           <select
             value={selectedSeasonId || ''}
             onChange={(e) => {
@@ -537,7 +538,7 @@ function WinDrawLossDistributionSection({ teamId }) {
               const selectedSeason = seasons.find(s => s.id === newSeasonId);
               setSelectedSeasonLeagueId(selectedSeason?.league_id || selectedSeason?.league?.id);
             }}
-            className="border border-gray-300 rounded-md px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+            className="border border-gray-600 rounded-md px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 bg-gray-800"
             disabled={seasons.length === 0}
           >
             {seasons.length === 0 ? (
@@ -555,14 +556,14 @@ function WinDrawLossDistributionSection({ teamId }) {
 
       {/* Loading State */}
       {loading && (
-        <div className="text-center py-8 text-gray-500">
+        <div className="text-center py-8 text-gray-400">
           <div className="animate-pulse">Loading statistics...</div>
         </div>
       )}
 
       {/* Error State */}
       {error && (
-        <div className="bg-red-50 text-red-600 p-3 rounded-md text-sm">
+        <div className="bg-red-900/30 text-red-400 p-3 rounded-md text-sm">
           {error}
         </div>
       )}
@@ -573,10 +574,12 @@ function WinDrawLossDistributionSection({ teamId }) {
           {/* Home W/D/L Bar */}
           <div className="mb-4">
             <div className="flex items-center justify-between mb-1">
-              <span className="text-xs font-semibold text-green-700">🏠 Home</span>
-              <span className="text-xs text-gray-500">{homeData.played} games</span>
+              <span className="text-xs font-semibold text-green-400 flex items-center gap-1">
+                <AppIcon name="home" size="sm" className="text-green-400" /> Home
+              </span>
+              <span className="text-xs text-gray-400">{homeData.played} games</span>
             </div>
-            <div className="h-8 rounded-full overflow-hidden flex bg-gray-100">
+            <div className="h-8 rounded-full overflow-hidden flex bg-gray-700">
               {/* Win segment */}
               {homeData.winPct > 0 && (
                 <div 
@@ -612,7 +615,7 @@ function WinDrawLossDistributionSection({ teamId }) {
               )}
             </div>
             {/* Home W-D-L counts */}
-            <div className="flex justify-between mt-1 text-xs text-gray-500">
+            <div className="flex justify-between mt-1 text-xs text-gray-400">
               <span>{homeData.won}W - {homeData.drawn}D - {homeData.lost}L</span>
             </div>
           </div>
@@ -620,10 +623,12 @@ function WinDrawLossDistributionSection({ teamId }) {
           {/* Away W/D/L Bar */}
           <div className="mb-4">
             <div className="flex items-center justify-between mb-1">
-              <span className="text-xs font-semibold text-blue-700">✈️ Away</span>
-              <span className="text-xs text-gray-500">{awayData.played} games</span>
+              <span className="text-xs font-semibold text-blue-400 flex items-center gap-1">
+                <AppIcon name="away" size="sm" className="text-blue-400" /> Away
+              </span>
+              <span className="text-xs text-gray-400">{awayData.played} games</span>
             </div>
-            <div className="h-8 rounded-full overflow-hidden flex bg-gray-100">
+            <div className="h-8 rounded-full overflow-hidden flex bg-gray-700">
               {/* Win segment */}
               {awayData.winPct > 0 && (
                 <div 
@@ -659,24 +664,24 @@ function WinDrawLossDistributionSection({ teamId }) {
               )}
             </div>
             {/* Away W-D-L counts */}
-            <div className="flex justify-between mt-1 text-xs text-gray-500">
+            <div className="flex justify-between mt-1 text-xs text-gray-400">
               <span>{awayData.won}W - {awayData.drawn}D - {awayData.lost}L</span>
             </div>
           </div>
 
           {/* Legend */}
-          <div className="flex justify-center gap-6 mt-4 pt-4 border-t border-gray-100">
+          <div className="flex justify-center gap-6 mt-4 pt-4 border-t border-gray-700">
             <div className="flex items-center gap-2">
               <div className="w-4 h-4 rounded bg-green-500"></div>
-              <span className="text-sm text-gray-600">Win</span>
+              <span className="text-sm text-gray-400">Win</span>
             </div>
             <div className="flex items-center gap-2">
               <div className="w-4 h-4 rounded bg-gray-400"></div>
-              <span className="text-sm text-gray-600">Draw</span>
+              <span className="text-sm text-gray-400">Draw</span>
             </div>
             <div className="flex items-center gap-2">
               <div className="w-4 h-4 rounded bg-red-500"></div>
-              <span className="text-sm text-gray-600">Loss</span>
+              <span className="text-sm text-gray-400">Loss</span>
             </div>
           </div>
         </div>
@@ -861,20 +866,20 @@ function HalfTimingAnalysisSection({ teamId }) {
   // RENDER
   // ============================================
   return (
-    <div className="bg-white rounded-lg shadow-md p-6">
+    <div className="bg-gray-800 rounded-lg shadow-md p-6">
       {/* Header with Season Selector */}
       <div className="flex items-center justify-between mb-6">
-        <h2 className="text-xl font-semibold text-gray-900">
+        <h2 className="text-xl font-semibold text-gray-100">
           Half & Timing Analysis
         </h2>
         
         {/* Season Selector */}
         <div className="flex items-center space-x-2">
-          <label className="text-sm text-gray-600">Season:</label>
+          <label className="text-sm text-gray-400">Season:</label>
           <select
             value={selectedSeasonId || ''}
             onChange={(e) => setSelectedSeasonId(parseInt(e.target.value))}
-            className="border border-gray-300 rounded-md px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+            className="border border-gray-600 rounded-md px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 bg-gray-800"
             disabled={seasons.length === 0}
           >
             {seasons.length === 0 ? (
@@ -900,14 +905,14 @@ function HalfTimingAnalysisSection({ teamId }) {
 
       {/* Loading State */}
       {loading && (
-        <div className="text-center py-8 text-gray-500">
+        <div className="text-center py-8 text-gray-400">
           <div className="animate-pulse">Loading statistics...</div>
         </div>
       )}
 
       {/* Error State */}
       {error && (
-        <div className="bg-red-50 text-red-600 p-3 rounded-md text-sm">
+        <div className="bg-red-900/30 text-red-400 p-3 rounded-md text-sm">
           {error}
         </div>
       )}
@@ -918,18 +923,18 @@ function HalfTimingAnalysisSection({ teamId }) {
           
           {/* Most Scored Half - Visual Bar */}
           <div>
-            <h3 className="text-sm font-semibold text-gray-700 mb-3">
+            <h3 className="text-sm font-semibold text-gray-300 mb-3">
               Goals by Half
             </h3>
             
             {totalHalfGoals > 0 ? (
               <div>
                 {/* Stacked Bar */}
-                <div className="h-10 rounded-full overflow-hidden flex bg-gray-100 mb-2">
+                <div className="h-10 rounded-full overflow-hidden flex bg-gray-700 mb-2">
                   {/* 1st Half */}
                   {halfData.firstHalfPct > 0 && (
                     <div 
-                      className="h-full bg-blue-500 flex items-center justify-center transition-all duration-300"
+                      className="h-full bg-amber-500 flex items-center justify-center transition-all duration-300"
                       style={{ width: `${halfData.firstHalfPct}%` }}
                     >
                       {halfData.firstHalfPct >= 15 && (
@@ -955,9 +960,9 @@ function HalfTimingAnalysisSection({ teamId }) {
                 </div>
                 
                 {/* Legend */}
-                <div className="flex justify-center gap-6 text-xs text-gray-500">
+                <div className="flex justify-center gap-6 text-xs text-gray-400">
                   <span className="flex items-center gap-1">
-                    <span className="w-3 h-3 rounded bg-blue-500"></span>
+                    <span className="w-3 h-3 rounded bg-amber-500"></span>
                     1st Half: {halfData.firstHalfGoals} goals
                   </span>
                   <span className="flex items-center gap-1">
@@ -969,17 +974,17 @@ function HalfTimingAnalysisSection({ teamId }) {
                 {/* Stronger Half Indicator */}
                 <div className="mt-2 text-center">
                   <span className={`text-xs px-3 py-1 rounded-full ${
-                    strongerHalf === '1st' ? 'bg-blue-100 text-blue-700' :
-                    strongerHalf === '2nd' ? 'bg-purple-100 text-purple-700' :
-                    'bg-gray-100 text-gray-600'
+                    strongerHalf === '1st' ? 'bg-amber-900/30 text-amber-400' :
+                    strongerHalf === '2nd' ? 'bg-purple-900/30 text-purple-400' :
+                    'bg-gray-700 text-gray-400'
                   }`}>
-                    {strongerHalf === 'Equal' ? 'Even across both halves' : 
+                    {strongerHalf === 'Equal' ? 'Even across both halves' :
                      `Stronger in ${strongerHalf} Half`}
                   </span>
                 </div>
               </div>
             ) : (
-              <div className="text-center py-4 text-gray-400 text-sm bg-gray-50 rounded">
+              <div className="text-center py-4 text-gray-400 text-sm bg-gray-700 rounded">
                 No half goal data available
               </div>
             )}
@@ -987,36 +992,36 @@ function HalfTimingAnalysisSection({ teamId }) {
 
           {/* Half Results Grid */}
           <div>
-            <h3 className="text-sm font-semibold text-gray-700 mb-3">
+            <h3 className="text-sm font-semibold text-gray-300 mb-3">
               Match Dominance
             </h3>
             <div className="grid grid-cols-3 gap-4">
               {/* Won Both Halves */}
-              <div className="bg-green-50 rounded-lg p-4 border border-green-200 text-center">
-                <div className="text-2xl font-bold text-green-700">
+              <div className="bg-green-900/30 rounded-lg p-4 border border-green-700 text-center">
+                <div className="text-2xl font-bold text-green-400">
                   {halfData.wonBothHalves}
                 </div>
-                <div className="text-xs text-green-600 font-medium mt-1">
+                <div className="text-xs text-green-400 font-medium mt-1">
                   Won Both Halves
                 </div>
               </div>
-              
+
               {/* Scored Both Halves */}
-              <div className="bg-blue-50 rounded-lg p-4 border border-blue-200 text-center">
-                <div className="text-2xl font-bold text-blue-700">
+              <div className="bg-blue-900/30 rounded-lg p-4 border border-blue-700 text-center">
+                <div className="text-2xl font-bold text-blue-400">
                   {halfData.scoredBothHalves}
                 </div>
-                <div className="text-xs text-blue-600 font-medium mt-1">
+                <div className="text-xs text-blue-400 font-medium mt-1">
                   Scored Both Halves
                 </div>
               </div>
-              
+
               {/* Comebacks */}
-              <div className="bg-orange-50 rounded-lg p-4 border border-orange-200 text-center">
-                <div className="text-2xl font-bold text-orange-700">
+              <div className="bg-orange-900/30 rounded-lg p-4 border border-orange-700 text-center">
+                <div className="text-2xl font-bold text-orange-400">
                   {halfData.comebacks}
                 </div>
-                <div className="text-xs text-orange-600 font-medium mt-1">
+                <div className="text-xs text-orange-400 font-medium mt-1">
                   Comebacks
                 </div>
               </div>
@@ -1025,26 +1030,27 @@ function HalfTimingAnalysisSection({ teamId }) {
 
           {/* Injury Time Goals */}
           <div>
-            <h3 className="text-sm font-semibold text-gray-700 mb-3">
-              ⏱️ Injury Time Goals
+            <h3 className="text-sm font-semibold text-gray-300 mb-3 flex items-center gap-2">
+              <AppIcon name="timer" size="md" className="text-gray-400" />
+              <span>Injury Time Goals</span>
             </h3>
             <div className="grid grid-cols-2 gap-4">
               {/* Total Injury Time Goals */}
-              <div className="bg-amber-50 rounded-lg p-4 border border-amber-200 text-center">
-                <div className="text-2xl font-bold text-amber-700">
+              <div className="bg-amber-900/30 rounded-lg p-4 border border-amber-700 text-center">
+                <div className="text-2xl font-bold text-amber-400">
                   {halfData.injuryTimeTotal}
                 </div>
-                <div className="text-xs text-amber-600 font-medium mt-1">
+                <div className="text-xs text-amber-400 font-medium mt-1">
                   Total Goals
                 </div>
               </div>
-              
+
               {/* Average Per Game */}
-              <div className="bg-gray-50 rounded-lg p-4 border border-gray-200 text-center">
-                <div className="text-2xl font-bold text-gray-700">
+              <div className="bg-gray-700 rounded-lg p-4 border border-gray-600 text-center">
+                <div className="text-2xl font-bold text-gray-300">
                   {halfData.injuryTimeAverage.toFixed(2)}
                 </div>
-                <div className="text-xs text-gray-600 font-medium mt-1">
+                <div className="text-xs text-gray-400 font-medium mt-1">
                   Per Game
                 </div>
               </div>
@@ -1052,8 +1058,8 @@ function HalfTimingAnalysisSection({ teamId }) {
           </div>
 
           {/* Betting Insight */}
-          <div className="pt-4 border-t border-gray-100">
-            <p className="text-xs text-gray-500">
+          <div className="pt-4 border-t border-gray-700">
+            <p className="text-xs text-gray-400">
               <strong>Betting Insight:</strong> 
               {strongerHalf !== 'Equal' && ` This team scores more in the ${strongerHalf} half.`}
               {halfData.comebacks > 0 && ` They've come from behind to win ${halfData.comebacks} time${halfData.comebacks !== 1 ? 's' : ''}.`}
@@ -1187,7 +1193,7 @@ function OverUnderGoalsSection({ teamId }) {
   // RENDER BAR
   // ============================================
   const renderBar = (percentage, color) => (
-    <div className="flex-1 h-6 bg-gray-100 rounded overflow-hidden">
+    <div className="flex-1 h-6 bg-gray-700 rounded overflow-hidden">
       <div 
         className={`h-full ${color} transition-all duration-300`}
         style={{ width: `${percentage}%` }}
@@ -1199,20 +1205,20 @@ function OverUnderGoalsSection({ teamId }) {
   // RENDER
   // ============================================
   return (
-    <div className="bg-white rounded-lg shadow-md p-6">
+    <div className="bg-gray-800 rounded-lg shadow-md p-6">
       {/* Header with Season Selector */}
       <div className="flex items-center justify-between mb-6">
-        <h2 className="text-xl font-semibold text-gray-900">
+        <h2 className="text-xl font-semibold text-gray-100">
           Over/Under Goals Analysis
         </h2>
         
         {/* Season Selector */}
         <div className="flex items-center space-x-2">
-          <label className="text-sm text-gray-600">Season:</label>
+          <label className="text-sm text-gray-400">Season:</label>
           <select
             value={selectedSeasonId || ''}
             onChange={(e) => setSelectedSeasonId(parseInt(e.target.value))}
-            className="border border-gray-300 rounded-md px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+            className="border border-gray-600 rounded-md px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 bg-gray-800"
             disabled={seasons.length === 0}
           >
             {seasons.length === 0 ? (
@@ -1238,14 +1244,14 @@ function OverUnderGoalsSection({ teamId }) {
 
       {/* Loading State */}
       {loading && (
-        <div className="text-center py-8 text-gray-500">
+        <div className="text-center py-8 text-gray-400">
           <div className="animate-pulse">Loading statistics...</div>
         </div>
       )}
 
       {/* Error State */}
       {error && (
-        <div className="bg-red-50 text-red-600 p-3 rounded-md text-sm">
+        <div className="bg-red-900/30 text-red-400 p-3 rounded-md text-sm">
           {error}
         </div>
       )}
@@ -1258,18 +1264,18 @@ function OverUnderGoalsSection({ teamId }) {
             
             {/* Match Totals (Both Teams) */}
             <div>
-              <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center">
-                <span className="w-3 h-3 bg-blue-500 rounded-full mr-2"></span>
+              <h3 className="text-sm font-semibold text-gray-300 mb-3 flex items-center">
+                <span className="w-3 h-3 bg-amber-500 rounded-full mr-2"></span>
                 Match Totals (Both Teams)
               </h3>
               <div className="space-y-2">
                 {overUnderData.map((item) => (
                   <div key={`match-${item.label}`} className="flex items-center gap-3">
-                    <div className="w-16 text-xs text-gray-600 font-medium text-right">
+                    <div className="w-16 text-xs text-gray-400 font-medium text-right">
                       Over {item.label}
                     </div>
-                    {renderBar(item.matchPct, 'bg-blue-500')}
-                    <div className="w-12 text-xs text-gray-600 text-right">
+                    {renderBar(item.matchPct, 'bg-amber-500')}
+                    <div className="w-12 text-xs text-gray-400 text-right">
                       {Math.round(item.matchPct)}%
                     </div>
                   </div>
@@ -1279,18 +1285,18 @@ function OverUnderGoalsSection({ teamId }) {
 
             {/* Team Goals Only */}
             <div>
-              <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center">
+              <h3 className="text-sm font-semibold text-gray-300 mb-3 flex items-center">
                 <span className="w-3 h-3 bg-green-500 rounded-full mr-2"></span>
                 Team Goals Only
               </h3>
               <div className="space-y-2">
                 {overUnderData.map((item) => (
                   <div key={`team-${item.label}`} className="flex items-center gap-3">
-                    <div className="w-16 text-xs text-gray-600 font-medium text-right">
+                    <div className="w-16 text-xs text-gray-400 font-medium text-right">
                       Over {item.label}
                     </div>
                     {renderBar(item.teamPct, 'bg-green-500')}
-                    <div className="w-12 text-xs text-gray-600 text-right">
+                    <div className="w-12 text-xs text-gray-400 text-right">
                       {Math.round(item.teamPct)}%
                     </div>
                   </div>
@@ -1300,45 +1306,45 @@ function OverUnderGoalsSection({ teamId }) {
           </div>
 
           {/* Key Stats Highlight */}
-          <div className="mt-6 pt-4 border-t border-gray-100">
+          <div className="mt-6 pt-4 border-t border-gray-700">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               {/* Over 1.5 Match */}
-              <div className="bg-blue-50 rounded-lg p-3 text-center border border-blue-200">
-                <div className="text-xl font-bold text-blue-700">
+              <div className="bg-amber-900/30 rounded-lg p-3 text-center border border-amber-700">
+                <div className="text-xl font-bold text-amber-400">
                   {Math.round(overUnderData[1]?.matchPct || 0)}%
                 </div>
-                <div className="text-xs text-blue-600">Over 1.5 (Match)</div>
+                <div className="text-xs text-amber-400">Over 1.5 (Match)</div>
               </div>
-              
+
               {/* Over 2.5 Match - Most Popular */}
-              <div className="bg-blue-100 rounded-lg p-3 text-center border-2 border-blue-300">
-                <div className="text-xl font-bold text-blue-800">
+              <div className="bg-blue-900/30 rounded-lg p-3 text-center border-2 border-blue-500">
+                <div className="text-xl font-bold text-blue-400">
                   {Math.round(overUnderData[2]?.matchPct || 0)}%
                 </div>
-                <div className="text-xs text-blue-700 font-semibold">Over 2.5 (Match) ★</div>
+                <div className="text-xs text-blue-400 font-semibold">Over 2.5 (Match) ★</div>
               </div>
-              
+
               {/* Over 1.5 Team */}
-              <div className="bg-green-50 rounded-lg p-3 text-center border border-green-200">
-                <div className="text-xl font-bold text-green-700">
+              <div className="bg-green-900/30 rounded-lg p-3 text-center border border-green-700">
+                <div className="text-xl font-bold text-green-400">
                   {Math.round(overUnderData[1]?.teamPct || 0)}%
                 </div>
-                <div className="text-xs text-green-600">Over 1.5 (Team)</div>
+                <div className="text-xs text-green-400">Over 1.5 (Team)</div>
               </div>
-              
+
               {/* Over 2.5 Team */}
-              <div className="bg-green-50 rounded-lg p-3 text-center border border-green-200">
-                <div className="text-xl font-bold text-green-700">
+              <div className="bg-green-900/30 rounded-lg p-3 text-center border border-green-700">
+                <div className="text-xl font-bold text-green-400">
                   {Math.round(overUnderData[2]?.teamPct || 0)}%
                 </div>
-                <div className="text-xs text-green-600">Over 2.5 (Team)</div>
+                <div className="text-xs text-green-400">Over 2.5 (Team)</div>
               </div>
             </div>
           </div>
 
           {/* Betting Insight */}
-          <div className="mt-4 pt-4 border-t border-gray-100">
-            <p className="text-xs text-gray-500">
+          <div className="mt-4 pt-4 border-t border-gray-700">
+            <p className="text-xs text-gray-400">
               <strong>Betting Insight:</strong> 
               {overUnderData[2]?.matchPct >= 50 && ` ${Math.round(overUnderData[2].matchPct)}% of this team's matches go Over 2.5 goals.`}
               {overUnderData[2]?.matchPct < 50 && ` Only ${Math.round(overUnderData[2]?.matchPct || 0)}% of matches go Over 2.5 - consider Under bets.`}
@@ -1484,11 +1490,11 @@ function ScoringPatternSection({ teamId }) {
       
       return (
         <div key={key} className="flex items-center space-x-3">
-          <div className="w-20 text-xs text-gray-600 text-right font-medium">
+          <div className="w-20 text-xs text-gray-400 text-right font-medium">
             {label}
           </div>
           
-          <div className="flex-1 h-7 bg-gray-100 rounded overflow-hidden relative">
+          <div className="flex-1 h-7 bg-gray-700 rounded overflow-hidden relative">
             <div
               className={`h-full ${color} transition-all duration-500 ease-out`}
               style={{ width: `${barWidth}%` }}
@@ -1500,7 +1506,7 @@ function ScoringPatternSection({ teamId }) {
             </div>
           </div>
           
-          <div className="w-14 text-xs text-gray-600 text-right">
+          <div className="w-14 text-xs text-gray-400 text-right">
             {item.percentage > 0 ? `${item.percentage}%` : '—'}
           </div>
         </div>
@@ -1515,19 +1521,20 @@ function ScoringPatternSection({ teamId }) {
   // RENDER
   // ============================================
   return (
-    <div className="bg-white rounded-lg shadow-md p-6">
+    <div className="bg-gray-800 rounded-lg shadow-md p-6">
       {/* Header with Season Selector */}
       <div className="flex items-center justify-between mb-6">
-        <h2 className="text-xl font-semibold text-gray-900">
-          ⏱️ Scoring Pattern by Minute
+        <h2 className="text-xl font-semibold text-gray-100 flex items-center gap-2">
+          <AppIcon name="timer" size="lg" className="text-gray-400" />
+          <span>Scoring Pattern by Minute</span>
         </h2>
         
         <div className="flex items-center space-x-2">
-          <label className="text-sm text-gray-600">Season:</label>
+          <label className="text-sm text-gray-400">Season:</label>
           <select
             value={selectedSeasonId || ''}
             onChange={(e) => setSelectedSeasonId(parseInt(e.target.value))}
-            className="border border-gray-300 rounded-md px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+            className="border border-gray-600 rounded-md px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 bg-gray-800"
             disabled={seasons.length === 0}
           >
             {seasons.length === 0 ? (
@@ -1553,14 +1560,14 @@ function ScoringPatternSection({ teamId }) {
 
       {/* Loading State */}
       {loading && (
-        <div className="text-center py-8 text-gray-500">
+        <div className="text-center py-8 text-gray-400">
           <div className="animate-pulse">Loading statistics...</div>
         </div>
       )}
 
       {/* Error State */}
       {error && (
-        <div className="bg-red-50 text-red-600 p-3 rounded-md text-sm">
+        <div className="bg-red-900/30 text-red-400 p-3 rounded-md text-sm">
           {error}
         </div>
       )}
@@ -1570,10 +1577,10 @@ function ScoringPatternSection({ teamId }) {
         <div className="grid md:grid-cols-2 gap-8">
           {/* Goals Scored Pattern */}
           <div>
-            <h3 className="text-sm font-semibold text-green-700 mb-4 flex items-center">
+            <h3 className="text-sm font-semibold text-green-400 mb-4 flex items-center">
               <span className="w-3 h-3 bg-green-500 rounded-full mr-2"></span>
               Goals Scored
-              <span className="ml-2 text-gray-500 font-normal">
+              <span className="ml-2 text-gray-400 font-normal">
                 ({totalScored} total)
               </span>
             </h3>
@@ -1583,7 +1590,7 @@ function ScoringPatternSection({ teamId }) {
                 {renderBar(scoringData, maxScoringPct, 'bg-green-500')}
               </div>
             ) : (
-              <div className="text-center py-6 text-gray-400 text-sm bg-gray-50 rounded">
+              <div className="text-center py-6 text-gray-400 text-sm bg-gray-700 rounded">
                 No scoring data available for this season
               </div>
             )}
@@ -1591,10 +1598,10 @@ function ScoringPatternSection({ teamId }) {
 
           {/* Goals Conceded Pattern */}
           <div>
-            <h3 className="text-sm font-semibold text-red-700 mb-4 flex items-center">
+            <h3 className="text-sm font-semibold text-red-400 mb-4 flex items-center">
               <span className="w-3 h-3 bg-red-500 rounded-full mr-2"></span>
               Goals Conceded
-              <span className="ml-2 text-gray-500 font-normal">
+              <span className="ml-2 text-gray-400 font-normal">
                 ({totalConceded} total)
               </span>
             </h3>
@@ -1604,7 +1611,7 @@ function ScoringPatternSection({ teamId }) {
                 {renderBar(concedingData, maxConcedingPct, 'bg-red-500')}
               </div>
             ) : (
-              <div className="text-center py-6 text-gray-400 text-sm bg-gray-50 rounded">
+              <div className="text-center py-6 text-gray-400 text-sm bg-gray-700 rounded">
                 No conceding data available for this season
               </div>
             )}
@@ -1614,8 +1621,8 @@ function ScoringPatternSection({ teamId }) {
 
       {/* Insight Note */}
       {!loading && !error && (totalScored > 0 || totalConceded > 0) && (
-        <div className="mt-6 pt-4 border-t border-gray-100">
-          <p className="text-xs text-gray-500">
+        <div className="mt-6 pt-4 border-t border-gray-700">
+          <p className="text-xs text-gray-400">
             <strong>Betting Insight:</strong> Shows when this team typically scores and concedes goals.
             Useful for in-play betting, goal timing predictions, and identifying vulnerable periods.
           </p>
@@ -1773,20 +1780,21 @@ function CornersSection({ teamId }) {
   // RENDER
   // ============================================
   return (
-    <div className="bg-white rounded-lg shadow-md p-6">
+    <div className="bg-gray-800 rounded-lg shadow-md p-6">
       {/* Header with Season Selector */}
       <div className="flex items-center justify-between mb-6">
-        <h2 className="text-xl font-semibold text-gray-900">
-          🚩 Corners
+        <h2 className="text-xl font-semibold text-gray-100 flex items-center gap-2">
+          <AppIcon name="corner-flag" size="lg" className="text-gray-400" />
+          <span>Corners</span>
         </h2>
         
         {/* Season Selector - Premier League only */}
         <div className="flex items-center space-x-2">
-          <label className="text-sm text-gray-600">Season:</label>
+          <label className="text-sm text-gray-400">Season:</label>
           <select
             value={selectedSeasonId || ''}
             onChange={(e) => setSelectedSeasonId(parseInt(e.target.value))}
-            className="border border-gray-300 rounded-md px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+            className="border border-gray-600 rounded-md px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 bg-gray-800"
             disabled={seasons.length === 0}
           >
             {seasons.length === 0 ? (
@@ -1804,14 +1812,14 @@ function CornersSection({ teamId }) {
 
       {/* Loading State */}
       {loading && (
-        <div className="text-center py-8 text-gray-500">
+        <div className="text-center py-8 text-gray-400">
           <div className="animate-pulse">Loading statistics...</div>
         </div>
       )}
 
       {/* Error State */}
       {error && (
-        <div className="bg-red-50 text-red-600 p-3 rounded-md text-sm">
+        <div className="bg-red-900/30 text-red-400 p-3 rounded-md text-sm">
           {error}
         </div>
       )}
@@ -1843,11 +1851,12 @@ function CornersSection({ teamId }) {
         // ============================================
         if (!showFullStats && !cornerAvgLoading) {
           return (
-            <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 text-center">
-              <div className="text-amber-600 text-sm font-medium mb-1">
-                ⚠️ Incomplete Historical Data
+            <div className="bg-amber-900/30 border border-amber-700 rounded-lg p-4 text-center">
+              <div className="text-amber-400 text-sm font-medium mb-1 flex items-center justify-center gap-2">
+                <AppIcon name="warning" size="md" className="text-amber-400" />
+                <span>Incomplete Historical Data</span>
               </div>
-              <p className="text-xs text-amber-700">
+              <p className="text-xs text-amber-300">
                 Detailed corner statistics are not available for this historical season.
                 {calculatedGames > 0 && !isDataComplete && (
                   <span> (Found data for {calculatedGames} of {officialGames} matches)</span>
@@ -1865,30 +1874,30 @@ function CornersSection({ teamId }) {
             {/* Main Stats Grid - Overall */}
             <div className="grid grid-cols-3 gap-4">
               {/* Total Corners */}
-              <div className="bg-orange-50 rounded-lg p-4 border border-orange-200 text-center">
-                <div className="text-xs text-orange-600 font-semibold mb-1">TOTAL</div>
-                <div className="text-3xl font-bold text-orange-700">
+              <div className="bg-orange-900/30 rounded-lg p-4 border border-orange-700 text-center">
+                <div className="text-xs text-orange-400 font-semibold mb-1">TOTAL</div>
+                <div className="text-3xl font-bold text-orange-400">
                   {cornersData.total}
                 </div>
-                <div className="text-xs text-gray-500 mt-1">corners won</div>
+                <div className="text-xs text-gray-400 mt-1">corners won</div>
               </div>
 
               {/* Average Per Game */}
-              <div className="bg-blue-50 rounded-lg p-4 border border-blue-200 text-center">
-                <div className="text-xs text-blue-600 font-semibold mb-1">AVERAGE</div>
-                <div className="text-3xl font-bold text-blue-700">
+              <div className="bg-blue-900/30 rounded-lg p-4 border border-blue-700 text-center">
+                <div className="text-xs text-blue-400 font-semibold mb-1">AVERAGE</div>
+                <div className="text-3xl font-bold text-blue-400">
                   {cornersData.average ?? '-'}
                 </div>
-                <div className="text-xs text-gray-500 mt-1">per game</div>
+                <div className="text-xs text-gray-400 mt-1">per game</div>
               </div>
 
               {/* Games Played */}
-              <div className="bg-gray-50 rounded-lg p-4 border border-gray-200 text-center">
-                <div className="text-xs text-gray-600 font-semibold mb-1">GAMES</div>
-                <div className="text-3xl font-bold text-gray-700">
+              <div className="bg-gray-700 rounded-lg p-4 border border-gray-600 text-center">
+                <div className="text-xs text-gray-400 font-semibold mb-1">GAMES</div>
+                <div className="text-3xl font-bold text-gray-300">
                   {cornersData.gamesPlayed}
                 </div>
-                <div className="text-xs text-gray-500 mt-1">played</div>
+                <div className="text-xs text-gray-400 mt-1">played</div>
               </div>
             </div>
 
@@ -1896,62 +1905,68 @@ function CornersSection({ teamId }) {
             {/* HOME / AWAY BREAKDOWN */}
             {/* ============================================ */}
             {cornerAvgLoading ? (
-              <div className="mt-6 pt-4 border-t border-gray-100">
+              <div className="mt-6 pt-4 border-t border-gray-700">
                 <div className="text-center py-4 text-gray-400 text-sm">
                   <div className="animate-pulse">Loading home/away breakdown...</div>
                 </div>
               </div>
             ) : cornerAvg?.corners ? (
-              <div className="mt-6 pt-4 border-t border-gray-100">
-                <h3 className="text-sm font-semibold text-gray-700 mb-3">
+              <div className="mt-6 pt-4 border-t border-gray-700">
+                <h3 className="text-sm font-semibold text-gray-300 mb-3">
                   Home vs Away Breakdown
                 </h3>
                 
                 <div className="grid grid-cols-2 gap-4">
                   {/* Home Corners */}
-                  <div className="bg-green-50 rounded-lg p-4 border border-green-200">
+                  <div className="bg-green-900/30 rounded-lg p-4 border border-green-700">
                     <div className="flex items-center justify-between mb-2">
-                      <span className="text-xs font-semibold text-green-700">🏠 HOME</span>
-                      <span className="text-xs text-gray-500">
+                      <span className="text-xs font-semibold text-green-400 flex items-center gap-1">
+                        <AppIcon name="home" size="sm" className="text-green-400" />
+                        <span>HOME</span>
+                      </span>
+                      <span className="text-xs text-gray-400">
                         {cornerAvg.corners.home.games} games
                       </span>
                     </div>
                     <div className="flex items-baseline justify-between">
                       <div>
-                        <span className="text-2xl font-bold text-green-700">
+                        <span className="text-2xl font-bold text-green-400">
                           {cornerAvg.corners.home.total}
                         </span>
-                        <span className="text-sm text-gray-500 ml-1">corners</span>
+                        <span className="text-sm text-gray-400 ml-1">corners</span>
                       </div>
                       <div className="text-right">
-                        <span className="text-lg font-bold text-green-600">
+                        <span className="text-lg font-bold text-green-400">
                           {cornerAvg.corners.home.average}
                         </span>
-                        <span className="text-xs text-gray-500 ml-1">avg</span>
+                        <span className="text-xs text-gray-400 ml-1">avg</span>
                       </div>
                     </div>
                   </div>
 
                   {/* Away Corners */}
-                  <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
+                  <div className="bg-blue-900/30 rounded-lg p-4 border border-blue-700">
                     <div className="flex items-center justify-between mb-2">
-                      <span className="text-xs font-semibold text-blue-700">✈️ AWAY</span>
-                      <span className="text-xs text-gray-500">
+                      <span className="text-xs font-semibold text-blue-400 flex items-center gap-1">
+                        <AppIcon name="away" size="sm" className="text-blue-400" />
+                        <span>AWAY</span>
+                      </span>
+                      <span className="text-xs text-gray-400">
                         {cornerAvg.corners.away.games} games
                       </span>
                     </div>
                     <div className="flex items-baseline justify-between">
                       <div>
-                        <span className="text-2xl font-bold text-blue-700">
+                        <span className="text-2xl font-bold text-blue-400">
                           {cornerAvg.corners.away.total}
                         </span>
-                        <span className="text-sm text-gray-500 ml-1">corners</span>
+                        <span className="text-sm text-gray-400 ml-1">corners</span>
                       </div>
                       <div className="text-right">
-                        <span className="text-lg font-bold text-blue-600">
+                        <span className="text-lg font-bold text-blue-400">
                           {cornerAvg.corners.away.average}
                         </span>
-                        <span className="text-xs text-gray-500 ml-1">avg</span>
+                        <span className="text-xs text-gray-400 ml-1">avg</span>
                       </div>
                     </div>
                   </div>
@@ -1962,8 +1977,8 @@ function CornersSection({ teamId }) {
                   <div className="mt-3 text-center">
                     <span className={`text-xs px-3 py-1 rounded-full ${
                       cornerAvg.corners.home.average > cornerAvg.corners.away.average
-                        ? 'bg-green-100 text-green-700'
-                        : 'bg-blue-100 text-blue-700'
+                        ? 'bg-green-900/30 text-green-400'
+                        : 'bg-blue-900/30 text-blue-400'
                     }`}>
                       {cornerAvg.corners.home.average > cornerAvg.corners.away.average
                         ? `+${(cornerAvg.corners.home.average - cornerAvg.corners.away.average).toFixed(1)} more corners at home`
@@ -2026,15 +2041,15 @@ const TeamDetail = () => {
 
   if (loading) {
     return (
-      <div className="text-center py-12 text-gray-500">Loading team...</div>
+      <div className="text-center py-12 text-gray-400">Loading team...</div>
     );
   }
 
   if (error) {
     return (
       <div className="space-y-4">
-        <div className="bg-red-50 text-red-600 p-3 rounded-md">{error}</div>
-        <Link to="/teams" className="text-blue-600 hover:underline">
+        <div className="bg-red-900/30 text-red-400 p-3 rounded-md">{error}</div>
+        <Link to="/teams" className="text-amber-500 hover:underline">
           &larr; Back to Teams
         </Link>
       </div>
@@ -2043,18 +2058,18 @@ const TeamDetail = () => {
 
   if (!team) {
     return (
-      <div className="text-center py-12 text-gray-500">Team not found.</div>
+      <div className="text-center py-12 text-gray-400">Team not found.</div>
     );
   }
 
   return (
     <div className="space-y-6">
-      <Link to="/teams" className="text-blue-600 hover:underline">
+      <Link to="/teams" className="text-amber-500 hover:underline">
         &larr; Back to Teams
       </Link>
 
       {/* Team Header */}
-      <div className="bg-white rounded-lg shadow-md p-6">
+      <div className="bg-gray-800 rounded-lg shadow-md p-6">
         <div className="flex items-center space-x-6">
           {team.image_path && (
             <img
@@ -2064,8 +2079,8 @@ const TeamDetail = () => {
             />
           )}
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">{team.name}</h1>
-            <p className="text-gray-500">{team.country?.name}</p>
+            <h1 className="text-3xl font-bold text-gray-100">{team.name}</h1>
+            <p className="text-gray-400">{team.country?.name}</p>
             {team.venue?.name && (
               <p className="text-sm text-gray-400 flex items-center gap-1">
                 <AppIcon name="stadium" size="sm" /> {team.venue.name}
@@ -2078,8 +2093,8 @@ const TeamDetail = () => {
 
       {/* Coach Section */}
       {team.coaches && team.coaches.length > 0 && (
-        <div className="bg-white rounded-lg shadow-md p-6">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center gap-2"><AppIcon name="player" size="lg" /> Manager</h2>
+        <div className="bg-gray-800 rounded-lg shadow-md p-6">
+          <h2 className="text-xl font-semibold text-gray-100 mb-4 flex items-center gap-2"><AppIcon name="player" size="lg" /> Manager</h2>
           <div className="flex items-center space-x-4">
             {team.coaches[0].image_path && (
               <img
@@ -2090,7 +2105,7 @@ const TeamDetail = () => {
             )}
             <div>
               <p className="font-medium">{team.coaches[0].common_name}</p>
-              <p className="text-sm text-gray-500">{team.coaches[0].nationality?.name}</p>
+              <p className="text-sm text-gray-400">{team.coaches[0].nationality?.name}</p>
             </div>
           </div>
         </div>

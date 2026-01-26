@@ -210,9 +210,12 @@ async function getHeadToHead(team1Id, team2Id, options = {}) {
     includes.push('odds');
   }
   if (options.includeSidelined) {
+    // Include full sidelined data with player info, sideline details, and type
     includes.push('sidelined.player');
+    includes.push('sidelined.sideline');
+    includes.push('sidelined.type');
   }
-  
+
   return makeRequest(endpoint, includes);
 }
 
@@ -286,10 +289,13 @@ async function getFixtureById(fixtureId, options = {}) {
     includes.push('odds.market');
   }
   if (options.includeSidelined) {
-    // Include player info and sideline details (injury reason, expected return)
-    // NOTE: Type info (e.g., "Red Card", "Hamstring Injury") is looked up from local database
+    // Include player info, sideline details, and type info
+    // - sidelined.player: Player name, image, position
+    // - sidelined.sideline: Start/end dates, games missed, category
+    // - sidelined.type: Specific injury/suspension type (e.g., "Red Card Suspension", "Hamstring Injury")
     includes.push('sidelined.player');
     includes.push('sidelined.sideline');
+    includes.push('sidelined.type');
   }
   
   return makeRequest(endpoint, includes);
@@ -342,9 +348,12 @@ async function getFixturesByDate(date, options = {}) {
     includes.push('odds');
   }
   if (options.includeSidelined) {
+    // Include full sidelined data with player info, sideline details, and type
     includes.push('sidelined.player');
+    includes.push('sidelined.sideline');
+    includes.push('sidelined.type');
   }
-  
+
   return makeRequest(endpoint, includes);
 }
 
@@ -399,7 +408,10 @@ async function getFixturesByDateRange(startDate, endDate, options = {}) {
     includes.push('odds');
   }
   if (options.includeSidelined) {
+    // Include full sidelined data with player info, sideline details, and type
     includes.push('sidelined.player');
+    includes.push('sidelined.sideline');
+    includes.push('sidelined.type');
   }
 
   // Use paginated request to fetch ALL fixtures across multiple pages
@@ -453,7 +465,10 @@ async function getTeamFixturesByDateRange(startDate, endDate, teamId, options = 
     includes.push('odds');
   }
   if (options.includeSidelined) {
+    // Include full sidelined data with player info, sideline details, and type
     includes.push('sidelined.player');
+    includes.push('sidelined.sideline');
+    includes.push('sidelined.type');
   }
 
   // Use paginated request for large date ranges (e.g., full seasons)
@@ -503,9 +518,12 @@ async function searchFixtures(searchQuery, options = {}) {
     includes.push('odds');
   }
   if (options.includeSidelined) {
+    // Include full sidelined data with player info, sideline details, and type
     includes.push('sidelined.player');
+    includes.push('sidelined.sideline');
+    includes.push('sidelined.type');
   }
-  
+
   return makeRequest(endpoint, includes);
 }
 

@@ -14,6 +14,7 @@ import { Link } from 'react-router-dom';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import { useAuth } from '../context/AuthContext';
 import { notesApi, dataApi } from '../api/client';
+import AppIcon from '../components/AppIcon';
 
 // ============================================
 // CONSTANTS
@@ -21,21 +22,21 @@ import { notesApi, dataApi } from '../api/client';
 const MAX_LINKS = 6;  // Maximum links per note (1 primary + up to 5 secondary)
 
 const CONTEXT_TYPES = [
-  { value: 'all', label: 'All Types', icon: '📋' },
-  { value: 'fixture', label: 'Matches', icon: '⚽' },
-  { value: 'team', label: 'Teams', icon: '🛡️' },
-  { value: 'player', label: 'Players', icon: '👤' },
-  { value: 'league', label: 'Competitions', icon: '🏆' },
-  { value: 'betting', label: 'Betting', icon: '🎰' },
-  { value: 'general', label: 'General', icon: '📝' },
+  { value: 'all', label: 'All Types', iconName: 'note' },
+  { value: 'fixture', label: 'Matches', iconName: 'soccer-ball' },
+  { value: 'team', label: 'Teams', iconName: 'team' },
+  { value: 'player', label: 'Players', iconName: 'player' },
+  { value: 'league', label: 'Competitions', iconName: 'trophy' },
+  { value: 'betting', label: 'Betting', iconName: 'money' },
+  { value: 'general', label: 'General', iconName: 'notes' },
 ];
 
 // ============================================
-// HELPER: Get icon for context type
+// HELPER: Get icon name for context type
 // ============================================
-const getContextIcon = (contextType) => {
+const getContextIconName = (contextType) => {
   const found = CONTEXT_TYPES.find(t => t.value === contextType);
-  return found?.icon || '📎';
+  return found?.iconName || 'note';
 };
 
 // ============================================
@@ -123,26 +124,26 @@ const TeamSearchInput = ({ onSelect, placeholder = 'Search for a team...' }) => 
         onFocus={() => results.length > 0 && setShowDropdown(true)}
         onBlur={handleBlur}
         placeholder={placeholder}
-        className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+        className="w-full px-2 py-1 text-xs border border-gray-600 rounded focus:outline-none focus:ring-1 focus:ring-amber-500"
         autoFocus
       />
       
       {/* Loading indicator */}
       {isLoading && (
         <div className="absolute right-2 top-1/2 -translate-y-1/2">
-          <div className="w-3 h-3 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+          <div className="w-3 h-3 border-2 border-amber-500 border-t-transparent rounded-full animate-spin" />
         </div>
       )}
       
       {/* Dropdown results */}
       {showDropdown && results.length > 0 && (
-        <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-48 overflow-y-auto">
+        <div className="absolute z-50 w-full mt-1 bg-gray-800 border border-gray-600 rounded-md shadow-lg max-h-48 overflow-y-auto">
           {results.map((team) => (
             <button
               key={team.id}
               type="button"
               onClick={() => handleSelect(team)}
-              className="w-full px-3 py-2 text-left text-xs hover:bg-blue-50 flex items-center gap-2"
+              className="w-full px-3 py-2 text-left text-xs hover:bg-gray-700 flex items-center gap-2"
             >
               {/* Team logo if available */}
               {team.image_path && (
@@ -161,14 +162,14 @@ const TeamSearchInput = ({ onSelect, placeholder = 'Search for a team...' }) => 
       
       {/* No results message */}
       {showDropdown && query.length >= 2 && !isLoading && results.length === 0 && (
-        <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg p-2 text-xs text-gray-500">
+        <div className="absolute z-50 w-full mt-1 bg-gray-800 border border-gray-600 rounded-md shadow-lg p-2 text-xs text-gray-400">
           No teams found for "{query}"
         </div>
       )}
       
       {/* Error message */}
       {error && (
-        <div className="absolute z-50 w-full mt-1 bg-red-50 border border-red-200 rounded-md p-2 text-xs text-red-600">
+        <div className="absolute z-50 w-full mt-1 bg-red-50 border border-red-700 rounded-md p-2 text-xs text-red-600">
           {error}
         </div>
       )}
@@ -248,26 +249,26 @@ const LeagueSearchInput = ({ onSelect, placeholder = 'Search for a league...' })
         onFocus={() => results.length > 0 && setShowDropdown(true)}
         onBlur={handleBlur}
         placeholder={placeholder}
-        className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+        className="w-full px-2 py-1 text-xs border border-gray-600 rounded focus:outline-none focus:ring-1 focus:ring-amber-500"
         autoFocus
       />
       
       {/* Loading indicator */}
       {isLoading && (
         <div className="absolute right-2 top-1/2 -translate-y-1/2">
-          <div className="w-3 h-3 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+          <div className="w-3 h-3 border-2 border-amber-500 border-t-transparent rounded-full animate-spin" />
         </div>
       )}
       
       {/* Dropdown results */}
       {showDropdown && results.length > 0 && (
-        <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-48 overflow-y-auto">
+        <div className="absolute z-50 w-full mt-1 bg-gray-800 border border-gray-600 rounded-md shadow-lg max-h-48 overflow-y-auto">
           {results.map((league) => (
             <button
               key={league.id}
               type="button"
               onClick={() => handleSelect(league)}
-              className="w-full px-3 py-2 text-left text-xs hover:bg-blue-50 flex items-center gap-2"
+              className="w-full px-3 py-2 text-left text-xs hover:bg-gray-700 flex items-center gap-2"
             >
               {/* League logo if available */}
               {league.image_path && (
@@ -290,14 +291,14 @@ const LeagueSearchInput = ({ onSelect, placeholder = 'Search for a league...' })
       
       {/* No results message */}
       {showDropdown && query.length >= 2 && !isLoading && results.length === 0 && (
-        <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg p-2 text-xs text-gray-500">
+        <div className="absolute z-50 w-full mt-1 bg-gray-800 border border-gray-600 rounded-md shadow-lg p-2 text-xs text-gray-400">
           No leagues found for "{query}"
         </div>
       )}
       
       {/* Error message */}
       {error && (
-        <div className="absolute z-50 w-full mt-1 bg-red-50 border border-red-200 rounded-md p-2 text-xs text-red-600">
+        <div className="absolute z-50 w-full mt-1 bg-red-50 border border-red-700 rounded-md p-2 text-xs text-red-600">
           {error}
         </div>
       )}
@@ -331,8 +332,8 @@ const LinkTag = ({ link, isPrimary, onRemove, onSetPrimary, editable = false }) 
     <span 
       className={`inline-flex items-center rounded-full text-xs font-medium
         ${isPrimary 
-          ? 'bg-blue-100 text-blue-800' 
-          : 'bg-gray-100 text-gray-600'
+          ? 'bg-amber-900/30 text-amber-400' 
+          : 'bg-gray-700 text-gray-400'
         }`}
     >
       {editable && onSetPrimary && (
@@ -340,15 +341,16 @@ const LinkTag = ({ link, isPrimary, onRemove, onSetPrimary, editable = false }) 
           type="button"
           onClick={() => onSetPrimary(link)}
           className={`px-1.5 py-0.5 rounded-l-full transition-colors
-            ${isPrimary ? 'text-blue-600' : 'text-gray-400 hover:text-yellow-500'}`}
+            ${isPrimary ? 'text-amber-500' : 'text-gray-400 hover:text-yellow-500'}`}
           title={isPrimary ? 'Primary link' : 'Set as primary'}
         >
           {isPrimary ? '★' : '☆'}
         </button>
       )}
       
-      <span className={`py-0.5 ${editable ? '' : 'px-2'}`}>
-        {getContextIcon(link.contextType)} {displayLabel}
+      <span className={`py-0.5 ${editable ? '' : 'px-2'} flex items-center gap-1`}>
+        <AppIcon name={getContextIconName(link.contextType)} size="xs" className="text-gray-400" />
+        <span>{displayLabel}</span>
       </span>
       
       {editable && onRemove && (
@@ -417,7 +419,7 @@ const DraggableLinkList = ({ links, onReorder, onRemove, onMakePrimary }) => {
   
   if (links.length === 0) {
     return (
-      <div className="p-4 bg-gray-50 rounded-md text-center text-sm text-gray-400">
+      <div className="p-4 bg-gray-700 rounded-md text-center text-sm text-gray-400">
         No links yet - add at least one
       </div>
     );
@@ -432,8 +434,8 @@ const DraggableLinkList = ({ links, onReorder, onRemove, onMakePrimary }) => {
             {...provided.droppableProps}
             className={`rounded-md border transition-colors ${
               snapshot.isDraggingOver 
-                ? 'bg-blue-50 border-blue-200' 
-                : 'bg-gray-50 border-gray-200'
+                ? 'bg-blue-900/30 border-blue-700' 
+                : 'bg-gray-700 border-gray-700'
             }`}
           >
             {links.map((link, index) => {
@@ -452,16 +454,16 @@ const DraggableLinkList = ({ links, onReorder, onRemove, onMakePrimary }) => {
                       {...provided.draggableProps}
                       className={`flex items-center gap-2 px-3 py-2 border-b last:border-b-0 transition-colors ${
                         snapshot.isDragging 
-                          ? 'bg-white shadow-lg rounded-md border-blue-300' 
+                          ? 'bg-gray-800 shadow-lg rounded-md border-blue-300' 
                           : isPrimary 
-                            ? 'bg-blue-50' 
-                            : 'bg-white hover:bg-gray-50'
+                            ? 'bg-blue-900/30' 
+                            : 'bg-gray-800 hover:bg-gray-700'
                       }`}
                     >
                       {/* Drag handle */}
                       <div 
                         {...provided.dragHandleProps}
-                        className="cursor-grab active:cursor-grabbing text-gray-400 hover:text-gray-600"
+                        className="cursor-grab active:cursor-grabbing text-gray-400 hover:text-gray-400"
                         title="Drag to reorder"
                       >
                         <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
@@ -486,9 +488,9 @@ const DraggableLinkList = ({ links, onReorder, onRemove, onMakePrimary }) => {
                       
                       {/* Link content */}
                       <div className="flex-1 flex items-center gap-1.5 min-w-0">
-                        <span className="text-base">{getContextIcon(link.contextType)}</span>
+                        <AppIcon name={getContextIconName(link.contextType)} size="sm" className="text-gray-400" />
                         <span className={`text-sm truncate ${
-                          isPrimary ? 'font-medium text-blue-800' : 'text-gray-700'
+                          isPrimary ? 'font-medium text-amber-400' : 'text-gray-300'
                         }`}>
                           {getDisplayLabel(link)}
                         </span>
@@ -691,7 +693,7 @@ const AddLinkInline = ({ onAdd, onCancel, existingTypes }) => {
       <select
         value={selectedType}
         onChange={(e) => handleTypeChange(e.target.value)}
-        className="px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+        className="px-2 py-1 text-xs border border-gray-600 rounded focus:outline-none focus:ring-1 focus:ring-amber-500"
       >
         {CONTEXT_TYPES.filter(t => t.value !== 'all').map(type => (
           <option key={type.value} value={type.value}>
@@ -724,7 +726,7 @@ const AddLinkInline = ({ onAdd, onCancel, existingTypes }) => {
           onChange={(e) => setLabelValue(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder={getPlaceholder()}
-          className="flex-1 px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+          className="flex-1 px-2 py-1 text-xs border border-gray-600 rounded focus:outline-none focus:ring-1 focus:ring-amber-500"
           autoFocus
         />
       )}
@@ -747,7 +749,7 @@ const AddLinkInline = ({ onAdd, onCancel, existingTypes }) => {
         type="button"
         onClick={handleAdd}
         disabled={isAddDisabled()}
-        className="px-2 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+        className="px-2 py-1 text-xs bg-amber-500 text-gray-900 rounded hover:bg-amber-600 disabled:opacity-50 disabled:cursor-not-allowed"
         title={getButtonTitle()}
       >
         Add
@@ -755,7 +757,7 @@ const AddLinkInline = ({ onAdd, onCancel, existingTypes }) => {
       <button
         type="button"
         onClick={onCancel}
-        className="px-2 py-1 text-xs text-gray-500 hover:text-gray-700"
+        className="px-2 py-1 text-xs text-gray-400 hover:text-gray-300"
       >
         Cancel
       </button>
@@ -858,13 +860,13 @@ const EditNoteModal = ({ note, onSave, onCancel, saving }) => {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
-      <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-hidden">
+      <div className="bg-gray-800 rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-hidden">
         {/* Header */}
-        <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
-          <h2 className="text-xl font-semibold text-gray-900">Edit Note</h2>
+        <div className="px-6 py-4 border-b border-gray-700 flex items-center justify-between">
+          <h2 className="text-xl font-semibold text-gray-100">Edit Note</h2>
           <button
             onClick={onCancel}
-            className="text-gray-400 hover:text-gray-600 text-2xl leading-none"
+            className="text-gray-400 hover:text-gray-400 text-2xl leading-none"
           >
             ×
           </button>
@@ -873,21 +875,21 @@ const EditNoteModal = ({ note, onSave, onCancel, saving }) => {
         {/* Body */}
         <form onSubmit={handleSubmit} className="p-6 space-y-4 overflow-y-auto" style={{ maxHeight: 'calc(90vh - 140px)' }}>
           {error && (
-            <div className="bg-red-50 text-red-600 p-3 rounded-md text-sm">
+            <div className="bg-red-900/30 text-red-400 p-3 rounded-md text-sm">
               {error}
             </div>
           )}
           
           {/* Title */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-300 mb-1">
               Title
             </label>
             <input
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-amber-500"
               placeholder="Note title"
               required
             />
@@ -895,14 +897,14 @@ const EditNoteModal = ({ note, onSave, onCancel, saving }) => {
           
           {/* Content */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-300 mb-1">
               Content
             </label>
             <textarea
               value={content}
               onChange={(e) => setContent(e.target.value)}
               rows={6}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-amber-500"
               placeholder="Your notes..."
               required
             />
@@ -911,14 +913,14 @@ const EditNoteModal = ({ note, onSave, onCancel, saving }) => {
           {/* Links */}
           <div>
             <div className="flex items-center justify-between mb-2">
-              <label className="block text-sm font-medium text-gray-700">
+              <label className="block text-sm font-medium text-gray-300">
                 Links ({links.length}/{MAX_LINKS})
               </label>
               {links.length < MAX_LINKS && !showAddLink && (
                 <button
                   type="button"
                   onClick={() => setShowAddLink(true)}
-                  className="text-sm text-blue-600 hover:text-blue-800"
+                  className="text-sm text-amber-500 hover:text-amber-400"
                 >
                   + Add Link
                 </button>
@@ -941,18 +943,18 @@ const EditNoteModal = ({ note, onSave, onCancel, saving }) => {
               />
             )}
             
-            <p className="mt-2 text-xs text-gray-500">
+            <p className="mt-2 text-xs text-gray-400">
               ★ First link is primary • Drag to reorder or click ☆ to make primary
             </p>
           </div>
         </form>
         
         {/* Footer */}
-        <div className="px-6 py-4 border-t border-gray-200 flex justify-end space-x-3">
+        <div className="px-6 py-4 border-t border-gray-700 flex justify-end space-x-3">
           <button
             type="button"
             onClick={onCancel}
-            className="px-4 py-2 text-gray-600 hover:text-gray-800"
+            className="px-4 py-2 text-gray-400 hover:text-gray-200"
             disabled={saving}
           >
             Cancel
@@ -960,7 +962,7 @@ const EditNoteModal = ({ note, onSave, onCancel, saving }) => {
           <button
             onClick={handleSubmit}
             disabled={saving}
-            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
+            className="px-4 py-2 bg-amber-500 text-gray-900 rounded-md hover:bg-amber-600 disabled:opacity-50"
           >
             {saving ? 'Saving...' : 'Save Changes'}
           </button>
@@ -1052,9 +1054,9 @@ const CreateNoteModal = ({ onSave, onCancel, saving }) => {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
-      <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-hidden">
+      <div className="bg-gray-800 rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-hidden">
         {/* Header */}
-        <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between bg-blue-600">
+        <div className="px-6 py-4 border-b border-gray-700 flex items-center justify-between bg-amber-500">
           <h2 className="text-xl font-semibold text-white">Create New Note</h2>
           <button
             onClick={onCancel}
@@ -1067,21 +1069,21 @@ const CreateNoteModal = ({ onSave, onCancel, saving }) => {
         {/* Body */}
         <form onSubmit={handleSubmit} className="p-6 space-y-4 overflow-y-auto" style={{ maxHeight: 'calc(90vh - 140px)' }}>
           {error && (
-            <div className="bg-red-50 text-red-600 p-3 rounded-md text-sm">
+            <div className="bg-red-900/30 text-red-400 p-3 rounded-md text-sm">
               {error}
             </div>
           )}
           
           {/* Title */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-300 mb-1">
               Title
             </label>
             <input
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-amber-500"
               placeholder="Note title"
               required
               autoFocus
@@ -1090,14 +1092,14 @@ const CreateNoteModal = ({ onSave, onCancel, saving }) => {
           
           {/* Content */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-300 mb-1">
               Content
             </label>
             <textarea
               value={content}
               onChange={(e) => setContent(e.target.value)}
               rows={6}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-amber-500"
               placeholder="Your betting research notes..."
               required
             />
@@ -1106,14 +1108,14 @@ const CreateNoteModal = ({ onSave, onCancel, saving }) => {
           {/* Links */}
           <div>
             <div className="flex items-center justify-between mb-2">
-              <label className="block text-sm font-medium text-gray-700">
+              <label className="block text-sm font-medium text-gray-300">
                 Links ({links.length}/{MAX_LINKS})
               </label>
               {links.length < MAX_LINKS && !showAddLink && (
                 <button
                   type="button"
                   onClick={() => setShowAddLink(true)}
-                  className="text-sm text-blue-600 hover:text-blue-800"
+                  className="text-sm text-amber-500 hover:text-amber-400"
                 >
                   + Add Link
                 </button>
@@ -1136,18 +1138,18 @@ const CreateNoteModal = ({ onSave, onCancel, saving }) => {
               />
             )}
             
-            <p className="mt-2 text-xs text-gray-500">
+            <p className="mt-2 text-xs text-gray-400">
               ★ First link is primary • Drag to reorder or click ☆ to make primary
             </p>
           </div>
         </form>
         
         {/* Footer */}
-        <div className="px-6 py-4 border-t border-gray-200 flex justify-end space-x-3">
+        <div className="px-6 py-4 border-t border-gray-700 flex justify-end space-x-3">
           <button
             type="button"
             onClick={onCancel}
-            className="px-4 py-2 text-gray-600 hover:text-gray-800"
+            className="px-4 py-2 text-gray-400 hover:text-gray-200"
             disabled={saving}
           >
             Cancel
@@ -1155,7 +1157,7 @@ const CreateNoteModal = ({ onSave, onCancel, saving }) => {
           <button
             onClick={handleSubmit}
             disabled={saving}
-            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
+            className="px-4 py-2 bg-amber-500 text-gray-900 rounded-md hover:bg-amber-600 disabled:opacity-50"
           >
             {saving ? 'Creating...' : 'Create Note'}
           </button>
@@ -1173,26 +1175,26 @@ const NoteCard = ({ note, onEdit, onDelete }) => {
   const otherLinks = note.links?.filter(l => l !== primaryLink) || [];
   
   return (
-    <div className="bg-white rounded-lg shadow-md p-4 hover:shadow-lg transition-shadow">
+    <div className="bg-gray-800 rounded-lg shadow-md p-4 hover:shadow-lg transition-shadow">
       <div className="flex items-start justify-between gap-4">
         {/* Note content */}
         <div className="flex-1 min-w-0">
           {/* Title */}
           <Link
             to={`/notes/${note.id}`}
-            className="text-lg font-semibold text-gray-900 hover:text-blue-600 line-clamp-1"
+            className="text-lg font-semibold text-gray-100 hover:text-amber-500 line-clamp-1"
           >
             {note.title}
           </Link>
           
           {/* Date */}
-          <p className="text-xs text-gray-500 mt-0.5">
+          <p className="text-xs text-gray-400 mt-0.5">
             {formatDate(note.updatedAt || note.createdAt)}
           </p>
           
           {/* Content preview */}
           {note.content && (
-            <p className="text-gray-600 mt-2 text-sm line-clamp-2">
+            <p className="text-gray-400 mt-2 text-sm line-clamp-2">
               {note.content}
             </p>
           )}
@@ -1216,13 +1218,13 @@ const NoteCard = ({ note, onEdit, onDelete }) => {
         <div className="flex flex-col space-y-1 flex-shrink-0">
           <button
             onClick={() => onEdit(note)}
-            className="px-3 py-1 text-sm text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded transition-colors"
+            className="px-3 py-1 text-sm text-amber-500 hover:text-amber-400 hover:bg-gray-700 rounded transition-colors"
           >
             Edit
           </button>
           <button
             onClick={() => onDelete(note)}
-            className="px-3 py-1 text-sm text-red-500 hover:text-red-700 hover:bg-red-50 rounded transition-colors"
+            className="px-3 py-1 text-sm text-red-500 hover:text-red-700 hover:bg-red-900/30 rounded transition-colors"
           >
             Delete
           </button>
@@ -1403,14 +1405,14 @@ const Notes = () => {
       {/* ============================================ */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">My Notes</h1>
-          <p className="text-sm text-gray-500 mt-1">
+          <h1 className="text-2xl font-bold text-gray-100">My Notes</h1>
+          <p className="text-sm text-gray-400 mt-1">
             {notes.length} {notes.length === 1 ? 'note' : 'notes'} total
           </p>
         </div>
         <button
           onClick={() => setShowCreate(true)}
-          className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 flex items-center space-x-2"
+          className="bg-amber-500 text-gray-900 px-4 py-2 rounded-md hover:bg-amber-600 flex items-center space-x-2"
         >
           <span>+</span>
           <span>New Note</span>
@@ -1420,7 +1422,7 @@ const Notes = () => {
       {/* ============================================ */}
       {/* SEARCH AND FILTERS */}
       {/* ============================================ */}
-      <div className="bg-white rounded-lg shadow-md p-4 space-y-4">
+      <div className="bg-gray-800 rounded-lg shadow-md p-4 space-y-4">
         {/* Search bar */}
         <div className="relative">
           <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
@@ -1431,12 +1433,12 @@ const Notes = () => {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search notes by title, content, or links..."
-            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full pl-10 pr-4 py-2 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-amber-500"
           />
           {searchQuery && (
             <button
               onClick={() => setSearchQuery('')}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-400"
             >
               ×
             </button>
@@ -1451,16 +1453,16 @@ const Notes = () => {
               onClick={() => setFilterType(type.value)}
               className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors
                 ${filterType === type.value
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  ? 'bg-amber-500 text-gray-900'
+                  : 'bg-gray-700 text-gray-400 hover:bg-gray-600'
                 }`}
             >
               {type.icon} {type.label}
               {linkTypeCounts[type.value] > 0 && (
                 <span className={`ml-1.5 px-1.5 py-0.5 rounded-full text-xs
                   ${filterType === type.value
-                    ? 'bg-blue-500 text-white'
-                    : 'bg-gray-200 text-gray-600'
+                    ? 'bg-amber-500 text-gray-900'
+                    : 'bg-gray-600 text-gray-400'
                   }`}
                 >
                   {linkTypeCounts[type.value]}
@@ -1475,7 +1477,7 @@ const Notes = () => {
       {/* ERROR MESSAGE */}
       {/* ============================================ */}
       {error && (
-        <div className="bg-red-50 text-red-600 p-3 rounded-md">
+        <div className="bg-red-900/30 text-red-400 p-3 rounded-md">
           {error}
         </div>
       )}
@@ -1484,14 +1486,14 @@ const Notes = () => {
       {/* NOTES LIST */}
       {/* ============================================ */}
       {loading ? (
-        <div className="text-center py-12 text-gray-500">
+        <div className="text-center py-12 text-gray-400">
           Loading notes...
         </div>
       ) : filteredNotes.length === 0 ? (
-        <div className="text-center py-12 bg-white rounded-lg shadow-md">
+        <div className="text-center py-12 bg-gray-800 rounded-lg shadow-md">
           {searchQuery || filterType !== 'all' ? (
             <>
-              <p className="text-gray-500 text-lg">No notes found</p>
+              <p className="text-gray-400 text-lg">No notes found</p>
               <p className="text-gray-400 text-sm mt-1">
                 Try adjusting your search or filters
               </p>
@@ -1500,20 +1502,20 @@ const Notes = () => {
                   setSearchQuery('');
                   setFilterType('all');
                 }}
-                className="mt-4 text-blue-600 hover:text-blue-800"
+                className="mt-4 text-amber-500 hover:text-amber-400"
               >
                 Clear filters
               </button>
             </>
           ) : (
             <>
-              <p className="text-gray-500 text-lg">No notes yet</p>
+              <p className="text-gray-400 text-lg">No notes yet</p>
               <p className="text-gray-400 text-sm mt-1">
                 Create your first note to get started!
               </p>
               <button
                 onClick={() => setShowCreate(true)}
-                className="mt-4 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700"
+                className="mt-4 bg-amber-500 text-gray-900 px-4 py-2 rounded-md hover:bg-amber-600"
               >
                 Create Note
               </button>
@@ -1524,7 +1526,7 @@ const Notes = () => {
         <div className="space-y-4">
           {/* Results count */}
           {(searchQuery || filterType !== 'all') && (
-            <p className="text-sm text-gray-500">
+            <p className="text-sm text-gray-400">
               Showing {filteredNotes.length} of {notes.length} notes
             </p>
           )}

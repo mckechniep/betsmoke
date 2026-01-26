@@ -13,7 +13,7 @@ const API_BASE = 'http://localhost:3001';
 // Retrieves the auth token from localStorage (where AuthContext stores it)
 
 const getStoredToken = () => {
-  return localStorage.getItem('token');
+  return localStorage.getItem('betsmoke_token');
 };
 
 // ============================================

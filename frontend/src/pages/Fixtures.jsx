@@ -138,13 +138,37 @@ function groupFixturesByDate(fixtures, timezone = 'America/New_York') {
 function getMatchState(fixture) {
   const stateObj = fixture.state;
   if (!stateObj) return null;
-  
+
   // Use short_name - it's consistent across all endpoints
   if (stateObj.short_name) {
     return stateObj.short_name.toLowerCase();
   }
-  
+
   return null;
+}
+
+// ============================================
+// HELPER: Format match state for display
+// ============================================
+// Converts short state codes to user-friendly text
+// e.g., "1st" → "1st Half", "2nd" → "2nd Half"
+function formatMatchStateDisplay(matchState) {
+  if (!matchState) return 'Scheduled';
+
+  const stateMap = {
+    '1st': '1st Half',
+    '1h': '1st Half',
+    '2nd': '2nd Half',
+    '2h': '2nd Half',
+    'ht': 'Half Time',
+    'et': 'Extra Time',
+    'pen': 'Penalties',
+    'break': 'Break',
+    'live': 'Live',
+    'inplay': 'Live',
+  };
+
+  return stateMap[matchState] || matchState.toUpperCase();
 }
 
 // ============================================
@@ -289,7 +313,7 @@ function FixtureLegend() {
 // Reusable across DefaultFixtures and SearchResults.
 function RefreshBar({ timeAgoText, loading, onRefresh }) {
   return (
-    <div className="flex items-center justify-between mb-4 bg-gray-50 rounded-lg px-4 py-2">
+    <div className="flex items-center justify-between mb-4 bg-gray-700 rounded-lg px-4 py-2">
       <div className="text-sm text-gray-500">
         {timeAgoText && (
           <span className="flex items-center gap-1">
@@ -301,18 +325,18 @@ function RefreshBar({ timeAgoText, loading, onRefresh }) {
       <button
         onClick={onRefresh}
         disabled={loading}
-        className="flex items-center space-x-2 px-3 py-1.5 bg-blue-600 text-white 
-                   rounded-md text-sm font-medium hover:bg-blue-700 
-                   disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+        className="flex items-center space-x-2 px-3 py-1.5 border border-amber-500 text-amber-500
+                   rounded-md text-sm font-medium hover:bg-amber-500/10
+                   disabled:border-gray-500 disabled:text-gray-500 disabled:cursor-not-allowed transition-colors"
       >
         {loading ? (
           <>
-            <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+            <span className="w-4 h-4 border-2 border-amber-500 border-t-transparent rounded-full animate-spin"></span>
             <span>Refreshing...</span>
           </>
         ) : (
           <>
-            <span>🔄</span>
+            <AppIcon name="refresh" size="md" className="text-amber-500" />
             <span>Refresh</span>
           </>
         )}
@@ -409,7 +433,7 @@ function FixtureCard({ fixture, timezone, temperatureUnit }) {
     <Link
       to={`/fixtures/${fixture.id}`}
       className={`
-        block bg-white rounded-lg shadow-md p-4 
+        block bg-gray-800 rounded-lg shadow-md p-4 
         hover:shadow-lg transition-shadow cursor-pointer
         ${isLive ? 'border-l-4 border-l-green-500' : ''}
         ${isFinished ? 'border-l-4 border-l-gray-400' : ''}
@@ -455,21 +479,21 @@ function FixtureCard({ fixture, timezone, temperatureUnit }) {
               </div>
               {/* State indicator */}
               <div className="text-xs text-gray-400 mt-1">
-                {isAfterPenalties ? 'P' : isAfterExtraTime ? 'AET' : isFinished ? 'FT' : isLive ? matchState?.toUpperCase() : 'Scheduled'}
+                {isAfterPenalties ? 'P' : isAfterExtraTime ? 'AET' : isFinished ? 'FT' : isLive ? formatMatchStateDisplay(matchState) : 'Scheduled'}
               </div>
               {/* Penalty score and winner (only for penalty shootout wins) */}
               {isAfterPenalties && penaltyScore && (
                 <div className="text-xs text-gray-500 mt-1">
                   <div className="font-medium">({penaltyScore.home}-{penaltyScore.away})</div>
                   {penaltyWinnerName && (
-                    <div className="text-gray-600 mt-0.5">{penaltyWinnerName} wins on penalties</div>
+                    <div className="text-gray-400 mt-0.5">{penaltyWinnerName} wins on penalties</div>
                   )}
                 </div>
               )}
             </div>
           ) : (
             <div>
-              <div className="text-lg font-medium text-gray-700">
+              <div className="text-lg font-medium text-gray-300">
                 {formatTimeUtil(fixture.starting_at, timezone)}
               </div>
               <div className="text-xs text-gray-400 mt-1">Scheduled</div>
@@ -511,7 +535,7 @@ function FixtureCard({ fixture, timezone, temperatureUnit }) {
         </div>
       )}
 
-      <div className="mt-2 text-xs text-blue-500 text-center">
+      <div className="mt-2 text-xs text-amber-500 text-center">
         Click for details, odds &amp; H2H →
       </div>
     </Link>
@@ -614,20 +638,20 @@ function TeamAutocomplete({ selectedTeam, onSelectTeam, disabled }) {
           placeholder="Type team name (e.g., Man, Liv, Ars...)"
           disabled={disabled}
           className={`w-full px-4 py-2 border rounded-md 
-                     focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent
-                     ${selectedTeam ? 'border-green-500 bg-green-50' : 'border-gray-300'}
-                     ${disabled ? 'bg-gray-100 cursor-not-allowed' : ''}`}
+                     focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent
+                     ${selectedTeam ? 'border-green-500 bg-green-900/30' : 'border-gray-600'}
+                     ${disabled ? 'bg-gray-600 cursor-not-allowed' : ''}`}
         />
         
         <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center space-x-2">
           {loading && (
-            <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+            <div className="w-4 h-4 border-2 border-amber-500 border-t-transparent rounded-full animate-spin"></div>
           )}
           {selectedTeam && !disabled && (
             <button
               type="button"
               onClick={handleClear}
-              className="text-gray-400 hover:text-gray-600"
+              className="text-gray-400 hover:text-gray-200"
             >
               ✕
             </button>
@@ -652,14 +676,14 @@ function TeamAutocomplete({ selectedTeam, onSelectTeam, disabled }) {
       {showDropdown && suggestions.length > 0 && (
         <div 
           ref={dropdownRef}
-          className="absolute z-20 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto"
+          className="absolute z-20 w-full mt-1 bg-gray-800 border border-gray-600 rounded-md shadow-lg max-h-60 overflow-y-auto"
         >
           {suggestions.map((team) => (
             <button
               key={team.id}
               type="button"
               onClick={() => handleSelect(team)}
-              className="w-full px-4 py-2 text-left hover:bg-blue-50 flex items-center space-x-3 border-b last:border-b-0"
+              className="w-full px-4 py-2 text-left hover:bg-gray-700 flex items-center space-x-3 border-b last:border-b-0"
             >
               {team.image_path && (
                 <img 
@@ -669,7 +693,7 @@ function TeamAutocomplete({ selectedTeam, onSelectTeam, disabled }) {
                 />
               )}
               <div>
-                <div className="font-medium text-gray-900">{team.name}</div>
+                <div className="font-medium text-gray-100">{team.name}</div>
                 {team.country?.name && (
                   <div className="text-xs text-gray-500">{team.country.name}</div>
                 )}
@@ -680,7 +704,7 @@ function TeamAutocomplete({ selectedTeam, onSelectTeam, disabled }) {
       )}
 
       {showDropdown && suggestions.length === 0 && query.length >= 2 && !loading && (
-        <div className="absolute z-20 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg p-3 text-sm text-gray-500">
+        <div className="absolute z-20 w-full mt-1 bg-gray-800 border border-gray-600 rounded-md shadow-lg p-3 text-sm text-gray-500">
           No teams found matching "{query}"
         </div>
       )}
@@ -1015,15 +1039,18 @@ function SearchPanel({ onSearchResults, onClearSearch, isSearchActive }) {
   // RENDER
   // ============================================
   return (
-    <div className="bg-white rounded-lg shadow-md p-4 mb-6">
+    <div className="bg-gray-800 rounded-lg shadow-md p-4 mb-6">
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-lg font-semibold text-gray-900">🔍 Search Fixtures</h2>
+        <h2 className="text-lg font-semibold text-gray-100 flex items-center gap-2">
+          <AppIcon name="search" size="lg" className="text-gray-400" />
+          <span>Search Fixtures</span>
+        </h2>
         
         {isSearchActive && (
           <button
             onClick={handleClear}
-            className="px-3 py-1 bg-gray-100 text-gray-700 rounded-md text-sm font-medium
-                       hover:bg-gray-200 transition-colors"
+            className="px-3 py-1 bg-gray-600 text-gray-200 rounded-md text-sm font-medium
+                       hover:bg-gray-500 transition-colors"
           >
             ✕ Clear &amp; Show Default
           </button>
@@ -1034,12 +1061,11 @@ function SearchPanel({ onSearchResults, onClearSearch, isSearchActive }) {
       <div className="flex space-x-2 mb-4">
         <button
           onClick={() => setSearchMode('team')}
-          className={`px-4 py-2 rounded-md text-sm font-medium transition-colors
+          className={`px-4 py-2 rounded-md text-sm font-medium transition-colors flex items-center gap-2
             ${searchMode === 'team'
-              ? 'bg-blue-600 text-white'
-              : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              ? 'bg-gray-700 text-amber-400 ring-2 ring-amber-500'
+              : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
             }`}
-        className="flex items-center gap-2"
         >
           <AppIcon name="team" size="sm" /> By Team
         </button>
@@ -1047,8 +1073,8 @@ function SearchPanel({ onSearchResults, onClearSearch, isSearchActive }) {
           onClick={() => setSearchMode('competition')}
           className={`px-4 py-2 rounded-md text-sm font-medium transition-colors flex items-center gap-2
             ${searchMode === 'competition'
-              ? 'bg-blue-600 text-white'
-              : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              ? 'bg-gray-700 text-amber-400 ring-2 ring-amber-500'
+              : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
             }`}
         >
           <AppIcon name="trophy" size="sm" /> By Competition
@@ -1057,8 +1083,8 @@ function SearchPanel({ onSearchResults, onClearSearch, isSearchActive }) {
           onClick={() => setSearchMode('date')}
           className={`px-4 py-2 rounded-md text-sm font-medium transition-colors flex items-center gap-2
             ${searchMode === 'date'
-              ? 'bg-blue-600 text-white'
-              : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              ? 'bg-gray-700 text-amber-400 ring-2 ring-amber-500'
+              : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
             }`}
         >
           <AppIcon name="calendar" size="sm" /> By Date
@@ -1071,7 +1097,7 @@ function SearchPanel({ onSearchResults, onClearSearch, isSearchActive }) {
       {searchMode === 'team' && (
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-300 mb-1">
               Team
             </label>
             <TeamAutocomplete
@@ -1093,10 +1119,10 @@ function SearchPanel({ onSearchResults, onClearSearch, isSearchActive }) {
                 value="upcoming"
                 checked={searchType === 'upcoming'}
                 onChange={() => setSearchType('upcoming')}
-                className="text-blue-600 focus:ring-blue-500"
+                className="text-amber-500 focus:ring-amber-500"
                 disabled={teamSearchLoading}
               />
-              <span className="text-sm text-gray-700">Upcoming</span>
+              <span className="text-sm text-gray-300">Upcoming</span>
             </label>
 
             <label className="flex items-center space-x-2 cursor-pointer">
@@ -1106,10 +1132,10 @@ function SearchPanel({ onSearchResults, onClearSearch, isSearchActive }) {
                 value="dateRange"
                 checked={searchType === 'dateRange'}
                 onChange={() => setSearchType('dateRange')}
-                className="text-blue-600 focus:ring-blue-500"
+                className="text-amber-500 focus:ring-amber-500"
                 disabled={teamSearchLoading}
               />
-              <span className="text-sm text-gray-700">Custom Date Range</span>
+              <span className="text-sm text-gray-300">Custom Date Range</span>
             </label>
 
             <label className="flex items-center space-x-2 cursor-pointer">
@@ -1119,24 +1145,24 @@ function SearchPanel({ onSearchResults, onClearSearch, isSearchActive }) {
                 value="historical"
                 checked={searchType === 'historical'}
                 onChange={() => setSearchType('historical')}
-                className="text-blue-600 focus:ring-blue-500"
+                className="text-amber-500 focus:ring-amber-500"
                 disabled={teamSearchLoading}
               />
-              <span className="text-sm text-gray-700">Historical Seasons</span>
+              <span className="text-sm text-gray-300">Historical Seasons</span>
             </label>
           </div>
 
           {/* Season Selector (for historical) */}
           {searchType === 'historical' && (
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-300 mb-1">
                 Season
               </label>
               <select
                 value={selectedSeason}
                 onChange={(e) => setSelectedSeason(e.target.value)}
-                className="px-3 py-2 border border-gray-300 rounded-md text-sm
-                           focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                className="px-3 py-2 border border-gray-600 rounded-md text-sm
+                           focus:outline-none focus:ring-2 focus:ring-amber-500 bg-gray-800"
                 disabled={teamSearchLoading}
               >
                 {SEASON_OPTIONS.map(option => (
@@ -1153,35 +1179,35 @@ function SearchPanel({ onSearchResults, onClearSearch, isSearchActive }) {
             <div className="space-y-2">
               <div className="flex space-x-4">
                 <div className="flex-1">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-gray-300 mb-1">
                     Start Date
                   </label>
                   <input
                     type="date"
                     value={teamStartDate}
                     onChange={(e) => setTeamStartDate(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md
-                               focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-gray-600 rounded-md
+                               focus:outline-none focus:ring-2 focus:ring-amber-500"
                     disabled={teamSearchLoading}
                   />
                 </div>
                 <div className="flex-1">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-gray-300 mb-1">
                     End Date
                   </label>
                   <input
                     type="date"
                     value={teamEndDate}
                     onChange={(e) => setTeamEndDate(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md
-                               focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-gray-600 rounded-md
+                               focus:outline-none focus:ring-2 focus:ring-amber-500"
                     disabled={teamSearchLoading}
                   />
                 </div>
               </div>
 
               {teamStartDate && teamEndDate && (
-                <div className={`text-sm ${isTeamDateRangeValid ? 'text-gray-600' : 'text-red-600'}`}>
+                <div className={`text-sm ${isTeamDateRangeValid ? 'text-gray-400' : 'text-red-400'}`}>
                   {isTeamDateRangeValid
                     ? `${teamDateRangeDays} days selected`
                     : teamDateRangeDays > MAX_TEAM_DATE_RANGE_DAYS
@@ -1197,8 +1223,8 @@ function SearchPanel({ onSearchResults, onClearSearch, isSearchActive }) {
           <button
             onClick={handleTeamSearch}
             disabled={!selectedTeam || teamSearchLoading || (searchType === 'dateRange' && !isTeamDateRangeValid)}
-            className="w-full px-6 py-2 bg-blue-600 text-white rounded-md font-medium
-                       hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed
+            className="w-full px-6 py-2 bg-amber-500 text-gray-900 rounded-md font-medium
+                       hover:bg-amber-600 disabled:bg-gray-400 disabled:cursor-not-allowed
                        transition-colors"
           >
             {teamSearchLoading ? 'Searching...' : 'Search Fixtures'}
@@ -1217,7 +1243,7 @@ function SearchPanel({ onSearchResults, onClearSearch, isSearchActive }) {
           )}
 
           {loadingProgress && (
-            <div className="text-sm text-blue-600 bg-blue-50 p-2 rounded-md animate-pulse">
+            <div className="text-sm text-amber-500 bg-gray-700 p-2 rounded-md animate-pulse">
               ⏳ {loadingProgress}
             </div>
           )}
@@ -1231,12 +1257,12 @@ function SearchPanel({ onSearchResults, onClearSearch, isSearchActive }) {
         <div className="space-y-4">
           {/* Competition Selection */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-300 mb-2">
               Select Competition
             </label>
             {leaguesLoading ? (
               <div className="flex justify-center py-8">
-                <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                <div className="w-8 h-8 border-4 border-amber-500 border-t-transparent rounded-full animate-spin"></div>
               </div>
             ) : (
               <div className="grid grid-cols-3 gap-4">
@@ -1315,10 +1341,10 @@ function SearchPanel({ onSearchResults, onClearSearch, isSearchActive }) {
                 value="upcoming"
                 checked={competitionSearchType === 'upcoming'}
                 onChange={() => setCompetitionSearchType('upcoming')}
-                className="text-blue-600 focus:ring-blue-500"
+                className="text-amber-500 focus:ring-amber-500"
                 disabled={competitionSearchLoading}
               />
-              <span className="text-sm text-gray-700">Upcoming (next 30 days)</span>
+              <span className="text-sm text-gray-300">Upcoming (next 30 days)</span>
             </label>
             
             <label className="flex items-center space-x-2 cursor-pointer">
@@ -1328,10 +1354,10 @@ function SearchPanel({ onSearchResults, onClearSearch, isSearchActive }) {
                 value="dateRange"
                 checked={competitionSearchType === 'dateRange'}
                 onChange={() => setCompetitionSearchType('dateRange')}
-                className="text-blue-600 focus:ring-blue-500"
+                className="text-amber-500 focus:ring-amber-500"
                 disabled={competitionSearchLoading}
               />
-              <span className="text-sm text-gray-700">Custom Date Range (max {MAX_DATE_RANGE_DAYS} days)</span>
+              <span className="text-sm text-gray-300">Custom Date Range (max {MAX_DATE_RANGE_DAYS} days)</span>
             </label>
           </div>
           
@@ -1340,35 +1366,35 @@ function SearchPanel({ onSearchResults, onClearSearch, isSearchActive }) {
             <div className="space-y-2">
               <div className="flex space-x-4">
                 <div className="flex-1">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-gray-300 mb-1">
                     Start Date
                   </label>
                   <input
                     type="date"
                     value={competitionStartDate}
                     onChange={(e) => setCompetitionStartDate(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md
-                               focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-gray-600 rounded-md
+                               focus:outline-none focus:ring-2 focus:ring-amber-500"
                     disabled={competitionSearchLoading}
                   />
                 </div>
                 <div className="flex-1">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-gray-300 mb-1">
                     End Date
                   </label>
                   <input
                     type="date"
                     value={competitionEndDate}
                     onChange={(e) => setCompetitionEndDate(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md
-                               focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-gray-600 rounded-md
+                               focus:outline-none focus:ring-2 focus:ring-amber-500"
                     disabled={competitionSearchLoading}
                   />
                 </div>
               </div>
               
               {competitionStartDate && competitionEndDate && (
-                <div className={`text-sm ${isCompetitionDateRangeValid ? 'text-gray-600' : 'text-red-600'}`}>
+                <div className={`text-sm ${isCompetitionDateRangeValid ? 'text-gray-400' : 'text-red-400'}`}>
                   {isCompetitionDateRangeValid 
                     ? `${competitionDateRangeDays} days selected`
                     : competitionDateRangeDays > MAX_DATE_RANGE_DAYS
@@ -1388,8 +1414,8 @@ function SearchPanel({ onSearchResults, onClearSearch, isSearchActive }) {
               competitionSearchLoading || 
               (competitionSearchType === 'dateRange' && !isCompetitionDateRangeValid)
             }
-            className="w-full px-6 py-2 bg-blue-600 text-white rounded-md font-medium
-                       hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed
+            className="w-full px-6 py-2 bg-amber-500 text-gray-900 rounded-md font-medium
+                       hover:bg-amber-600 disabled:bg-gray-400 disabled:cursor-not-allowed
                        transition-colors"
           >
             {competitionSearchLoading ? 'Searching...' : 'Search Fixtures'}
@@ -1411,10 +1437,10 @@ function SearchPanel({ onSearchResults, onClearSearch, isSearchActive }) {
                 value="single"
                 checked={dateSearchType === 'single'}
                 onChange={() => setDateSearchType('single')}
-                className="text-blue-600 focus:ring-blue-500"
+                className="text-amber-500 focus:ring-amber-500"
                 disabled={dateSearchLoading}
               />
-              <span className="text-sm text-gray-700">Single Date</span>
+              <span className="text-sm text-gray-300">Single Date</span>
             </label>
             
             <label className="flex items-center space-x-2 cursor-pointer">
@@ -1424,25 +1450,25 @@ function SearchPanel({ onSearchResults, onClearSearch, isSearchActive }) {
                 value="range"
                 checked={dateSearchType === 'range'}
                 onChange={() => setDateSearchType('range')}
-                className="text-blue-600 focus:ring-blue-500"
+                className="text-amber-500 focus:ring-amber-500"
                 disabled={dateSearchLoading}
               />
-              <span className="text-sm text-gray-700">Date Range (max {MAX_DATE_RANGE_DAYS} days)</span>
+              <span className="text-sm text-gray-300">Date Range (max {MAX_DATE_RANGE_DAYS} days)</span>
             </label>
           </div>
           
           {/* Single Date Input */}
           {dateSearchType === 'single' && (
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-300 mb-1">
                 Select Date
               </label>
               <input
                 type="date"
                 value={searchDate}
                 onChange={(e) => setSearchDate(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-md 
-                           focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-4 py-2 border border-gray-600 rounded-md 
+                           focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent"
                 disabled={dateSearchLoading}
               />
             </div>
@@ -1453,28 +1479,28 @@ function SearchPanel({ onSearchResults, onClearSearch, isSearchActive }) {
             <div className="space-y-2">
               <div className="flex space-x-4">
                 <div className="flex-1">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-gray-300 mb-1">
                     Start Date
                   </label>
                   <input
                     type="date"
                     value={dateRangeStart}
                     onChange={(e) => setDateRangeStart(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md
-                               focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-gray-600 rounded-md
+                               focus:outline-none focus:ring-2 focus:ring-amber-500"
                     disabled={dateSearchLoading}
                   />
                 </div>
                 <div className="flex-1">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-gray-300 mb-1">
                     End Date
                   </label>
                   <input
                     type="date"
                     value={dateRangeEnd}
                     onChange={(e) => setDateRangeEnd(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md
-                               focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-gray-600 rounded-md
+                               focus:outline-none focus:ring-2 focus:ring-amber-500"
                     disabled={dateSearchLoading}
                   />
                 </div>
@@ -1482,7 +1508,7 @@ function SearchPanel({ onSearchResults, onClearSearch, isSearchActive }) {
               
               {/* Date range validation message */}
               {dateRangeStart && dateRangeEnd && (
-                <div className={`text-sm ${isGeneralDateRangeValid ? 'text-gray-600' : 'text-red-600'}`}>
+                <div className={`text-sm ${isGeneralDateRangeValid ? 'text-gray-400' : 'text-red-400'}`}>
                   {isGeneralDateRangeValid 
                     ? `${generalDateRangeDays} days selected`
                     : generalDateRangeDays > MAX_DATE_RANGE_DAYS
@@ -1502,8 +1528,8 @@ function SearchPanel({ onSearchResults, onClearSearch, isSearchActive }) {
               (dateSearchType === 'single' && !searchDate) ||
               (dateSearchType === 'range' && !isGeneralDateRangeValid)
             }
-            className="w-full px-6 py-2 bg-blue-600 text-white rounded-md font-medium
-                       hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed
+            className="w-full px-6 py-2 bg-amber-500 text-gray-900 rounded-md font-medium
+                       hover:bg-amber-600 disabled:bg-gray-400 disabled:cursor-not-allowed
                        transition-colors"
           >
             {dateSearchLoading ? 'Searching...' : 'Search Fixtures'}
@@ -1580,14 +1606,14 @@ function SearchResults({ searchData, onClear, loading, timeAgoText, onRefresh, t
     <div>
       <div className="flex items-center justify-between mb-4">
         <div>
-          <h2 className="text-xl font-bold text-gray-900">
+          <h2 className="text-xl font-bold text-gray-100">
             {getHeaderText()}
           </h2>
           <p className="text-sm text-gray-500 mt-1">
             {fixtures.length} {fixtures.length === 1 ? 'fixture' : 'fixtures'} found
             {type === 'team' && teamId && (
               <span className="ml-2">
-                • <Link to={`/teams/${teamId}`} className="text-blue-600 hover:underline">
+                • <Link to={`/teams/${teamId}`} className="text-amber-500 hover:underline">
                   View team page →
                 </Link>
               </span>
@@ -1596,8 +1622,8 @@ function SearchResults({ searchData, onClear, loading, timeAgoText, onRefresh, t
         </div>
         <button
           onClick={onClear}
-          className="px-4 py-2 bg-gray-100 text-gray-700 rounded-md text-sm font-medium
-                     hover:bg-gray-200 transition-colors"
+          className="px-4 py-2 bg-gray-600 text-gray-200 rounded-md text-sm font-medium
+                     hover:bg-gray-500 transition-colors"
         >
           ✕ Clear Search
         </button>
@@ -1616,9 +1642,9 @@ function SearchResults({ searchData, onClear, loading, timeAgoText, onRefresh, t
       )}
 
       {fixtures.length === 0 ? (
-        <div className="bg-gray-50 rounded-lg p-8 text-center">
+        <div className="bg-gray-700 rounded-lg p-8 text-center">
           <div className="text-gray-400 text-5xl mb-4">🔍</div>
-          <h3 className="text-xl font-semibold text-gray-700 mb-2">
+          <h3 className="text-xl font-semibold text-gray-200 mb-2">
             No Fixtures Found
           </h3>
           <p className="text-gray-500">
@@ -1635,9 +1661,9 @@ function SearchResults({ searchData, onClear, loading, timeAgoText, onRefresh, t
           {groupedFixtures.map(({ date, fixtures: dayFixtures }) => (
             <div key={date}>
               <div className={`sticky top-0 px-4 py-2 rounded-md mb-3 z-10
-                ${isHistorical ? 'bg-amber-100' : 'bg-blue-100'}`}
+                ${isHistorical ? 'bg-amber-100' : 'bg-amber-900/30'}`}
               >
-                <h3 className={`font-semibold ${isHistorical ? 'text-amber-800' : 'text-blue-800'}`}>
+                <h3 className={`font-semibold ${isHistorical ? 'text-amber-800' : 'text-amber-400'}`}>
                   {formatDateOnly(date, dateFormat)}
                 </h3>
               </div>
@@ -1664,7 +1690,7 @@ function DefaultFixtures({ fixtures, loading, error, dateRange, timeAgoText, onR
   return (
     <div>
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+        <h2 className="text-xl font-bold text-gray-100 flex items-center gap-2">
           <AppIcon name="calendar" size="lg" /> Fixture List
         </h2>
         
@@ -1686,7 +1712,7 @@ function DefaultFixtures({ fixtures, loading, error, dateRange, timeAgoText, onR
       />
 
       {error && (
-        <div className="bg-red-50 text-red-600 p-4 rounded-md">
+        <div className="bg-red-900/30 text-red-400 p-4 rounded-md">
           {error}
         </div>
       )}
@@ -1696,9 +1722,9 @@ function DefaultFixtures({ fixtures, loading, error, dateRange, timeAgoText, onR
           Loading fixtures...
         </div>
       ) : groupedFixtures.length === 0 ? (
-        <div className="bg-gray-50 rounded-lg p-8 text-center">
+        <div className="bg-gray-700 rounded-lg p-8 text-center">
           <div className="text-gray-400 mb-4"><AppIcon name="calendar" size="3xl" /></div>
-          <h2 className="text-xl font-semibold text-gray-700 mb-2">
+          <h2 className="text-xl font-semibold text-gray-200 mb-2">
             No Upcoming Fixtures
           </h2>
           <p className="text-gray-500">
@@ -1710,8 +1736,8 @@ function DefaultFixtures({ fixtures, loading, error, dateRange, timeAgoText, onR
         <div className="space-y-8">
           {groupedFixtures.map(({ date, fixtures: dayFixtures }) => (
             <div key={date}>
-              <div className="sticky top-0 bg-gray-100 px-4 py-2 rounded-md mb-3 z-10">
-                <h3 className="font-semibold text-gray-700">
+              <div className="sticky top-0 bg-gray-700 px-4 py-2 rounded-md mb-3 z-10">
+                <h3 className="font-semibold text-gray-200">
                   {formatDateOnly(date, dateFormat)}
                 </h3>
               </div>
@@ -2040,7 +2066,7 @@ const Fixtures = () => {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Fixtures</h1>
+        <h1 className="text-2xl font-bold text-gray-100">Fixtures</h1>
         <p className="text-sm text-gray-500 mt-1">
           Premier League, FA Cup &amp; Carabao Cup
         </p>
