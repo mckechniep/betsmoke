@@ -37,63 +37,16 @@ function App() {
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/reset-password" element={<ResetPassword />} />
 
-            {/* Protected Routes - All app content requires login */}
-            <Route
-              path="/fixtures"
-              element={
-                <ProtectedRoute>
-                  <Fixtures />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/fixtures/:id"
-              element={
-                <ProtectedRoute>
-                  <FixtureDetail />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/teams"
-              element={
-                <ProtectedRoute>
-                  <Teams />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/teams/:id"
-              element={
-                <ProtectedRoute>
-                  <TeamDetail />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/competitions"
-              element={
-                <ProtectedRoute>
-                  <Competitions />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/model-performance"
-              element={
-                <ProtectedRoute>
-                  <ModelPerformance />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/model-architecture"
-              element={
-                <ProtectedRoute>
-                  <ModelArchitecture />
-                </ProtectedRoute>
-              }
-            />
+            {/* Public Data Routes - Viewable by everyone (anonymous gets cached data) */}
+            <Route path="/fixtures" element={<Fixtures />} />
+            <Route path="/fixtures/:id" element={<FixtureDetail />} />
+            <Route path="/teams" element={<Teams />} />
+            <Route path="/teams/:id" element={<TeamDetail />} />
+            <Route path="/competitions" element={<Competitions />} />
+            <Route path="/model-performance" element={<ModelPerformance />} />
+            <Route path="/model-architecture" element={<ModelArchitecture />} />
+
+            {/* Protected Routes - Require login */}
             <Route
               path="/notes"
               element={

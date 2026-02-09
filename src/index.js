@@ -20,7 +20,9 @@ import seasonsRoutes from './routes/seasons.js';  // SportsMonks seasons data
 import topscorersRoutes from './routes/topscorers.js';  // SportsMonks top scorers
 import predictionsRoutes from './routes/predictions.js';  // SportsMonks predictions
 import authMiddleware, { adminMiddleware } from './middleware/auth.js';  // Protects routes
+import { globalLimiter, authLimiter, dataLimiter, livescoresLimiter } from './middleware/rateLimiter.js';  // Rate limiting
 import { loadTypesCache, getCacheStatus, syncTypesFromAPI } from './services/types.js';  // Types cache
+import cache from './services/cache.js';  // Data cache (for admin endpoints)
 
 // ============================================
 // CONFIGURATION
@@ -45,14 +47,18 @@ app.use(express.json());
 // Enable CORS (so React frontend can call this API)
 app.use(cors());
 
+// Global rate limiter - baseline protection for all routes
+// 300 requests per 15 minutes per IP
+app.use(globalLimiter);
+
 // ============================================
 // ROUTES
 // ============================================
 
 // Health check route - confirms the server is running
 app.get('/health', (req, res) => {
-  res.json({ 
-    status: 'ok', 
+  res.json({
+    status: 'ok',
     message: 'BetSmoke API is running',
     timestamp: new Date().toISOString()
   });
@@ -63,14 +69,14 @@ app.get('/db-health', async (req, res) => {
   try {
     // Try to count users (will be 0, but proves connection works)
     const userCount = await prisma.user.count();
-    res.json({ 
-      status: 'ok', 
+    res.json({
+      status: 'ok',
       message: 'Database connected',
       userCount: userCount
     });
   } catch (error) {
-    res.status(500).json({ 
-      status: 'error', 
+    res.status(500).json({
+      status: 'error',
       message: 'Database connection failed',
       error: error.message
     });
@@ -78,7 +84,8 @@ app.get('/db-health', async (req, res) => {
 });
 
 // Authentication routes (public - no middleware needed)
-app.use('/auth', authRoutes);
+// Tight rate limit to prevent brute force attacks
+app.use('/auth', authLimiter, authRoutes);
 
 // Notes routes (protected - all routes require valid token)
 // By putting authMiddleware here, ALL /notes/* routes are protected
@@ -86,43 +93,43 @@ app.use('/notes', authMiddleware, notesRoutes);
 
 // Teams routes (public - SportsMonks data proxy)
 // These don't require auth since they're just fetching public football data
-app.use('/teams', teamsRoutes);
+app.use('/teams', dataLimiter, teamsRoutes);
 
 // Fixtures routes (public - SportsMonks data proxy)
 // Access match data: by ID, by date, by date range, by team+date range
-app.use('/fixtures', fixturesRoutes);
+app.use('/fixtures', dataLimiter, fixturesRoutes);
 
 // Players routes (public - SportsMonks data proxy)
 // Search players, get player details
-app.use('/players', playersRoutes);
+app.use('/players', dataLimiter, playersRoutes);
 
 // Odds routes (public - SportsMonks data proxy)
 // Pre-match odds, bookmakers, betting markets
-app.use('/odds', oddsRoutes);
+app.use('/odds', dataLimiter, oddsRoutes);
 
 // Standings routes (public - SportsMonks data proxy)
 // League tables by season or league, live standings
-app.use('/standings', standingsRoutes);
+app.use('/standings', dataLimiter, standingsRoutes);
 
 // Live scores routes (public - SportsMonks data proxy)
-// Real-time match scores for our subscribed leagues
-app.use('/livescores', livescoresRoutes);
+// Real-time match scores - generous limit since users poll frequently
+app.use('/livescores', livescoresLimiter, livescoresRoutes);
 
 // Leagues routes (public - SportsMonks data proxy)
 // List and search competitions
-app.use('/leagues', leaguesRoutes);
+app.use('/leagues', dataLimiter, leaguesRoutes);
 
 // Seasons routes (public - SportsMonks data proxy)
 // Navigate historical data by season
-app.use('/seasons', seasonsRoutes);
+app.use('/seasons', dataLimiter, seasonsRoutes);
 
 // Top scorers routes (public - SportsMonks data proxy)
 // Player leaderboards by season
-app.use('/topscorers', topscorersRoutes);
+app.use('/topscorers', dataLimiter, topscorersRoutes);
 
 // Predictions routes (public - SportsMonks data proxy)
 // AI prediction model performance/accuracy by league
-app.use('/predictions', predictionsRoutes);
+app.use('/predictions', dataLimiter, predictionsRoutes);
 
 // ============================================
 // PROTECTED TEST ROUTE
@@ -211,6 +218,67 @@ app.post('/admin/types/sync', authMiddleware, adminMiddleware, async (req, res) 
       message: 'Failed to sync types',
       error: error.message
     });
+  }
+});
+
+// ============================================
+// CACHE ADMIN ENDPOINTS
+// ============================================
+// Monitor and manage the SportsMonks data cache
+
+// GET /admin/cache/stats - Cache hit/miss counts, hit rate, keys by category
+app.get('/admin/cache/stats', authMiddleware, adminMiddleware, async (req, res) => {
+  try {
+    const stats = cache.detailedStats();
+    res.json({ status: 'ok', data: stats });
+  } catch (error) {
+    console.error('[Admin] Cache stats error:', error.message);
+    res.status(500).json({ error: 'Failed to get cache stats' });
+  }
+});
+
+// GET /admin/cache/keys - All cached keys with remaining TTL
+app.get('/admin/cache/keys', authMiddleware, adminMiddleware, async (req, res) => {
+  try {
+    const allKeys = cache.listKeys();
+
+    // Build key list with remaining TTL for each
+    const keysWithTtl = allKeys.map(key => ({
+      key,
+      ttlRemaining: cache.getTtl(key)
+    }));
+
+    res.json({ status: 'ok', data: { count: keysWithTtl.length, keys: keysWithTtl } });
+  } catch (error) {
+    console.error('[Admin] Cache keys error:', error.message);
+    res.status(500).json({ error: 'Failed to get cache keys' });
+  }
+});
+
+// DELETE /admin/cache/flush - Flush entire cache
+app.delete('/admin/cache/flush', authMiddleware, adminMiddleware, async (req, res) => {
+  try {
+    cache.flush();
+    res.json({ status: 'ok', message: 'Cache flushed successfully' });
+  } catch (error) {
+    console.error('[Admin] Cache flush error:', error.message);
+    res.status(500).json({ error: 'Failed to flush cache' });
+  }
+});
+
+// DELETE /admin/cache/prefix/:prefix - Flush keys matching a prefix
+app.delete('/admin/cache/prefix/:prefix', authMiddleware, adminMiddleware, async (req, res) => {
+  try {
+    const { prefix } = req.params;
+    const deletedCount = cache.flushByPrefix(prefix);
+    res.json({
+      status: 'ok',
+      message: `Flushed ${deletedCount} keys matching prefix "${prefix}"`,
+      deletedCount
+    });
+  } catch (error) {
+    console.error('[Admin] Cache prefix flush error:', error.message);
+    res.status(500).json({ error: 'Failed to flush cache by prefix' });
   }
 });
 

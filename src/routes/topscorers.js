@@ -8,14 +8,15 @@
 import express from 'express';
 import { getTopScorersBySeason } from '../services/sportsmonks.js';
 
-// Import auth middleware - all routes require authentication
-import authMiddleware from '../middleware/auth.js';
+// Import optional auth middleware - sets req.user if token present, but allows anonymous access
+// Authenticated users get fresh data (skipCache), anonymous users get cached data
+import { optionalAuthMiddleware } from '../middleware/auth.js';
 
 // Create a router
 const router = express.Router();
 
-// Apply auth middleware to all routes in this router
-router.use(authMiddleware);
+// Apply optional auth to all routes - allows both authenticated and anonymous access
+router.use(optionalAuthMiddleware);
 
 // ============================================
 // GET TOP SCORERS BY SEASON
@@ -41,7 +42,7 @@ router.get('/seasons/:seasonId', async (req, res) => {
     }
 
     // Call the SportsMonks service
-    const result = await getTopScorersBySeason(seasonId);
+    const result = await getTopScorersBySeason(seasonId, { skipCache: !!req.user });
 
     const scorers = result.data || [];
 

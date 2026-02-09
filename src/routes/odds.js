@@ -20,14 +20,15 @@ import {
   searchMarkets
 } from '../services/sportsmonks.js';
 
-// Import auth middleware - all routes require authentication
-import authMiddleware from '../middleware/auth.js';
+// Import optional auth middleware - sets req.user if token present, but allows anonymous access
+// Authenticated users get fresh data (skipCache), anonymous users get cached data
+import { optionalAuthMiddleware } from '../middleware/auth.js';
 
 // Create a router
 const router = express.Router();
 
-// Apply auth middleware to all routes in this router
-router.use(authMiddleware);
+// Apply optional auth to all routes - allows both authenticated and anonymous access
+router.use(optionalAuthMiddleware);
 
 // ============================================
 // PRE-MATCH ODDS ROUTES
@@ -52,7 +53,7 @@ router.get('/fixtures/:fixtureId', async (req, res) => {
     }
     
     // Call the SportsMonks service
-    const result = await getOddsByFixture(fixtureId);
+    const result = await getOddsByFixture(fixtureId, { skipCache: !!req.user });
     
     // Return the odds
     res.json({
@@ -95,7 +96,7 @@ router.get('/fixtures/:fixtureId/bookmakers/:bookmakerId', async (req, res) => {
     }
     
     // Call the SportsMonks service
-    const result = await getOddsByFixtureAndBookmaker(fixtureId, bookmakerId);
+    const result = await getOddsByFixtureAndBookmaker(fixtureId, bookmakerId, { skipCache: !!req.user });
     
     // Return the odds
     res.json({
@@ -146,7 +147,7 @@ router.get('/fixtures/:fixtureId/markets/:marketId', async (req, res) => {
     }
     
     // Call the SportsMonks service
-    const result = await getOddsByFixtureAndMarket(fixtureId, marketId);
+    const result = await getOddsByFixtureAndMarket(fixtureId, marketId, { skipCache: !!req.user });
     
     // Return the odds
     res.json({
@@ -179,7 +180,7 @@ router.get('/fixtures/:fixtureId/markets/:marketId', async (req, res) => {
 router.get('/bookmakers', async (req, res) => {
   try {
     // Call the SportsMonks service
-    const result = await getAllBookmakers();
+    const result = await getAllBookmakers({ skipCache: !!req.user });
     
     // Return the bookmakers
     res.json({
@@ -215,7 +216,7 @@ router.get('/bookmakers/:id', async (req, res) => {
     }
     
     // Call the SportsMonks service
-    const result = await getBookmakerById(id);
+    const result = await getBookmakerById(id, { skipCache: !!req.user });
     
     // Check if bookmaker was found
     if (!result.data) {
@@ -252,7 +253,7 @@ router.get('/bookmakers/:id', async (req, res) => {
 router.get('/markets', async (req, res) => {
   try {
     // Call the SportsMonks service
-    const result = await getAllMarkets();
+    const result = await getAllMarkets({ skipCache: !!req.user });
     
     // Return the markets
     res.json({
@@ -288,7 +289,7 @@ router.get('/markets/search/:query', async (req, res) => {
     }
     
     // Call the SportsMonks service
-    const result = await searchMarkets(query);
+    const result = await searchMarkets(query, { skipCache: !!req.user });
     
     // Return the markets
     res.json({
@@ -325,7 +326,7 @@ router.get('/markets/:id', async (req, res) => {
     }
     
     // Call the SportsMonks service
-    const result = await getMarketById(id);
+    const result = await getMarketById(id, { skipCache: !!req.user });
     
     // Check if market was found
     if (!result.data) {

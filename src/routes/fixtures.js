@@ -31,14 +31,15 @@ import {
 // so the frontend doesn't need hardcoded type_id mappings
 import { enrichFixtureWithTypes } from '../services/types.js';
 
-// Import auth middleware - all routes require authentication
-import authMiddleware from '../middleware/auth.js';
+// Import optional auth middleware - sets req.user if token present, but allows anonymous access
+// Authenticated users get fresh data (skipCache), anonymous users get cached data
+import { optionalAuthMiddleware } from '../middleware/auth.js';
 
 // Create a router
 const router = express.Router();
 
-// Apply auth middleware to all routes in this router
-router.use(authMiddleware);
+// Apply optional auth to all routes - allows both authenticated and anonymous access
+router.use(optionalAuthMiddleware);
 
 // ============================================
 // HELPER: Validate Date Format
@@ -126,6 +127,8 @@ router.get('/date/:date', async (req, res) => {
     }
     
     // Call the SportsMonks service with options
+    // Authenticated users bypass cache for fresh data
+    options.skipCache = !!req.user;
     const result = await getFixturesByDate(date, options);
     
     // Return the fixtures
@@ -200,6 +203,8 @@ router.get('/between/:startDate/:endDate', async (req, res) => {
     }
     
     // Call the SportsMonks service with options
+    // Authenticated users bypass cache for fresh data
+    options.skipCache = !!req.user;
     const result = await getFixturesByDateRange(startDate, endDate, options);
     
     // Return the fixtures
@@ -276,6 +281,8 @@ router.get('/between/:startDate/:endDate/team/:teamId', async (req, res) => {
     const days = daysBetween(startDate, endDate);
     
     // Call the SportsMonks service with options
+    // Authenticated users bypass cache for fresh data
+    options.skipCache = !!req.user;
     const result = await getTeamFixturesByDateRange(startDate, endDate, teamId, options);
     
     // Return the fixtures
@@ -321,6 +328,8 @@ router.get('/search/:query', async (req, res) => {
     }
     
     // Call the SportsMonks service with options
+    // Authenticated users bypass cache for fresh data
+    options.skipCache = !!req.user;
     const result = await searchFixtures(searchQuery, options);
     
     // Return the fixtures
@@ -365,7 +374,7 @@ router.get('/seasons/:seasonId', async (req, res) => {
     
     // Call the SportsMonks service
     // This uses /stages/seasons/{seasonId} with fixtures include
-    const result = await getStagesBySeason(seasonId);
+    const result = await getStagesBySeason(seasonId, { skipCache: !!req.user });
     
     // The response.data is an array of stages
     // Each stage has: id, name, sort_order, finished, is_current, starting_at, ending_at, fixtures[]
@@ -414,7 +423,7 @@ router.get('/:id/predictions', async (req, res) => {
     }
     
     // Call the SportsMonks service
-    const result = await getFixturePredictions(fixtureId);
+    const result = await getFixturePredictions(fixtureId, { skipCache: !!req.user });
     
     // Check if fixture was found
     if (!result.data) {
@@ -466,6 +475,8 @@ router.get('/:id', async (req, res) => {
     }
     
     // Call the SportsMonks service with options
+    // Authenticated users bypass cache for fresh data
+    options.skipCache = !!req.user;
     const result = await getFixtureById(fixtureId, options);
     
     // Check if fixture was found

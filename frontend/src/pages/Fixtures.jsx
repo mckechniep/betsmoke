@@ -457,24 +457,24 @@ function FixtureCard({ fixture, timezone, temperatureUnit }) {
 
       <div className="flex items-center justify-between">
         {/* Home Team - no special styling for AET/penalty wins */}
-        <div className="flex-1 flex items-center justify-end space-x-3">
-          <span className="font-medium text-right">
+        <div className="flex-1 min-w-0 flex items-center justify-end space-x-2 sm:space-x-3">
+          <span className="font-medium text-sm sm:text-base text-right truncate">
             {homeTeam?.name || 'Home'}
           </span>
           {homeTeam?.image_path && (
             <img
               src={homeTeam.image_path}
               alt={homeTeam.name}
-              className="w-8 h-8 object-contain"
+              className="w-7 h-7 sm:w-8 sm:h-8 object-contain shrink-0"
             />
           )}
         </div>
 
         {/* Score Section */}
-        <div className="px-6 text-center min-w-[120px]">
+        <div className="px-2 sm:px-6 text-center min-w-[70px] sm:min-w-[120px] shrink-0">
           {score ? (
             <div>
-              <div className={`text-xl font-bold ${isLive ? 'text-green-600' : ''}`}>
+              <div className={`text-lg sm:text-xl font-bold ${isLive ? 'text-green-600' : ''}`}>
                 {score}
               </div>
               {/* State indicator */}
@@ -493,7 +493,7 @@ function FixtureCard({ fixture, timezone, temperatureUnit }) {
             </div>
           ) : (
             <div>
-              <div className="text-lg font-medium text-gray-300">
+              <div className="text-base sm:text-lg font-medium text-gray-300">
                 {formatTimeUtil(fixture.starting_at, timezone)}
               </div>
               <div className="text-xs text-gray-400 mt-1">Scheduled</div>
@@ -502,15 +502,15 @@ function FixtureCard({ fixture, timezone, temperatureUnit }) {
         </div>
 
         {/* Away Team - no special styling for AET/penalty wins */}
-        <div className="flex-1 flex items-center space-x-3">
+        <div className="flex-1 min-w-0 flex items-center space-x-2 sm:space-x-3">
           {awayTeam?.image_path && (
             <img
               src={awayTeam.image_path}
               alt={awayTeam.name}
-              className="w-8 h-8 object-contain"
+              className="w-7 h-7 sm:w-8 sm:h-8 object-contain shrink-0"
             />
           )}
-          <span className="font-medium">
+          <span className="font-medium text-sm sm:text-base truncate">
             {awayTeam?.name || 'Away'}
           </span>
         </div>

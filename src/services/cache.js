@@ -1,49 +1,144 @@
 // ============================================
 // CACHE SERVICE
 // ============================================
-// Simple in-memory caching using node-cache.
-// Used to reduce API calls to SportsMonks for data
-// that doesn't change frequently (like corner averages).
+// In-memory caching using node-cache to reduce SportsMonks API calls.
+// Provides TTL tiers based on data volatility, key builders for
+// all cacheable entities, and a getOrFetch helper pattern.
 //
-// Cache Keys:
-//   - corners:{teamId}:{seasonId}  → Team corner averages (12h TTL)
-//   - season:{seasonId}            → Season dates (24h TTL)
+// Cache Keys use colon-delimited format: "type:id1:id2"
 // ============================================
 
 import NodeCache from 'node-cache';
 
 // ============================================
-// CONFIGURATION
+// TTL TIERS (in seconds)
 // ============================================
+// Organized by data volatility - static data cached longer, live data shorter
 
-// Default TTL values (in seconds)
 const TTL = {
-  CORNERS: 12 * 60 * 60,    // 12 hours for corner averages
-  SEASON: 24 * 60 * 60,     // 24 hours for season dates (rarely change)
-  DEFAULT: 6 * 60 * 60      // 6 hours fallback
+  // Reference data that almost never changes
+  REFERENCE: 7 * 24 * 60 * 60,      // 7 days - bookmakers, markets, historical squads
+
+  // League/team/player data - changes infrequently
+  LEAGUE: 24 * 60 * 60,             // 24 hours - leagues, teams, players, coaches, seasons
+
+  // Data that changes occasionally (roster moves, stats accumulation)
+  SEMI_STATIC: 6 * 60 * 60,         // 6 hours - team stats, current squads, transfers, prediction accuracy
+
+  // Standings change after each matchday
+  STANDINGS: 2 * 60 * 60,           // 2 hours - standings, top scorers
+
+  // Fixture lists change less frequently than individual fixtures
+  FIXTURE_LIST: 30 * 60,            // 30 minutes - fixtures by date, schedules, search results
+
+  // Individual fixture detail (lineups, events update during match)
+  FIXTURE_DETAIL: 15 * 60,          // 15 minutes - single fixture detail
+
+  // Predictions available before match, don't change much
+  PREDICTIONS: 30 * 60,             // 30 minutes - fixture predictions
+
+  // H2H is historical data, changes slowly
+  H2H: 30 * 60,                     // 30 minutes - head-to-head
+
+  // Odds shift frequently as bookmakers adjust lines
+  ODDS: 10 * 60,                    // 10 minutes - all odds endpoints
+
+  // Live data needs very short TTLs
+  LIVESCORES: 30,                   // 30 seconds - live scores
+  LIVESCORES_INPLAY: 15,            // 15 seconds - in-play scores
+
+  // Fallback
+  DEFAULT: 6 * 60 * 60              // 6 hours
 };
 
-// Create cache instance
-// - stdTTL: default time-to-live in seconds
-// - checkperiod: how often to check for expired keys (in seconds)
-// - useClones: false for better performance (we won't mutate cached objects)
+// ============================================
+// CREATE CACHE INSTANCE
+// ============================================
+
 const cache = new NodeCache({
   stdTTL: TTL.DEFAULT,
-  checkperiod: 600,  // Check every 10 minutes
-  useClones: false
+  checkperiod: 120,   // Check for expired keys every 2 minutes
+  useClones: false     // Better performance - we won't mutate cached objects
 });
 
 // ============================================
 // CACHE KEY BUILDERS
 // ============================================
 // Consistent key format: "type:id1:id2:..."
+// Every cacheable entity has a dedicated key builder
 
 const keys = {
-  // Key for team corner averages by season
-  corners: (teamId, seasonId) => `corners:${teamId}:${seasonId}`,
-  
-  // Key for season data (dates, name, etc.)
-  season: (seasonId) => `season:${seasonId}`
+  // --- Teams ---
+  teamSearch: (query) => `teamSearch:${query.toLowerCase()}`,
+  team: (teamId) => `team:${teamId}`,
+  teamWithStats: (teamId) => `teamStats:${teamId}`,
+  teamStatsBySeason: (teamId, seasonId) => `teamStatsSeason:${teamId}:${seasonId}`,
+  teamSquad: (teamId) => `teamSquad:${teamId}`,
+  teamSquadBySeason: (seasonId, teamId) => `teamSquadSeason:${seasonId}:${teamId}`,
+  teamSquadWithStats: (seasonId, teamId) => `teamSquadStats:${seasonId}:${teamId}`,
+  teamTransfers: (teamId) => `teamTransfers:${teamId}`,
+  teamSeasons: (teamId) => `teamSeasons:${teamId}`,
+  teamSchedule: (teamId) => `teamSchedule:${teamId}`,
+
+  // --- Fixtures ---
+  fixture: (fixtureId) => `fixture:${fixtureId}`,
+  fixturesByDate: (date) => `fixturesByDate:${date}`,
+  fixturesByDateRange: (start, end) => `fixturesRange:${start}:${end}`,
+  teamFixturesByDateRange: (start, end, teamId) => `teamFixturesRange:${start}:${end}:${teamId}`,
+  teamFixturesWithStats: (start, end, teamId) => `teamFixturesStats:${start}:${end}:${teamId}`,
+  fixtureSearch: (query) => `fixtureSearch:${query.toLowerCase()}`,
+
+  // --- Players ---
+  playerSearch: (query) => `playerSearch:${query.toLowerCase()}`,
+  player: (playerId) => `player:${playerId}`,
+
+  // --- Odds ---
+  oddsByFixture: (fixtureId) => `odds:${fixtureId}`,
+  oddsByFixtureAndBookmaker: (fixtureId, bookmakerId) => `odds:${fixtureId}:bk:${bookmakerId}`,
+  oddsByFixtureAndMarket: (fixtureId, marketId) => `odds:${fixtureId}:mk:${marketId}`,
+
+  // --- Bookmakers ---
+  allBookmakers: () => 'bookmakers:all',
+  bookmaker: (bookmakerId) => `bookmaker:${bookmakerId}`,
+
+  // --- Markets ---
+  allMarkets: () => 'markets:all',
+  market: (marketId) => `market:${marketId}`,
+  marketSearch: (query) => `marketSearch:${query.toLowerCase()}`,
+
+  // --- Coaches ---
+  coach: (coachId) => `coach:${coachId}`,
+  coachSearch: (query) => `coachSearch:${query.toLowerCase()}`,
+
+  // --- Standings ---
+  standingsBySeason: (seasonId) => `standings:${seasonId}`,
+
+  // --- Live Scores ---
+  livescores: () => 'livescores',
+  livescoresInplay: () => 'livescoresInplay',
+
+  // --- Leagues ---
+  allLeagues: () => 'leagues:all',
+  league: (leagueId) => `league:${leagueId}`,
+  leagueSearch: (query) => `leagueSearch:${query.toLowerCase()}`,
+
+  // --- Seasons ---
+  allSeasons: () => 'seasons:all',
+  season: (seasonId) => `season:${seasonId}`,
+  seasonsByLeague: (leagueId) => `seasonsByLeague:${leagueId}`,
+
+  // --- Top Scorers ---
+  topScorersBySeason: (seasonId) => `topScorers:${seasonId}`,
+
+  // --- Predictions ---
+  fixturePredictions: (fixtureId) => `predictions:${fixtureId}`,
+  predictabilityByLeague: (leagueId) => `predictability:${leagueId}`,
+
+  // --- Stages ---
+  stagesBySeason: (seasonId) => `stages:${seasonId}`,
+
+  // --- Legacy (kept for backwards compatibility) ---
+  corners: (teamId, seasonId) => `corners:${teamId}:${seasonId}`
 };
 
 // ============================================
@@ -93,7 +188,6 @@ function del(key) {
 
 /**
  * Clear all cached data
- * Use with caution - clears everything!
  */
 function flush() {
   cache.flushAll();
@@ -128,6 +222,61 @@ function getTtl(key) {
   return Math.round((ttl - Date.now()) / 1000);
 }
 
+/**
+ * Flush all cache keys matching a prefix
+ * Useful for targeted clearing (e.g., flush all odds for a fixture)
+ *
+ * @param {string} prefix - The key prefix to match (e.g., "odds:", "team:19")
+ * @returns {number} - Number of deleted entries
+ */
+function flushByPrefix(prefix) {
+  const allKeys = cache.keys();
+  const matchingKeys = allKeys.filter(key => key.startsWith(prefix));
+
+  if (matchingKeys.length === 0) {
+    console.log(`[Cache] FLUSH PREFIX: "${prefix}" - no matching keys`);
+    return 0;
+  }
+
+  const count = cache.del(matchingKeys);
+  console.log(`[Cache] FLUSH PREFIX: "${prefix}" - deleted ${count} keys`);
+  return count;
+}
+
+/**
+ * Get detailed cache stats grouped by key category
+ * @returns {object} - Stats with hit rate and key counts by category
+ */
+function detailedStats() {
+  const baseStats = cache.getStats();
+  const allKeys = cache.keys();
+
+  // Group keys by their prefix (everything before the first colon)
+  const keysByCategory = {};
+  for (const key of allKeys) {
+    const category = key.split(':')[0];
+    if (!keysByCategory[category]) {
+      keysByCategory[category] = 0;
+    }
+    keysByCategory[category]++;
+  }
+
+  // Calculate hit rate
+  const totalRequests = baseStats.hits + baseStats.misses;
+  const hitRate = totalRequests > 0
+    ? Math.round((baseStats.hits / totalRequests) * 10000) / 100
+    : 0;
+
+  return {
+    hits: baseStats.hits,
+    misses: baseStats.misses,
+    totalRequests,
+    hitRate: `${hitRate}%`,
+    totalKeys: allKeys.length,
+    keysByCategory
+  };
+}
+
 // ============================================
 // HELPER: Get or Fetch Pattern
 // ============================================
@@ -138,28 +287,32 @@ function getTtl(key) {
  * @param {string} key - The cache key
  * @param {function} fetchFn - Async function to call if cache miss
  * @param {number} ttl - TTL for cached result (optional)
+ * @param {object} options - Additional options
+ * @param {boolean} options.skipCache - If true, always fetch fresh (for authenticated users)
  * @returns {Promise<any>} - Cached or freshly fetched value
- * 
- * Example:
- *   const data = await getOrFetch(
- *     keys.corners(teamId, seasonId),
- *     () => fetchCornersFromAPI(teamId, seasonId),
- *     TTL.CORNERS
- *   );
  */
-async function getOrFetch(key, fetchFn, ttl = TTL.DEFAULT) {
+async function getOrFetch(key, fetchFn, ttl = TTL.DEFAULT, options = {}) {
+  // Authenticated users bypass cache entirely - always get fresh data
+  if (options.skipCache) {
+    console.log(`[Cache] SKIP: ${key} (authenticated user)`);
+    const freshData = await fetchFn();
+    // Still cache the result so anonymous users benefit
+    set(key, freshData, ttl);
+    return freshData;
+  }
+
   // Try cache first
   const cached = get(key);
   if (cached !== undefined) {
     return cached;
   }
-  
+
   // Cache miss - fetch fresh data
   const freshData = await fetchFn();
-  
+
   // Cache the result
   set(key, freshData, ttl);
-  
+
   return freshData;
 }
 
@@ -170,21 +323,23 @@ async function getOrFetch(key, fetchFn, ttl = TTL.DEFAULT) {
 export {
   // Key builders
   keys,
-  
+
   // TTL constants
   TTL,
-  
+
   // Basic operations
   get,
   set,
   del,
   flush,
-  
+
   // Utilities
   stats,
   listKeys,
   getTtl,
-  
+  flushByPrefix,
+  detailedStats,
+
   // Helper patterns
   getOrFetch
 };
@@ -200,5 +355,7 @@ export default {
   stats,
   listKeys,
   getTtl,
+  flushByPrefix,
+  detailedStats,
   getOrFetch
 };

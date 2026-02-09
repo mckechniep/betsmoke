@@ -25,14 +25,15 @@ import {
 } from '../services/sportsmonks.js';
 import cache from '../services/cache.js';
 
-// Import auth middleware - all routes require authentication
-import authMiddleware from '../middleware/auth.js';
+// Import optional auth middleware - sets req.user if token present, but allows anonymous access
+// Authenticated users get fresh data (skipCache), anonymous users get cached data
+import { optionalAuthMiddleware } from '../middleware/auth.js';
 
 // Create a router
 const router = express.Router();
 
-// Apply auth middleware to all routes in this router
-router.use(authMiddleware);
+// Apply optional auth to all routes - allows both authenticated and anonymous access
+router.use(optionalAuthMiddleware);
 
 // ============================================
 // HELPER: Parse Include Options from Query
@@ -75,7 +76,8 @@ router.get('/search/:query', async (req, res) => {
     }
     
     // 3. Call the SportsMonks service
-    const result = await searchTeams(searchQuery);
+    // Authenticated users bypass cache for fresh data
+    const result = await searchTeams(searchQuery, { skipCache: !!req.user });
     
     // 4. Return the results
     // We pass through the SportsMonks response structure
@@ -124,6 +126,8 @@ router.get('/h2h/:team1Id/:team2Id', async (req, res) => {
     }
     
     // Call the SportsMonks service with options
+    // Authenticated users bypass cache for fresh data
+    options.skipCache = !!req.user;
     const result = await getHeadToHead(team1Id, team2Id, options);
     
     // 5. Process the fixtures to create a summary
@@ -226,7 +230,7 @@ router.get('/:id/stats/seasons/:seasonId', async (req, res) => {
     }
     
     // Call the SportsMonks service
-    const result = await getTeamStatsBySeason(teamId, seasonId);
+    const result = await getTeamStatsBySeason(teamId, seasonId, { skipCache: !!req.user });
     
     // Check if team was found
     if (!result.data) {
@@ -270,7 +274,7 @@ router.get('/:id/stats', async (req, res) => {
     }
     
     // Call the SportsMonks service
-    const result = await getTeamWithStats(teamId);
+    const result = await getTeamWithStats(teamId, { skipCache: !!req.user });
     
     // Check if team was found
     if (!result.data) {
@@ -312,7 +316,7 @@ router.get('/:id/squad', async (req, res) => {
     }
     
     // Call the SportsMonks service
-    const result = await getTeamSquad(teamId);
+    const result = await getTeamSquad(teamId, { skipCache: !!req.user });
     
     // Return the squad
     res.json({
@@ -355,7 +359,7 @@ router.get('/:id/squad/seasons/:seasonId', async (req, res) => {
     }
     
     // Call the SportsMonks service
-    const result = await getTeamSquadBySeason(seasonId, teamId);
+    const result = await getTeamSquadBySeason(seasonId, teamId, { skipCache: !!req.user });
     
     // Return the squad
     res.json({
@@ -416,9 +420,9 @@ router.get('/:id/fullsquad/seasons/:seasonId', async (req, res) => {
     }
     
     // Fetch squad with player statistics
-    const result = await getTeamSquadWithStats(seasonId, teamId);
+    const result = await getTeamSquadWithStats(seasonId, teamId, { skipCache: !!req.user });
     const squadMembers = result.data || [];
-    
+
     // Type IDs for all stats we want to extract
     const STAT_TYPE_IDS = {
       GOALS: 52,
@@ -595,9 +599,9 @@ router.get('/:id/topstats/seasons/:seasonId', async (req, res) => {
     }
     
     // Fetch squad with player statistics
-    const result = await getTeamSquadWithStats(seasonId, teamId);
+    const result = await getTeamSquadWithStats(seasonId, teamId, { skipCache: !!req.user });
     const squadMembers = result.data || [];
-    
+
     // Type IDs for the stats we want:
     // 52 = GOALS (total goals scored)
     // 79 = ASSISTS (total assists)
@@ -694,7 +698,7 @@ router.get('/:id/transfers', async (req, res) => {
     }
     
     // Call the SportsMonks service
-    const result = await getTeamTransfers(teamId);
+    const result = await getTeamTransfers(teamId, { skipCache: !!req.user });
     
     // Return the transfers
     res.json({
@@ -732,7 +736,7 @@ router.get('/:id/seasons', async (req, res) => {
     }
     
     // Call the SportsMonks service
-    const result = await getTeamSeasons(teamId);
+    const result = await getTeamSeasons(teamId, { skipCache: !!req.user });
     
     // Return the seasons
     res.json({
@@ -769,7 +773,7 @@ router.get('/:id/schedule', async (req, res) => {
     }
     
     // Call the SportsMonks service
-    const result = await getTeamSchedule(teamId);
+    const result = await getTeamSchedule(teamId, { skipCache: !!req.user });
     
     // Return the schedule
     res.json({
@@ -808,7 +812,7 @@ router.get('/coaches/search/:query', async (req, res) => {
     }
     
     // Call the SportsMonks service
-    const result = await searchCoaches(searchQuery);
+    const result = await searchCoaches(searchQuery, { skipCache: !!req.user });
     
     // Return the coaches
     res.json({
@@ -843,7 +847,7 @@ router.get('/coaches/:id', async (req, res) => {
     }
     
     // Call the SportsMonks service
-    const result = await getCoachById(coachId);
+    const result = await getCoachById(coachId, { skipCache: !!req.user });
     
     // Check if coach was found
     if (!result.data) {
@@ -923,7 +927,7 @@ router.get('/:id/corners/seasons/:seasonId', async (req, res) => {
     
     if (!seasonData) {
       console.log(`[Corners] Fetching season ${seasonId} dates...`);
-      const seasonResult = await getSeasonById(seasonId);
+      const seasonResult = await getSeasonById(seasonId, { skipCache: !!req.user });
       
       if (!seasonResult.data) {
         return res.status(404).json({ error: `Season ${seasonId} not found` });
@@ -938,7 +942,7 @@ router.get('/:id/corners/seasons/:seasonId', async (req, res) => {
       };
       
       // Cache season data for 24 hours
-      cache.set(seasonCacheKey, seasonData, cache.TTL.SEASON);
+      cache.set(seasonCacheKey, seasonData, cache.TTL.LEAGUE);
     }
     
     // ============================================
@@ -949,7 +953,7 @@ router.get('/:id/corners/seasons/:seasonId', async (req, res) => {
     const startDate = seasonData.startDate;
     
     console.log(`[Corners] Fetching fixtures for team ${teamId} from ${startDate} to ${today}...`);
-    const fixturesResult = await getTeamFixturesWithStats(startDate, today, teamId);
+    const fixturesResult = await getTeamFixturesWithStats(startDate, today, teamId, { skipCache: !!req.user });
     const allFixtures = fixturesResult.data || [];
     
     // ============================================
@@ -1059,7 +1063,7 @@ router.get('/:id/corners/seasons/:seasonId', async (req, res) => {
     // ============================================
     // CACHE AND RETURN
     // ============================================
-    cache.set(cacheKey, response, cache.TTL.CORNERS);
+    cache.set(cacheKey, response, cache.TTL.SEMI_STATIC);
     
     res.json({
       ...response,
@@ -1127,7 +1131,7 @@ router.get('/:id', async (req, res) => {
     }
     
     // 3. Call the SportsMonks service
-    const result = await getTeamById(teamId);
+    const result = await getTeamById(teamId, { skipCache: !!req.user });
     
     // 4. Check if team was found
     if (!result.data) {

@@ -22,36 +22,69 @@ const PREMIER_LEAGUE_ID = 8;
 // LANDING PAGE (Non-Authenticated Users)
 // ============================================
 const LandingPage = () => {
+  // State for Premier League logo
+  const [plLogo, setPlLogo] = useState(null);
+
+  // Fetch Premier League logo on mount
+  useEffect(() => {
+    const fetchLogo = async () => {
+      try {
+        const data = await dataApi.getLeague(PREMIER_LEAGUE_ID);
+        setPlLogo(data.league?.image_path || null);
+      } catch (err) {
+        console.error('Failed to fetch Premier League logo:', err);
+      }
+    };
+    fetchLogo();
+  }, []);
+
   return (
     <div className="space-y-12 bg-gray-100 -mx-4 px-4 -my-6 py-6 min-h-screen text-gray-900">
       {/* Hero Section */}
-      <div className="rounded-lg">
+      <div className="rounded-lg mx-2 md:mx-0">
         {/* Hero Logo */}
         <img
           src={heroLogo}
           alt="BetSmoke"
-          className="w-full max-w-xl mx-auto rounded-lg"
+          className="w-full md:max-w-xl md:mx-auto rounded-lg"
         />
-        {/* Text and buttons below the logo */}
-        <div className="text-center py-8 bg-gray-800 mt-6 rounded-lg shadow-lg mx-2">
-          <p className="text-xl text-gray-300 max-w-2xl mx-auto mb-6 px-4">
-            Your personal betting research terminal. Aggregate football data,
-            track insights, and make disciplined betting decisions.
-          </p>
-          <div className="flex justify-center space-x-4">
+        {/* Text and navigation below the logo */}
+        <div className="py-8 bg-gray-800 mt-6 rounded-lg shadow-lg">
+          <div className="grid md:grid-cols-3 gap-4 px-6 max-w-4xl mx-auto">
             <Link
-              to="/register"
-              className="bg-amber-500 text-gray-900 px-8 py-3 rounded-lg text-lg font-semibold hover:bg-amber-400 transition-colors"
+              to="/fixtures"
+              className="group block p-5 bg-gray-700/50 rounded-lg border border-gray-600 hover:border-amber-500 hover:bg-gray-700 transition-all text-center"
             >
-              Sign Up
+              <AppIcon name="calendar" size="xl" className="text-amber-500 mb-2 mx-auto" />
+              <h3 className="text-lg font-semibold text-white mb-1">Fixtures</h3>
+              <p className="text-sm text-gray-400">
+                Browse upcoming and past matches with scores, lineups, stats, odds, and AI predictions.
+              </p>
             </Link>
             <Link
-              to="/login"
-              className="bg-gray-700 text-white px-8 py-3 rounded-lg text-lg font-semibold hover:bg-gray-600 transition-colors border border-amber-500/30"
+              to="/teams"
+              className="group block p-5 bg-gray-700/50 rounded-lg border border-gray-600 hover:border-amber-500 hover:bg-gray-700 transition-all text-center"
             >
-              Sign In
+              <AppIcon name="team" size="xl" className="text-amber-500 mb-2 mx-auto" />
+              <h3 className="text-lg font-semibold text-white mb-1">Teams</h3>
+              <p className="text-sm text-gray-400">
+                Search any Premier League team for squads, form, head-to-head records, and season stats.
+              </p>
+            </Link>
+            <Link
+              to="/competitions"
+              className="group block p-5 bg-gray-700/50 rounded-lg border border-gray-600 hover:border-amber-500 hover:bg-gray-700 transition-all text-center"
+            >
+              <AppIcon name="trophy" size="xl" className="text-amber-500 mb-2 mx-auto" />
+              <h3 className="text-lg font-semibold text-white mb-1">Competitions</h3>
+              <p className="text-sm text-gray-400">
+                League tables, top scorers, and standings across the Premier League, FA Cup, and Carabao Cup.
+              </p>
             </Link>
           </div>
+          <p className="text-sm text-gray-400 text-center mt-6 px-4">
+            No account needed to browse. Sign up only if you want to save personal research notes.
+          </p>
         </div>
       </div>
 
@@ -87,35 +120,35 @@ const LandingPage = () => {
           Tools for Disciplined Betting
         </h2>
         <div className="grid md:grid-cols-3 gap-8">
-          {/* Feature 1 */}
-          <div className="bg-white p-6 rounded-lg shadow-md border-t-4 border-amber-500">
+          {/* Feature 1 - Links to fixtures */}
+          <Link to="/fixtures" className="bg-white p-6 rounded-lg shadow-md border-t-4 border-amber-500 hover:shadow-xl hover:border-amber-400 transition-all">
             <AppIcon name="stats" size="3xl" className="text-amber-500 mb-4" />
             <h3 className="text-xl font-semibold text-gray-900 mb-2">Live & Historical Data</h3>
             <p className="text-gray-600">
               Real-time scores and historical fixtures, statistics, and trends from
               the Premier League, FA Cup, and Carabao Cup.
             </p>
-          </div>
+          </Link>
 
-          {/* Feature 2 */}
-          <div className="bg-white p-6 rounded-lg shadow-md border-t-4 border-amber-500">
+          {/* Feature 2 - Links to register (notes require auth) */}
+          <Link to="/register" className="bg-white p-6 rounded-lg shadow-md border-t-4 border-amber-500 hover:shadow-xl hover:border-amber-400 transition-all">
             <AppIcon name="notes" size="3xl" className="text-amber-500 mb-4" />
             <h3 className="text-xl font-semibold text-gray-900 mb-2">Research Journal</h3>
             <p className="text-gray-600">
               Keep notes on teams, fixtures, and trends. Build your own database
               of insights to inform future bets.
             </p>
-          </div>
+          </Link>
 
-          {/* Feature 3 */}
-          <div className="bg-white p-6 rounded-lg shadow-md border-t-4 border-amber-500">
+          {/* Feature 3 - Links to fixtures (odds are on fixture detail) */}
+          <Link to="/fixtures" className="bg-white p-6 rounded-lg shadow-md border-t-4 border-amber-500 hover:shadow-xl hover:border-amber-400 transition-all">
             <AppIcon name="money" size="3xl" className="text-amber-500 mb-4" />
             <h3 className="text-xl font-semibold text-gray-900 mb-2">Odds Comparison</h3>
             <p className="text-gray-600">
               Compare pre-match odds across multiple bookmakers to find
               the best value for your bets.
             </p>
-          </div>
+          </Link>
         </div>
       </div>
 
@@ -142,6 +175,16 @@ const LandingPage = () => {
             <p className="text-gray-400">Recent form & trends</p>
           </div>
         </div>
+      </div>
+
+      {/* Premier League Standings - Live data preview for anonymous users */}
+      <div className="bg-gray-900 mx-2 px-4 py-8 rounded-lg shadow-lg">
+        <LeagueStandings
+          leagueId={PREMIER_LEAGUE_ID}
+          leagueName="Premier League"
+          leagueLogo={plLogo}
+          showZones={true}
+        />
       </div>
 
       {/* CTA Section */}

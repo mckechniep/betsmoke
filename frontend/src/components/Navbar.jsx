@@ -112,58 +112,58 @@ const Navbar = () => {
           </Link>
 
           {/* Desktop Navigation - Hidden on mobile */}
-          {isAuthenticated && (
-            <div className="hidden md:flex items-center space-x-6">
-              <Link to="/fixtures" className="hover:text-amber-400 transition-colors">
-                Fixtures
-              </Link>
-              <Link to="/teams" className="hover:text-amber-400 transition-colors">
-                Teams
-              </Link>
-              <Link to="/competitions" className="hover:text-amber-400 transition-colors">
-                Competitions
-              </Link>
+          <div className="hidden md:flex items-center space-x-6">
+            <Link to="/fixtures" className="hover:text-amber-400 transition-colors">
+              Fixtures
+            </Link>
+            <Link to="/teams" className="hover:text-amber-400 transition-colors">
+              Teams
+            </Link>
+            <Link to="/competitions" className="hover:text-amber-400 transition-colors">
+              Competitions
+            </Link>
+            {isAuthenticated && (
               <Link to="/notes" className="hover:text-amber-400 transition-colors">
                 Notes
               </Link>
+            )}
 
-              {/* "More" Dropdown */}
-              <div className="relative" ref={dropdownRef}>
-                <button
-                  onClick={toggleDropdown}
-                  className={`flex items-center space-x-1 transition-colors ${
-                    isDropdownOpen ? 'text-amber-400' : 'hover:text-amber-400'
-                  }`}
-                >
-                  <span>More</span>
-                  <AppIcon
-                    name={isDropdownOpen ? 'close' : 'chevron-down'}
-                    size="xs"
-                    className="text-current"
-                  />
-                </button>
+            {/* "More" Dropdown */}
+            <div className="relative" ref={dropdownRef}>
+              <button
+                onClick={toggleDropdown}
+                className={`flex items-center space-x-1 transition-colors ${
+                  isDropdownOpen ? 'text-amber-400' : 'hover:text-amber-400'
+                }`}
+              >
+                <span>More</span>
+                <AppIcon
+                  name={isDropdownOpen ? 'close' : 'chevron-down'}
+                  size="xs"
+                  className="text-current"
+                />
+              </button>
 
-                {isDropdownOpen && (
-                  <div className="absolute top-full left-0 mt-2 w-48 bg-gray-800 rounded-md shadow-lg py-1 z-50">
-                    <Link
-                      to="/model-performance"
-                      className="block px-4 py-2 text-sm hover:bg-gray-700 hover:text-amber-400 transition-colors"
-                      onClick={() => setIsDropdownOpen(false)}
-                    >
-                      Model Performance
-                    </Link>
-                    <Link
-                      to="/model-architecture"
-                      className="block px-4 py-2 text-sm hover:bg-gray-700 hover:text-amber-400 transition-colors"
-                      onClick={() => setIsDropdownOpen(false)}
-                    >
-                      Model Architecture
-                    </Link>
-                  </div>
-                )}
-              </div>
+              {isDropdownOpen && (
+                <div className="absolute top-full left-0 mt-2 w-48 bg-gray-800 rounded-md shadow-lg py-1 z-50">
+                  <Link
+                    to="/model-performance"
+                    className="block px-4 py-2 text-sm hover:bg-gray-700 hover:text-amber-400 transition-colors"
+                    onClick={() => setIsDropdownOpen(false)}
+                  >
+                    Model Performance
+                  </Link>
+                  <Link
+                    to="/model-architecture"
+                    className="block px-4 py-2 text-sm hover:bg-gray-700 hover:text-amber-400 transition-colors"
+                    onClick={() => setIsDropdownOpen(false)}
+                  >
+                    Model Architecture
+                  </Link>
+                </div>
+              )}
             </div>
-          )}
+          </div>
 
           {/* Desktop Auth Section - Hidden on mobile */}
           <div className="hidden md:flex items-center space-x-4">
@@ -276,132 +276,133 @@ const Navbar = () => {
       {isMobileMenuOpen && (
         <div className="md:hidden bg-gray-900 border-t border-gray-700">
           <div className="px-4 py-4 space-y-3">
-            {isAuthenticated ? (
+            {/* User Info (authenticated only) */}
+            {isAuthenticated && (
+              <div className="pb-3 border-b border-gray-700">
+                <Link
+                  to="/settings"
+                  onClick={closeMobileMenu}
+                  className="flex items-center text-sm text-gray-400 hover:text-amber-400"
+                >
+                  <AppIcon name="settings" size="sm" className="mr-2 text-gray-400" />
+                  {user?.email}
+                </Link>
+              </div>
+            )}
+
+            {/* Main Navigation Links - Always visible */}
+            <Link
+              to="/fixtures"
+              onClick={closeMobileMenu}
+              className="flex items-center py-2 text-white hover:text-amber-400 transition-colors"
+            >
+              <AppIcon name="calendar" size="md" className="mr-3 text-gray-400" />
+              Fixtures
+            </Link>
+            <Link
+              to="/teams"
+              onClick={closeMobileMenu}
+              className="flex items-center py-2 text-white hover:text-amber-400 transition-colors"
+            >
+              <AppIcon name="team" size="md" className="mr-3 text-gray-400" />
+              Teams
+            </Link>
+            <Link
+              to="/competitions"
+              onClick={closeMobileMenu}
+              className="flex items-center py-2 text-white hover:text-amber-400 transition-colors"
+            >
+              <AppIcon name="trophy" size="md" className="mr-3 text-gray-400" />
+              Competitions
+            </Link>
+            {isAuthenticated && (
+              <Link
+                to="/notes"
+                onClick={closeMobileMenu}
+                className="flex items-center py-2 text-white hover:text-amber-400 transition-colors"
+              >
+                <AppIcon name="notes" size="md" className="mr-3 text-gray-400" />
+                Notes
+              </Link>
+            )}
+
+            {/* More Section - Always visible */}
+            <div className="border-t border-gray-700 pt-3">
+              <span className="text-xs text-gray-500 uppercase tracking-wide">More</span>
+            </div>
+
+            <Link
+              to="/model-performance"
+              onClick={closeMobileMenu}
+              className="flex items-center py-2 text-white hover:text-amber-400 transition-colors"
+            >
+              <AppIcon name="stats" size="md" className="mr-3 text-gray-400" />
+              Model Performance
+            </Link>
+            <Link
+              to="/model-architecture"
+              onClick={closeMobileMenu}
+              className="flex items-center py-2 text-white hover:text-amber-400 transition-colors"
+            >
+              <AppIcon name="brain" size="md" className="mr-3 text-gray-400" />
+              Model Architecture
+            </Link>
+
+            {/* Admin Section (admin only) */}
+            {isAuthenticated && user?.isAdmin && (
               <>
-                {/* User Info */}
-                <div className="pb-3 border-b border-gray-700">
-                  <Link
-                    to="/settings"
-                    onClick={closeMobileMenu}
-                    className="flex items-center text-sm text-gray-400 hover:text-amber-400"
-                  >
-                    <AppIcon name="settings" size="sm" className="mr-2 text-gray-400" />
-                    {user?.email}
-                  </Link>
-                </div>
-
-                {/* Main Navigation Links */}
-                <Link
-                  to="/fixtures"
-                  onClick={closeMobileMenu}
-                  className="flex items-center py-2 text-white hover:text-amber-400 transition-colors"
-                >
-                  <AppIcon name="calendar" size="md" className="mr-3 text-gray-400" />
-                  Fixtures
-                </Link>
-                <Link
-                  to="/teams"
-                  onClick={closeMobileMenu}
-                  className="flex items-center py-2 text-white hover:text-amber-400 transition-colors"
-                >
-                  <AppIcon name="team" size="md" className="mr-3 text-gray-400" />
-                  Teams
-                </Link>
-                <Link
-                  to="/competitions"
-                  onClick={closeMobileMenu}
-                  className="flex items-center py-2 text-white hover:text-amber-400 transition-colors"
-                >
-                  <AppIcon name="trophy" size="md" className="mr-3 text-gray-400" />
-                  Competitions
-                </Link>
-                <Link
-                  to="/notes"
-                  onClick={closeMobileMenu}
-                  className="flex items-center py-2 text-white hover:text-amber-400 transition-colors"
-                >
-                  <AppIcon name="notes" size="md" className="mr-3 text-gray-400" />
-                  Notes
-                </Link>
-
-                {/* Divider */}
                 <div className="border-t border-gray-700 pt-3">
-                  <span className="text-xs text-gray-500 uppercase tracking-wide">More</span>
+                  <span className="text-xs text-amber-500 uppercase tracking-wide">Admin</span>
                 </div>
-
-                <Link
-                  to="/model-performance"
-                  onClick={closeMobileMenu}
-                  className="flex items-center py-2 text-white hover:text-amber-400 transition-colors"
+                <button
+                  onClick={handleSyncTypes}
+                  disabled={isSyncing}
+                  className="flex items-center w-full py-2 text-white hover:text-amber-400 transition-colors disabled:opacity-50"
                 >
-                  <AppIcon name="stats" size="md" className="mr-3 text-gray-400" />
-                  Model Performance
-                </Link>
-                <Link
-                  to="/model-architecture"
-                  onClick={closeMobileMenu}
-                  className="flex items-center py-2 text-white hover:text-amber-400 transition-colors"
-                >
-                  <AppIcon name="brain" size="md" className="mr-3 text-gray-400" />
-                  Model Architecture
-                </Link>
-
-                {/* Admin Section */}
-                {user?.isAdmin && (
-                  <>
-                    <div className="border-t border-gray-700 pt-3">
-                      <span className="text-xs text-amber-500 uppercase tracking-wide">Admin</span>
-                    </div>
-                    <button
-                      onClick={handleSyncTypes}
-                      disabled={isSyncing}
-                      className="flex items-center w-full py-2 text-white hover:text-amber-400 transition-colors disabled:opacity-50"
-                    >
-                      <AppIcon name="sync" size="md" className={`mr-3 text-gray-400 ${isSyncing ? 'animate-spin' : ''}`} />
-                      {isSyncing ? 'Syncing...' : 'Sync SportsMonks Types'}
-                    </button>
-                    {syncMessage && (
-                      <div className={`p-2 rounded text-xs ${
-                        syncMessage.type === 'success'
-                          ? 'bg-green-900 text-green-200'
-                          : 'bg-red-900 text-red-200'
-                      }`}>
-                        {syncMessage.text}
-                      </div>
-                    )}
-                  </>
+                  <AppIcon name="sync" size="md" className={`mr-3 text-gray-400 ${isSyncing ? 'animate-spin' : ''}`} />
+                  {isSyncing ? 'Syncing...' : 'Sync SportsMonks Types'}
+                </button>
+                {syncMessage && (
+                  <div className={`p-2 rounded text-xs ${
+                    syncMessage.type === 'success'
+                      ? 'bg-green-900 text-green-200'
+                      : 'bg-red-900 text-red-200'
+                  }`}>
+                    {syncMessage.text}
+                  </div>
                 )}
-
-                {/* Logout Button */}
-                <div className="border-t border-gray-700 pt-3">
-                  <button
-                    onClick={handleLogout}
-                    className="flex items-center w-full py-2 text-red-400 hover:text-red-300 transition-colors"
-                  >
-                    <AppIcon name="arrow-right" size="md" className="mr-3 text-red-400" />
-                    Logout
-                  </button>
-                </div>
-              </>
-            ) : (
-              <>
-                {/* Non-authenticated mobile menu */}
-                <Link
-                  to="/login"
-                  onClick={closeMobileMenu}
-                  className="block py-3 text-center text-white hover:text-amber-400 transition-colors"
-                >
-                  Login
-                </Link>
-                <Link
-                  to="/register"
-                  onClick={closeMobileMenu}
-                  className="block py-3 text-center bg-amber-500 text-gray-900 rounded-md font-semibold hover:bg-amber-400 transition-colors"
-                >
-                  Register
-                </Link>
               </>
             )}
+
+            {/* Auth Section */}
+            <div className="border-t border-gray-700 pt-3">
+              {isAuthenticated ? (
+                <button
+                  onClick={handleLogout}
+                  className="flex items-center w-full py-2 text-red-400 hover:text-red-300 transition-colors"
+                >
+                  <AppIcon name="arrow-right" size="md" className="mr-3 text-red-400" />
+                  Logout
+                </button>
+              ) : (
+                <div className="space-y-3">
+                  <Link
+                    to="/login"
+                    onClick={closeMobileMenu}
+                    className="block py-3 text-center text-white hover:text-amber-400 transition-colors"
+                  >
+                    Login
+                  </Link>
+                  <Link
+                    to="/register"
+                    onClick={closeMobileMenu}
+                    className="block py-3 text-center bg-amber-500 text-gray-900 rounded-md font-semibold hover:bg-amber-400 transition-colors"
+                  >
+                    Register
+                  </Link>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       )}

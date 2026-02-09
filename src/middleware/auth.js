@@ -146,10 +146,44 @@ const adminMiddleware = async (req, res, next) => {
 };
 
 // ============================================
+// OPTIONAL AUTH MIDDLEWARE
+// ============================================
+// Like authMiddleware, but does NOT reject unauthenticated requests.
+// If a valid token is present, sets req.user. Otherwise, continues
+// without it. Use this on public data routes so authenticated users
+// get fresh (uncached) data while anonymous users get cached data.
+
+const optionalAuthMiddleware = (req, res, next) => {
+  const authHeader = req.headers.authorization;
+
+  // No token - that's fine, continue as anonymous
+  if (!authHeader) {
+    return next();
+  }
+
+  const parts = authHeader.split(' ');
+  if (parts.length !== 2 || parts[0] !== 'Bearer') {
+    // Malformed header - treat as anonymous rather than erroring
+    return next();
+  }
+
+  const token = parts[1];
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    req.user = { userId: decoded.userId };
+  } catch {
+    // Invalid/expired token - treat as anonymous
+  }
+
+  next();
+};
+
+// ============================================
 // EXPORT THE MIDDLEWARE
 // ============================================
 // Default export: authMiddleware (for backward compatibility)
-// Named export: adminMiddleware (for admin routes)
+// Named exports: adminMiddleware, optionalAuthMiddleware
 
 export default authMiddleware;
-export { adminMiddleware };
+export { adminMiddleware, optionalAuthMiddleware };

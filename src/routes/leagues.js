@@ -15,14 +15,15 @@ import {
   searchLeagues
 } from '../services/sportsmonks.js';
 
-// Import auth middleware - all routes require authentication
-import authMiddleware from '../middleware/auth.js';
+// Import optional auth middleware - sets req.user if token present, but allows anonymous access
+// Authenticated users get fresh data (skipCache), anonymous users get cached data
+import { optionalAuthMiddleware } from '../middleware/auth.js';
 
 // Create a router
 const router = express.Router();
 
-// Apply auth middleware to all routes in this router
-router.use(authMiddleware);
+// Apply optional auth to all routes - allows both authenticated and anonymous access
+router.use(optionalAuthMiddleware);
 
 // ============================================
 // GET ALL LEAGUES
@@ -35,7 +36,7 @@ router.use(authMiddleware);
 router.get('/', async (req, res) => {
   try {
     // Call the SportsMonks service
-    const result = await getAllLeagues();
+    const result = await getAllLeagues({ skipCache: !!req.user });
 
     const leagues = result.data || [];
 
@@ -75,7 +76,7 @@ router.get('/search/:query', async (req, res) => {
     }
 
     // Call the SportsMonks service
-    const result = await searchLeagues(query);
+    const result = await searchLeagues(query, { skipCache: !!req.user });
 
     const leagues = result.data || [];
 
@@ -121,7 +122,7 @@ router.get('/:id', async (req, res) => {
     }
 
     // Call the SportsMonks service
-    const result = await getLeagueById(id);
+    const result = await getLeagueById(id, { skipCache: !!req.user });
 
     // Check if league was found
     if (!result.data) {
