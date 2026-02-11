@@ -293,7 +293,7 @@ function getTimeAgoText(timestamp) {
 // Reusable across DefaultFixtures and SearchResults.
 function FixtureLegend() {
   return (
-    <div className="text-xs text-gray-500 flex items-center space-x-4 mb-2">
+    <div className="text-xs text-gray-400 flex items-center space-x-4 mb-2">
       <div className="flex items-center space-x-1">
         <div className="w-3 h-3 bg-green-500 rounded"></div>
         <span>Live Match</span>
@@ -314,7 +314,7 @@ function FixtureLegend() {
 function RefreshBar({ timeAgoText, loading, onRefresh }) {
   return (
     <div className="flex items-center justify-between mb-4 bg-gray-700 rounded-lg px-4 py-2">
-      <div className="text-sm text-gray-500">
+      <div className="text-sm text-gray-400">
         {timeAgoText && (
           <span className="flex items-center gap-1">
             <AppIcon name="clock" size="sm" /> Last updated: <span className="font-medium">{timeAgoText}</span>
@@ -439,7 +439,7 @@ function FixtureCard({ fixture, timezone, temperatureUnit }) {
         ${isFinished ? 'border-l-4 border-l-gray-400' : ''}
       `}
     >
-      <div className="text-xs text-gray-500 mb-2 flex items-center justify-between">
+      <div className="text-xs text-gray-400 mb-2 flex items-center justify-between">
         <span className="font-medium">
           {fixture.league?.name || getLeagueName(fixture.league_id)}
         </span>
@@ -483,7 +483,7 @@ function FixtureCard({ fixture, timezone, temperatureUnit }) {
               </div>
               {/* Penalty score and winner (only for penalty shootout wins) */}
               {isAfterPenalties && penaltyScore && (
-                <div className="text-xs text-gray-500 mt-1">
+                <div className="text-xs text-gray-400 mt-1">
                   <div className="font-medium">({penaltyScore.home}-{penaltyScore.away})</div>
                   {penaltyWinnerName && (
                     <div className="text-gray-400 mt-0.5">{penaltyWinnerName} wins on penalties</div>
@@ -525,7 +525,7 @@ function FixtureCard({ fixture, timezone, temperatureUnit }) {
 
       {/* Weather - below venue */}
       {weather && (
-        <div className="mt-1 text-sm text-gray-500 text-center flex items-center justify-center space-x-2">
+        <div className="mt-1 text-sm text-gray-400 text-center flex items-center justify-center space-x-2">
           {weather.iconUrl && (
             <div className="bg-gradient-to-b from-sky-100 to-slate-200 rounded-full p-1 shadow-sm">
               <img src={weather.iconUrl} alt={weather.label} className="w-8 h-8" />
@@ -695,7 +695,7 @@ function TeamAutocomplete({ selectedTeam, onSelectTeam, disabled }) {
               <div>
                 <div className="font-medium text-gray-100">{team.name}</div>
                 {team.country?.name && (
-                  <div className="text-xs text-gray-500">{team.country.name}</div>
+                  <div className="text-xs text-gray-400">{team.country.name}</div>
                 )}
               </div>
             </button>
@@ -704,7 +704,7 @@ function TeamAutocomplete({ selectedTeam, onSelectTeam, disabled }) {
       )}
 
       {showDropdown && suggestions.length === 0 && query.length >= 2 && !loading && (
-        <div className="absolute z-20 w-full mt-1 bg-gray-800 border border-gray-600 rounded-md shadow-lg p-3 text-sm text-gray-500">
+        <div className="absolute z-20 w-full mt-1 bg-gray-800 border border-gray-600 rounded-md shadow-lg p-3 text-sm text-gray-400">
           No teams found matching "{query}"
         </div>
       )}
@@ -1105,7 +1105,7 @@ function SearchPanel({ onSearchResults, onClearSearch, isSearchActive }) {
               onSelectTeam={setSelectedTeam}
               disabled={teamSearchLoading}
             />
-            <p className="mt-1 text-xs text-gray-500">
+            <p className="mt-1 text-xs text-gray-400">
               Start typing to see matching teams. Select a team, then choose how to search.
             </p>
           </div>
@@ -1232,12 +1232,12 @@ function SearchPanel({ onSearchResults, onClearSearch, isSearchActive }) {
 
           {/* Contextual hint based on search type */}
           {searchType === 'upcoming' && (
-            <p className="text-xs text-gray-500 text-center">
+            <p className="text-xs text-gray-400 text-center">
               Shows all scheduled fixtures for the next 100 days
             </p>
           )}
           {searchType === 'dateRange' && (
-            <p className="text-xs text-gray-500 text-center">
+            <p className="text-xs text-gray-400 text-center">
               Search any date range up to 100 days
             </p>
           )}
@@ -1546,7 +1546,7 @@ function SearchPanel({ onSearchResults, onClearSearch, isSearchActive }) {
 
       {/* Helper Text (not shown for team mode - has its own helper) */}
       {searchMode !== 'team' && (
-        <p className="mt-3 text-xs text-gray-500">
+        <p className="mt-3 text-xs text-gray-400">
           {searchMode === 'competition'
             ? 'Select a competition to view upcoming fixtures or search by date range.'
             : dateSearchType === 'single'
@@ -1609,7 +1609,7 @@ function SearchResults({ searchData, onClear, loading, timeAgoText, onRefresh, t
           <h2 className="text-xl font-bold text-gray-100">
             {getHeaderText()}
           </h2>
-          <p className="text-sm text-gray-500 mt-1">
+          <p className="text-sm text-gray-400 mt-1">
             {fixtures.length} {fixtures.length === 1 ? 'fixture' : 'fixtures'} found
             {type === 'team' && teamId && (
               <span className="ml-2">
@@ -1647,7 +1647,7 @@ function SearchResults({ searchData, onClear, loading, timeAgoText, onRefresh, t
           <h3 className="text-xl font-semibold text-gray-200 mb-2">
             No Fixtures Found
           </h3>
-          <p className="text-gray-500">
+          <p className="text-gray-400">
             {type === 'team'
               ? `No Premier League, FA Cup, or Carabao Cup fixtures found for ${query} in this time period.`
               : type === 'competition'
@@ -1695,7 +1695,7 @@ function DefaultFixtures({ fixtures, loading, error, dateRange, timeAgoText, onR
         </h2>
         
         {dateRange.startDate && dateRange.endDate && (
-          <div className="text-sm text-gray-500 text-right">
+          <div className="text-sm text-gray-400 text-right">
             <div>{formatDateOnly(dateRange.startDate, dateFormat)}</div>
             <div className="text-gray-400">to</div>
             <div>{formatDateOnly(dateRange.endDate, dateFormat)}</div>
@@ -1718,7 +1718,7 @@ function DefaultFixtures({ fixtures, loading, error, dateRange, timeAgoText, onR
       )}
 
       {loading ? (
-        <div className="text-center py-12 text-gray-500">
+        <div className="text-center py-12 text-gray-400">
           Loading fixtures...
         </div>
       ) : groupedFixtures.length === 0 ? (
@@ -1727,7 +1727,7 @@ function DefaultFixtures({ fixtures, loading, error, dateRange, timeAgoText, onR
           <h2 className="text-xl font-semibold text-gray-200 mb-2">
             No Upcoming Fixtures
           </h2>
-          <p className="text-gray-500">
+          <p className="text-gray-400">
             No Premier League, FA Cup, or Carabao Cup fixtures before{' '}
             <span className="font-medium">{formatDateOnly(dateRange.endDate, dateFormat)}</span>.
           </p>
@@ -2067,7 +2067,7 @@ const Fixtures = () => {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-gray-100">Fixtures</h1>
-        <p className="text-sm text-gray-500 mt-1">
+        <p className="text-sm text-gray-400 mt-1">
           Premier League, FA Cup &amp; Carabao Cup
         </p>
       </div>

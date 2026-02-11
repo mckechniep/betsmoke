@@ -301,7 +301,7 @@ const LeagueStandings = ({
             {row.participant?.image_path && (
               <img
                 src={row.participant.image_path}
-                alt={row.participant.name}
+                alt=""
                 className="w-4 h-4 md:w-6 md:h-6 object-contain flex-shrink-0"
               />
             )}
@@ -412,7 +412,7 @@ const LeagueStandings = ({
             {leagueLogo ? (
               <img
                 src={leagueLogo}
-                alt={leagueName}
+                alt=""
                 className="w-11 h-11 md:w-8 md:h-8 object-contain"
               />
             ) : (
@@ -434,6 +434,7 @@ const LeagueStandings = ({
           <div className="text-purple-200 text-sm">Loading seasons...</div>
         ) : (
           <select
+            aria-label="Select season"
             value={selectedSeasonId}
             onChange={(e) => setSelectedSeasonId(e.target.value)}
             className="px-2 py-1.5 md:px-3 md:py-2 text-sm md:text-base

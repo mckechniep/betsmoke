@@ -234,6 +234,12 @@ export const dataApi = {
 export const adminApi = {
   // Sync SportsMonks types from API to local database
   syncTypes: (token) => api.postAuth('/admin/types/sync', {}, token),
+
+  // Cache management
+  getCacheStats: (token) => api.getAuth('/admin/cache/stats', token),
+  getCacheKeys: (token) => api.getAuth('/admin/cache/keys', token),
+  flushCache: (token) => api.deleteAuth('/admin/cache/flush', token),
+  flushCacheByPrefix: (prefix, token) => api.deleteAuth(`/admin/cache/prefix/${encodeURIComponent(prefix)}`, token),
 };
 
 export default api;

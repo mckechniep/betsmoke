@@ -326,6 +326,9 @@ const ModelPerformance = () => {
   const [predictabilityData, setPredictabilityData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+
+  // Tab state - overview (simple) or deepdive (full stats)
+  const [activeTab, setActiveTab] = useState('overview');
   
   // Sorting state - default to rating descending (High first)
   const [sortColumn, setSortColumn] = useState('rating');
@@ -625,6 +628,32 @@ const ModelPerformance = () => {
       </div>
 
       {/* ============================================ */}
+      {/* TAB BAR */}
+      {/* ============================================ */}
+      <div className="flex gap-6 border-b border-gray-700">
+        <button
+          onClick={() => setActiveTab('overview')}
+          className={`pb-2 text-sm font-medium transition-colors ${
+            activeTab === 'overview'
+              ? 'text-amber-400 border-b-2 border-amber-400'
+              : 'text-gray-400 hover:text-gray-200'
+          }`}
+        >
+          Overview
+        </button>
+        <button
+          onClick={() => setActiveTab('deepdive')}
+          className={`pb-2 text-sm font-medium transition-colors ${
+            activeTab === 'deepdive'
+              ? 'text-amber-400 border-b-2 border-amber-400'
+              : 'text-gray-400 hover:text-gray-200'
+          }`}
+        >
+          Deep Dive
+        </button>
+      </div>
+
+      {/* ============================================ */}
       {/* ERROR MESSAGE */}
       {/* ============================================ */}
       {error && (
@@ -644,35 +673,175 @@ const ModelPerformance = () => {
       )}
 
       {/* ============================================ */}
-      {/* MAIN UNIFIED TABLE */}
+      {/* OVERVIEW TAB */}
       {/* ============================================ */}
-      {!loading && !error && historicalLogLoss && modelLogLoss && (
-        <div className="bg-gray-800 rounded-lg shadow-md overflow-hidden">
-          {/* Header */}
-          <div className="bg-gray-900 text-white px-6 py-4">
-            <h2 className="text-lg font-semibold flex items-center gap-3">
-              <CompetitionLogo 
-                competition={COMPETITIONS.find(c => c.id === selectedLeagueId)} 
-                size="md" 
-                withBackground={true}
-              />
-              {getCompetitionName(selectedLeagueId)} - Model Performance
-            </h2>
-          </div>
-          
+      {activeTab === 'overview' && !loading && !error && historicalLogLoss && modelLogLoss && ratingData && trendData && (
+        <div className="space-y-4">
+          {/* Intro text */}
+          <p className="text-sm text-gray-400">
+            How well does the AI predict each betting market?
+          </p>
 
-          
-          {/* Table */}
-          <div className="overflow-x-auto">
+          {/* Desktop: Table + Key side by side */}
+          <div className="hidden md:flex gap-4">
+            {/* Table */}
+            <div className="bg-gray-800 rounded-lg shadow-md overflow-hidden flex-1 min-w-0">
+              <table className="w-full">
+                <thead className="bg-gray-700 border-b border-gray-700">
+                  <tr>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Market</th>
+                    <th className="px-4 py-3 text-center text-xs font-semibold text-gray-400 uppercase tracking-wider">Diff.</th>
+                    <th className="px-4 py-3 text-center text-xs font-semibold text-gray-400 uppercase tracking-wider">Rating</th>
+                    <th className="px-4 py-3 text-center text-xs font-semibold text-gray-400 uppercase tracking-wider">Trend</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-200">
+                  {getSortedMarkets().map((marketKey) => {
+                    const differential = calculateDifferential(marketKey);
+                    const rating = ratingData?.[marketKey];
+                    const trend = trendData?.[marketKey];
+
+                    return (
+                      <tr key={marketKey} className="hover:bg-gray-700 transition-colors">
+                        <td className="px-4 py-3">
+                          <span className="font-medium text-gray-100 text-sm">
+                            {MARKET_LABELS[marketKey] || marketKey}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-center">
+                          {differential !== null && rating && (
+                            <DifferentialBadge differential={differential} rating={rating} />
+                          )}
+                        </td>
+                        <td className="px-4 py-3 text-center">
+                          {rating && <RatingBadge rating={rating} />}
+                        </td>
+                        <td className="px-4 py-3 text-center text-xl">
+                          {trend && <TrendArrow trend={trend} />}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Key */}
+            <div className="w-64 flex-shrink-0">
+              <div className="bg-blue-900/30 border border-gray-600 rounded-lg p-4 space-y-4">
+                <h4 className="text-sm font-semibold text-amber-400">Key</h4>
+                <div>
+                  <p className="text-sm font-medium text-amber-400">Differential</p>
+                  <p className="text-xs text-gray-300 mt-1">
+                    How much better the AI model is vs a historical average baseline, based on the last 100 matches.
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-amber-400">Rating</p>
+                  <p className="text-xs text-gray-300 mt-1">
+                    Performance grade based on the differential.
+                  </p>
+                  <div className="bg-gray-700 p-3 rounded mt-2">
+                    <ul className="list-none space-y-1 text-gray-300 text-xs">
+                      <li><span className="text-green-400 font-semibold">High</span> — 8% or more</li>
+                      <li><span className="text-blue-400 font-semibold">Good</span> — 5% to 8%</li>
+                      <li><span className="text-yellow-400 font-semibold">Medium</span> — 3% to 5%</li>
+                      <li><span className="text-red-400 font-semibold">Poor</span> — Under 3%</li>
+                    </ul>
+                  </div>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-amber-400">Trend</p>
+                  <p className="text-xs text-gray-300 mt-1">
+                    Whether the model is improving, declining, or stable over the most recent 50 matches.
+                  </p>
+                  <div className="bg-gray-700 p-3 rounded mt-2">
+                    <ul className="list-none space-y-1 text-gray-300 text-xs">
+                      <li><span className="text-green-400 font-bold text-base">↑</span> — Improving</li>
+                      <li><span className="text-red-400 font-bold text-base">↓</span> — Declining</li>
+                      <li><span className="text-gray-400 font-bold text-base">→</span> — Stable</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Mobile Cards */}
+          <div className="md:hidden bg-gray-800 rounded-lg shadow-md overflow-hidden">
+            <div className="divide-y divide-gray-700">
+              {getSortedMarkets().map((marketKey) => {
+                const differential = calculateDifferential(marketKey);
+                const rating = ratingData?.[marketKey];
+                const trend = trendData?.[marketKey];
+
+                return (
+                  <div key={marketKey} className="p-4 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="font-medium text-gray-100 text-sm">
+                        {MARKET_LABELS[marketKey] || marketKey}
+                      </span>
+                      <div className="flex items-center gap-2">
+                        {rating && <RatingBadge rating={rating} />}
+                        <span className="text-lg">{trend && <TrendArrow trend={trend} />}</span>
+                      </div>
+                    </div>
+                    <div className="text-sm">
+                      <span className="text-gray-500 text-xs">Differential: </span>
+                      {differential !== null && rating && (
+                        <DifferentialBadge differential={differential} rating={rating} />
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* CTA to Deep Dive */}
+          <div className="bg-gray-800 rounded-lg p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+            <p className="text-sm text-gray-400">
+              Want the full statistical breakdown? Log loss, differentials, and formulas.
+            </p>
+            <button
+              onClick={() => setActiveTab('deepdive')}
+              className="text-sm font-medium text-amber-400 hover:text-amber-300 transition-colors whitespace-nowrap"
+            >
+              View Deep Dive →
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ============================================ */}
+      {/* OVERVIEW — NO DATA STATE */}
+      {/* ============================================ */}
+      {activeTab === 'overview' && !loading && !error && (!historicalLogLoss || !modelLogLoss || !ratingData || !trendData) && (
+        <div className="text-center py-12 bg-gray-800 rounded-lg shadow-md">
+          <p className="text-gray-400 text-lg">No prediction data available</p>
+          <p className="text-gray-400 text-sm mt-1">
+            Try selecting a different competition
+          </p>
+        </div>
+      )}
+
+      {/* ============================================ */}
+      {/* MAIN UNIFIED TABLE (DEEP DIVE) */}
+      {/* ============================================ */}
+      {activeTab === 'deepdive' && !loading && !error && historicalLogLoss && modelLogLoss && (
+        <>
+        <p className="text-sm text-gray-400">
+          Full statistical breakdown — log loss, differentials, and accuracy across all markets.
+        </p>
+        <div className="bg-gray-800 rounded-lg shadow-md overflow-hidden">
+          {/* Desktop Table - Hidden on mobile */}
+          <div className="hidden md:block overflow-x-auto">
             <table className="w-full">
               <thead className="bg-gray-700 border-b border-gray-700">
                 <tr>
-                  {/* Market - not sortable */}
                   <th className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
                     Market
                   </th>
-                  
-                  {/* Historical Log Loss */}
                   <SortableHeader
                     label="Historical Log Loss"
                     column="historical"
@@ -681,8 +850,6 @@ const ModelPerformance = () => {
                     onSort={handleSort}
                     className="text-center whitespace-nowrap pl-8"
                   />
-                  
-                  {/* Model Log Loss */}
                   <SortableHeader
                     label="Model Log Loss"
                     column="model"
@@ -691,8 +858,6 @@ const ModelPerformance = () => {
                     onSort={handleSort}
                     className="text-center whitespace-nowrap"
                   />
-                  
-                  {/* Differential */}
                   <SortableHeader
                     label="Differential"
                     column="differential"
@@ -701,8 +866,6 @@ const ModelPerformance = () => {
                     onSort={handleSort}
                     className="text-center w-28"
                   />
-                  
-                  {/* Rating */}
                   <SortableHeader
                     label="Rating"
                     column="rating"
@@ -711,8 +874,6 @@ const ModelPerformance = () => {
                     onSort={handleSort}
                     className="text-center w-20"
                   />
-                  
-                  {/* Accuracy */}
                   <SortableHeader
                     label="Accuracy"
                     column="accuracy"
@@ -721,8 +882,6 @@ const ModelPerformance = () => {
                     onSort={handleSort}
                     className="text-center w-24"
                   />
-                  
-                  {/* Trend */}
                   <SortableHeader
                     label="Trend"
                     column="trend"
@@ -741,50 +900,37 @@ const ModelPerformance = () => {
                   const rating = ratingData?.[marketKey];
                   const accuracy = accuracyData?.[marketKey];
                   const trend = trendData?.[marketKey];
-                  
+
                   return (
                     <tr key={marketKey} className="hover:bg-gray-700 transition-colors">
-                      {/* Market Name */}
                       <td className="px-4 py-4">
                         <span className="font-medium text-gray-100">
                           {MARKET_LABELS[marketKey] || marketKey}
                         </span>
                       </td>
-                      
-                      {/* Historical Log Loss (rounded to 2 decimals) */}
                       <td className="px-4 py-4 text-center">
                         <span className="text-sm text-gray-400 font-mono">
                           {historical.toFixed(2)}
                         </span>
                       </td>
-                      
-                      {/* Model Log Loss (rounded to 2 decimals) */}
                       <td className="px-4 py-4 text-center">
                         <span className="text-sm text-gray-100 font-mono font-semibold">
                           {model.toFixed(2)}
                         </span>
                       </td>
-                      
-                      {/* Differential Badge */}
                       <td className="px-4 py-4 text-center">
                         {differential !== null && rating && (
                           <DifferentialBadge differential={differential} rating={rating} />
                         )}
                       </td>
-                      
-                      {/* Rating Badge */}
                       <td className="px-4 py-4 text-center">
                         {rating && <RatingBadge rating={rating} />}
                       </td>
-                      
-                      {/* Accuracy */}
                       <td className="px-4 py-4 text-center">
                         <span className="text-sm font-semibold text-gray-300">
                           {Math.round(accuracy * 100)}%
                         </span>
                       </td>
-                      
-                      {/* Trend Arrow */}
                       <td className="px-4 py-4 text-center text-xl">
                         {trend && <TrendArrow trend={trend} />}
                       </td>
@@ -794,13 +940,65 @@ const ModelPerformance = () => {
               </tbody>
             </table>
           </div>
+
+          {/* Mobile Cards - Hidden on desktop */}
+          <div className="md:hidden divide-y divide-gray-700">
+            {getSortedMarkets().map((marketKey) => {
+              const historical = historicalLogLoss[marketKey];
+              const model = modelLogLoss[marketKey];
+              const differential = calculateDifferential(marketKey);
+              const rating = ratingData?.[marketKey];
+              const accuracy = accuracyData?.[marketKey];
+              const trend = trendData?.[marketKey];
+
+              return (
+                <div key={marketKey} className="p-4 space-y-3">
+                  {/* Market name with rating and trend */}
+                  <div className="flex items-center justify-between">
+                    <span className="font-medium text-gray-100 text-sm">
+                      {MARKET_LABELS[marketKey] || marketKey}
+                    </span>
+                    <div className="flex items-center gap-2">
+                      {rating && <RatingBadge rating={rating} />}
+                      <span className="text-lg">{trend && <TrendArrow trend={trend} />}</span>
+                    </div>
+                  </div>
+
+                  {/* Metrics in 2x2 grid */}
+                  <div className="grid grid-cols-2 gap-3 text-sm">
+                    <div>
+                      <span className="text-gray-500 text-xs block">Historical LL</span>
+                      <span className="text-gray-400 font-mono">{historical.toFixed(2)}</span>
+                    </div>
+                    <div>
+                      <span className="text-gray-500 text-xs block">Model LL</span>
+                      <span className="text-gray-100 font-mono font-semibold">{model.toFixed(2)}</span>
+                    </div>
+                    <div>
+                      <span className="text-gray-500 text-xs block">Differential</span>
+                      <div className="mt-0.5">
+                        {differential !== null && rating && (
+                          <DifferentialBadge differential={differential} rating={rating} />
+                        )}
+                      </div>
+                    </div>
+                    <div>
+                      <span className="text-gray-500 text-xs block">Accuracy</span>
+                      <span className="font-semibold text-gray-300">{Math.round(accuracy * 100)}%</span>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         </div>
+        </>
       )}
 
       {/* ============================================ */}
       {/* UNDERSTANDING AI PREDICTION MODEL PERFORMANCE */}
       {/* ============================================ */}
-      {!loading && !error && historicalLogLoss && modelLogLoss && (
+      {activeTab === 'deepdive' && !loading && !error && historicalLogLoss && modelLogLoss && (
         <div className="bg-blue-900/30 border border-gray-600 rounded-lg p-4">
           <h3 className="text-lg font-semibold text-amber-400 mb-4 flex items-center gap-2">
             <AppIcon name="stats" size="lg" className="text-gray-400" />
@@ -841,6 +1039,19 @@ const ModelPerformance = () => {
                 <li>It's the <strong>baseline</strong> we compare Model Log Loss against</li>
                 <li>Calculated over the <strong>last 100 matches</strong> in the competition</li>
               </ul>
+              <div className="bg-gray-700 p-3 rounded mt-3">
+                <p className="text-amber-400 font-semibold text-xs uppercase tracking-wider mb-1">League-Wide Historical Averages Explained</p>
+                <p className="text-gray-200 font-medium mb-2">Example: Match Result (1X2)</p>
+                <p>
+                  Take all matches played in the Premier League over recent seasons and count the outcomes — say 45% ended in a home win, 26% in a draw, and 29% in an away win.
+                </p>
+                <p className="mt-2">
+                  The baseline uses those <strong>same flat probabilities for every match</strong>, regardless of who's playing. Arsenal vs Ipswich and Liverpool vs Man City both get 45/26/29.
+                </p>
+                <p className="mt-2">
+                  No team form, no injuries, no context — just "historically, this is how matches in this league tend to go."
+                </p>
+              </div>
             </AccordionItem>
             
             {/* 3. Model Log Loss */}
@@ -934,7 +1145,7 @@ const ModelPerformance = () => {
       {/* ============================================ */}
       {/* TECHNICAL DEEP DIVE (For the nerds!) */}
       {/* ============================================ */}
-      {!loading && !error && historicalLogLoss && modelLogLoss && (
+      {activeTab === 'deepdive' && !loading && !error && historicalLogLoss && modelLogLoss && (
         <div className="bg-gray-900 text-gray-100 rounded-lg p-6">
           <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
             <AppIcon name="microscope" size="lg" className="text-gray-400" />
@@ -947,8 +1158,8 @@ const ModelPerformance = () => {
           {/* Log Loss Formula */}
           <div className="mb-6">
             <h4 className="text-lg font-semibold text-blue-400 mb-2">Log Loss (Cross-Entropy Loss)</h4>
-            <div className="bg-gray-800 p-4 rounded-lg font-mono text-sm mb-3">
-              <p className="text-yellow-300">Log Loss = -1/N × Σ [y × log(p) + (1-y) × log(1-p)]</p>
+            <div className="bg-gray-800 p-4 rounded-lg font-mono text-sm mb-3 overflow-x-auto">
+              <p className="text-yellow-300 whitespace-nowrap">Log Loss = -1/N × Σ [y × log(p) + (1-y) × log(1-p)]</p>
               <p className="text-gray-400 mt-2">Where:</p>
               <ul className="text-gray-400 ml-4 space-y-1">
                 <li>N = number of predictions</li>
@@ -1002,8 +1213,8 @@ const ModelPerformance = () => {
           {/* Differential Formula */}
           <div className="mb-6">
             <h4 className="text-lg font-semibold text-blue-400 mb-2">Differential Percentage</h4>
-            <div className="bg-gray-800 p-4 rounded-lg font-mono text-sm mb-3">
-              <p className="text-yellow-300">Differential % = (|Historical LL| - |Model LL|) / |Historical LL| × 100</p>
+            <div className="bg-gray-800 p-4 rounded-lg font-mono text-sm mb-3 overflow-x-auto">
+              <p className="text-yellow-300 whitespace-nowrap">Differential % = (|Historical LL| - |Model LL|) / |Historical LL| × 100</p>
               <p className="text-gray-400 mt-2">Example:</p>
               <p className="text-gray-400">Historical LL = -0.65</p>
               <p className="text-gray-400">Model LL = -0.60</p>
@@ -1020,7 +1231,8 @@ const ModelPerformance = () => {
             <p className="text-gray-300 text-sm mb-2">
               SportsMonks assigns ratings based on how much the model's log loss improves over the historical baseline. These thresholds reflect how difficult it is to consistently beat the baseline:
             </p>
-            <div className="bg-gray-800 p-4 rounded-lg text-sm">
+            {/* Desktop table */}
+            <div className="hidden md:block bg-gray-800 p-4 rounded-lg text-sm">
               <table className="w-full">
                 <thead>
                   <tr className="text-gray-400 border-b border-gray-700">
@@ -1053,6 +1265,30 @@ const ModelPerformance = () => {
                 </tbody>
               </table>
             </div>
+
+            {/* Mobile cards */}
+            <div className="md:hidden bg-gray-800 p-3 rounded-lg text-sm space-y-3">
+              <div className="border-b border-gray-700 pb-2">
+                <span className="text-green-400 font-semibold">High</span>
+                <span className="text-gray-400 ml-2">≥ 8%</span>
+                <p className="text-gray-300 text-xs mt-0.5">Excellent predictive edge; model adds significant value</p>
+              </div>
+              <div className="border-b border-gray-700 pb-2">
+                <span className="text-blue-400 font-semibold">Good</span>
+                <span className="text-gray-400 ml-2">5% – 8%</span>
+                <p className="text-gray-300 text-xs mt-0.5">Solid performance; meaningful improvement over baseline</p>
+              </div>
+              <div className="border-b border-gray-700 pb-2">
+                <span className="text-yellow-400 font-semibold">Medium</span>
+                <span className="text-gray-400 ml-2">3% – 5%</span>
+                <p className="text-gray-300 text-xs mt-0.5">Modest edge; model helps but baseline is competitive</p>
+              </div>
+              <div>
+                <span className="text-red-400 font-semibold">Poor</span>
+                <span className="text-gray-400 ml-2">&lt; 3%</span>
+                <p className="text-gray-300 text-xs mt-0.5">Minimal advantage; consider relying on other factors</p>
+              </div>
+            </div>
           </div>
           
           {/* Why Log Loss Over Accuracy */}
@@ -1061,10 +1297,10 @@ const ModelPerformance = () => {
             <p className="text-gray-300 text-sm mb-2">
               Consider two models predicting 100 coin flips:
             </p>
-            <div className="bg-gray-800 p-4 rounded-lg text-sm mb-3">
-              <p className="text-gray-400 mb-2"><strong className="text-white">Model A:</strong> Always predicts 51% heads</p>
-              <p className="text-gray-400 mb-2"><strong className="text-white">Model B:</strong> Predicts 90% heads when confident, 10% when not</p>
-              <p className="text-gray-400 mt-3">Both might achieve ~50% accuracy on a fair coin, but:</p>
+            <div className="bg-gray-800 p-4 rounded-lg text-sm mb-3 space-y-2">
+              <p className="text-gray-400"><strong className="text-white">Model A:</strong> Always predicts 51% heads</p>
+              <p className="text-gray-400"><strong className="text-white">Model B:</strong> Predicts 90% heads when confident, 10% when not</p>
+              <p className="text-gray-400 pt-1">Both might achieve ~50% accuracy on a fair coin, but:</p>
               <p className="text-green-400">Model A: Lower log loss (well-calibrated uncertainty)</p>
               <p className="text-red-400">Model B: Higher log loss (overconfident and wrong)</p>
             </div>
@@ -1090,7 +1326,7 @@ const ModelPerformance = () => {
       {/* ============================================ */}
       {/* ADDITIONAL ANALYSIS (Random & Edge) */}
       {/* ============================================ */}
-      {!loading && !error && accuracyData && (
+      {activeTab === 'deepdive' && !loading && !error && accuracyData && (
         <div className="bg-gray-700 border border-gray-700 rounded-lg p-4">
           <h3 className="text-lg font-semibold text-gray-100 mb-4 flex items-center gap-2">
             <AppIcon name="target" size="lg" className="text-gray-400" />
@@ -1115,14 +1351,12 @@ const ModelPerformance = () => {
             </p>
           </div>
           
-          <div className="overflow-x-auto">
+          {/* Desktop Table - Hidden on mobile */}
+          <div className="hidden md:block overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-gray-600">
-                  {/* Market - not sortable */}
                   <th className="text-left py-2 pr-4 text-gray-300 font-semibold">Market</th>
-                  
-                  {/* Accuracy - sortable */}
                   <SortableHeader
                     label="Accuracy"
                     column="edgeAccuracy"
@@ -1131,8 +1365,6 @@ const ModelPerformance = () => {
                     onSort={handleEdgeSort}
                     className="text-center py-2 px-4"
                   />
-                  
-                  {/* Random Chance - sortable */}
                   <SortableHeader
                     label="Random Chance"
                     column="edgeRandom"
@@ -1141,8 +1373,6 @@ const ModelPerformance = () => {
                     onSort={handleEdgeSort}
                     className="text-center py-2 px-4"
                   />
-                  
-                  {/* Edge - sortable */}
                   <SortableHeader
                     label="Edge"
                     column="edge"
@@ -1157,10 +1387,10 @@ const ModelPerformance = () => {
                 {getSortedEdgeMarkets().map((marketKey) => {
                   const accuracy = accuracyData[marketKey];
                   if (accuracy === undefined) return null;
-                  
+
                   const randomChance = RANDOM_CHANCE[marketKey] || 0.5;
                   const edge = calculateEdge(marketKey, accuracy);
-                  
+
                   return (
                     <tr key={marketKey} className="hover:bg-gray-700">
                       <td className="py-2 pr-4 text-gray-100">
@@ -1181,13 +1411,45 @@ const ModelPerformance = () => {
               </tbody>
             </table>
           </div>
+
+          {/* Mobile Cards - Hidden on desktop */}
+          <div className="md:hidden divide-y divide-gray-600">
+            {getSortedEdgeMarkets().map((marketKey) => {
+              const accuracy = accuracyData[marketKey];
+              if (accuracy === undefined) return null;
+
+              const randomChance = RANDOM_CHANCE[marketKey] || 0.5;
+              const edge = calculateEdge(marketKey, accuracy);
+
+              return (
+                <div key={marketKey} className="py-3 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium text-gray-100">
+                      {MARKET_LABELS[marketKey] || marketKey}
+                    </span>
+                    <EdgeBadge edge={edge} />
+                  </div>
+                  <div className="flex gap-6 text-sm">
+                    <div>
+                      <span className="text-gray-500 text-xs block">Accuracy</span>
+                      <span className="font-semibold text-gray-300">{Math.round(accuracy * 100)}%</span>
+                    </div>
+                    <div>
+                      <span className="text-gray-500 text-xs block">Random</span>
+                      <span className="text-gray-400">{Math.round(randomChance * 100)}%</span>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         </div>
       )}
 
       {/* ============================================ */}
-      {/* NO DATA STATE */}
+      {/* NO DATA STATE (DEEP DIVE) */}
       {/* ============================================ */}
-      {!loading && !error && !historicalLogLoss && (
+      {activeTab === 'deepdive' && !loading && !error && !historicalLogLoss && (
         <div className="text-center py-12 bg-gray-800 rounded-lg shadow-md">
           <p className="text-gray-400 text-lg">No prediction data available</p>
           <p className="text-gray-400 text-sm mt-1">

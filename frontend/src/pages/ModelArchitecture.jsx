@@ -113,7 +113,7 @@ const ModelArchitecture = () => {
               isExpanded={expandedSections.dataInputs}
               onToggle={() => toggleSection('dataInputs')}
             >
-              <ul className="list-disc list-inside space-y-1 text-gray-400 text-xs">
+              <ul className="list-disc list-inside space-y-2 text-gray-400 text-sm">
                 <li><strong>Event data</strong> — Passes, shots, fouls, timestamps, pitch coordinates</li>
                 <li><strong>Player & team metadata</strong> — Age, height, experience, injury history, team value</li>
                 <li><strong>Match context</strong> — Home/away, rest days, weather, referee</li>
@@ -128,7 +128,7 @@ const ModelArchitecture = () => {
               isExpanded={expandedSections.algorithms}
               onToggle={() => toggleSection('algorithms')}
             >
-              <ul className="list-disc list-inside space-y-1 text-gray-400 text-xs">
+              <ul className="list-disc list-inside space-y-2 text-gray-400 text-sm">
                 <li><strong>Poisson regression</strong> — Models goal scoring as random events based on team strength</li>
                 <li><strong>Dixon & Coles model</strong> — Adjusts for low-scoring games (0-0, 1-1)</li>
                 <li><strong>Gradient boosting</strong> — XGBoost, LightGBM for complex pattern detection</li>
@@ -143,7 +143,7 @@ const ModelArchitecture = () => {
               isExpanded={expandedSections.limitations}
               onToggle={() => toggleSection('limitations')}
             >
-              <ul className="list-disc list-inside space-y-1 text-gray-400 text-xs">
+              <ul className="list-disc list-inside space-y-2 text-gray-400 text-sm">
                 <li><strong>High randomness</strong> — Goals are rare events; deflections, referee decisions, and luck create noise</li>
                 <li><strong>Small sample sizes</strong> — Individual player data can be too limited for reliable estimates</li>
                 <li><strong>Shifting conditions</strong> — Transfers, injuries, and managerial changes mean past data may not predict future</li>

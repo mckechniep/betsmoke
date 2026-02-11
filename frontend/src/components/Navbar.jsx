@@ -21,6 +21,10 @@ const Navbar = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncMessage, setSyncMessage] = useState(null);
+  const [cacheStats, setCacheStats] = useState(null);
+  const [isLoadingCache, setIsLoadingCache] = useState(false);
+  const [cacheMessage, setCacheMessage] = useState(null);
+  const [flushPrefix, setFlushPrefix] = useState('');
 
   // Refs for detecting clicks outside dropdowns
   const dropdownRef = useRef(null);
@@ -69,6 +73,9 @@ const Navbar = () => {
   const toggleAdminDropdown = () => {
     setIsAdminDropdownOpen(!isAdminDropdownOpen);
     setSyncMessage(null);
+    setCacheStats(null);
+    setCacheMessage(null);
+    setFlushPrefix('');
   };
 
   const toggleMobileMenu = () => {
@@ -96,6 +103,54 @@ const Navbar = () => {
       });
     } finally {
       setIsSyncing(false);
+    }
+  };
+
+  // ============================================
+  // CACHE MANAGEMENT HANDLERS
+  // ============================================
+  const handleViewCacheStats = async () => {
+    setIsLoadingCache(true);
+    setCacheMessage(null);
+
+    try {
+      const result = await adminApi.getCacheStats(token);
+      setCacheStats(result.data);
+    } catch (error) {
+      setCacheMessage({ type: 'error', text: error.message || 'Failed to load cache stats' });
+    } finally {
+      setIsLoadingCache(false);
+    }
+  };
+
+  const handleFlushCache = async () => {
+    setIsLoadingCache(true);
+    setCacheMessage(null);
+
+    try {
+      await adminApi.flushCache(token);
+      setCacheMessage({ type: 'success', text: 'Cache flushed successfully' });
+      setCacheStats(null);
+    } catch (error) {
+      setCacheMessage({ type: 'error', text: error.message || 'Failed to flush cache' });
+    } finally {
+      setIsLoadingCache(false);
+    }
+  };
+
+  const handleFlushByPrefix = async () => {
+    if (!flushPrefix.trim()) return;
+    setIsLoadingCache(true);
+    setCacheMessage(null);
+
+    try {
+      const result = await adminApi.flushCacheByPrefix(flushPrefix.trim(), token);
+      setCacheMessage({ type: 'success', text: result.message || `Flushed keys with prefix "${flushPrefix.trim()}"` });
+      setFlushPrefix('');
+    } catch (error) {
+      setCacheMessage({ type: 'error', text: error.message || 'Failed to flush by prefix' });
+    } finally {
+      setIsLoadingCache(false);
     }
   };
 
@@ -193,9 +248,10 @@ const Navbar = () => {
                     </button>
 
                     {isAdminDropdownOpen && (
-                      <div className="absolute top-full right-0 mt-2 w-64 bg-gray-800 rounded-md shadow-lg py-2 z-50">
+                      <div className="absolute top-full right-0 mt-2 w-80 bg-gray-800 rounded-md shadow-lg py-2 z-50">
+                        {/* Types Section */}
                         <div className="px-4 py-2 border-b border-gray-700">
-                          <span className="text-xs text-gray-400 uppercase tracking-wide">Admin Actions</span>
+                          <span className="text-xs text-gray-400 uppercase tracking-wide">Types</span>
                         </div>
 
                         <button
@@ -223,6 +279,92 @@ const Navbar = () => {
                               : 'bg-red-900 text-red-200'
                           }`}>
                             {syncMessage.text}
+                          </div>
+                        )}
+
+                        {/* Cache Section */}
+                        <div className="px-4 py-2 mt-1 border-t border-b border-gray-700">
+                          <span className="text-xs text-gray-400 uppercase tracking-wide">Cache</span>
+                        </div>
+
+                        {/* View Stats */}
+                        <button
+                          onClick={handleViewCacheStats}
+                          disabled={isLoadingCache}
+                          className="w-full text-left px-4 py-2 text-sm hover:bg-gray-700 transition-colors disabled:opacity-50"
+                        >
+                          {isLoadingCache && !cacheStats ? 'Loading...' : 'View Cache Stats'}
+                        </button>
+
+                        {/* Cache Stats Display */}
+                        {cacheStats && (
+                          <div className="mx-4 mt-1 p-2 bg-gray-900 rounded text-xs space-y-1">
+                            <div className="flex justify-between">
+                              <span className="text-gray-400">Keys:</span>
+                              <span className="text-white">{cacheStats.totalKeys}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-gray-400">Hits:</span>
+                              <span className="text-green-400">{cacheStats.hits}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-gray-400">Misses:</span>
+                              <span className="text-red-400">{cacheStats.misses}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-gray-400">Hit Rate:</span>
+                              <span className="text-amber-400">{cacheStats.hitRate}</span>
+                            </div>
+                            {cacheStats.categories && Object.keys(cacheStats.categories).length > 0 && (
+                              <div className="pt-1 border-t border-gray-700">
+                                <span className="text-gray-500">By Category:</span>
+                                {Object.entries(cacheStats.categories).map(([cat, count]) => (
+                                  <div key={cat} className="flex justify-between pl-2">
+                                    <span className="text-gray-400">{cat}</span>
+                                    <span className="text-white">{count}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        )}
+
+                        {/* Flush All */}
+                        <button
+                          onClick={handleFlushCache}
+                          disabled={isLoadingCache}
+                          className="w-full text-left px-4 py-2 text-sm text-red-400 hover:bg-gray-700 transition-colors disabled:opacity-50"
+                        >
+                          Flush Entire Cache
+                        </button>
+
+                        {/* Flush by Prefix */}
+                        <div className="px-4 py-2 flex items-center space-x-2">
+                          <input
+                            type="text"
+                            value={flushPrefix}
+                            onChange={(e) => setFlushPrefix(e.target.value)}
+                            onKeyDown={(e) => e.key === 'Enter' && handleFlushByPrefix()}
+                            placeholder="Prefix (e.g. fixtures)"
+                            className="flex-1 bg-gray-900 text-white text-xs px-2 py-1.5 rounded border border-gray-600 focus:border-amber-500 focus:outline-none"
+                          />
+                          <button
+                            onClick={handleFlushByPrefix}
+                            disabled={isLoadingCache || !flushPrefix.trim()}
+                            className="text-xs px-2 py-1.5 bg-red-800 text-red-200 rounded hover:bg-red-700 transition-colors disabled:opacity-50"
+                          >
+                            Flush
+                          </button>
+                        </div>
+
+                        {/* Cache Message */}
+                        {cacheMessage && (
+                          <div className={`mx-4 mt-1 p-2 rounded text-xs ${
+                            cacheMessage.type === 'success'
+                              ? 'bg-green-900 text-green-200'
+                              : 'bg-red-900 text-red-200'
+                          }`}>
+                            {cacheMessage.text}
                           </div>
                         )}
                       </div>
@@ -354,6 +496,8 @@ const Navbar = () => {
                 <div className="border-t border-gray-700 pt-3">
                   <span className="text-xs text-amber-500 uppercase tracking-wide">Admin</span>
                 </div>
+
+                {/* Sync Types */}
                 <button
                   onClick={handleSyncTypes}
                   disabled={isSyncing}
@@ -369,6 +513,94 @@ const Navbar = () => {
                       : 'bg-red-900 text-red-200'
                   }`}>
                     {syncMessage.text}
+                  </div>
+                )}
+
+                {/* Cache Management */}
+                <div className="mt-2 mb-1">
+                  <span className="text-xs text-gray-500 uppercase tracking-wide">Cache</span>
+                </div>
+
+                {/* View Stats */}
+                <button
+                  onClick={handleViewCacheStats}
+                  disabled={isLoadingCache}
+                  className="flex items-center w-full py-2 text-white hover:text-amber-400 transition-colors disabled:opacity-50"
+                >
+                  <AppIcon name="stats" size="md" className="mr-3 text-gray-400" />
+                  {isLoadingCache && !cacheStats ? 'Loading...' : 'View Cache Stats'}
+                </button>
+
+                {/* Cache Stats Display */}
+                {cacheStats && (
+                  <div className="p-3 bg-gray-800 rounded text-xs space-y-1 mb-2">
+                    <div className="flex justify-between">
+                      <span className="text-gray-400">Keys:</span>
+                      <span className="text-white">{cacheStats.totalKeys}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-400">Hits:</span>
+                      <span className="text-green-400">{cacheStats.hits}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-400">Misses:</span>
+                      <span className="text-red-400">{cacheStats.misses}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-400">Hit Rate:</span>
+                      <span className="text-amber-400">{cacheStats.hitRate}</span>
+                    </div>
+                    {cacheStats.categories && Object.keys(cacheStats.categories).length > 0 && (
+                      <div className="pt-1 border-t border-gray-700">
+                        <span className="text-gray-500">By Category:</span>
+                        {Object.entries(cacheStats.categories).map(([cat, count]) => (
+                          <div key={cat} className="flex justify-between pl-2">
+                            <span className="text-gray-400">{cat}</span>
+                            <span className="text-white">{count}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Flush All */}
+                <button
+                  onClick={handleFlushCache}
+                  disabled={isLoadingCache}
+                  className="flex items-center w-full py-2 text-red-400 hover:text-red-300 transition-colors disabled:opacity-50"
+                >
+                  <AppIcon name="close" size="md" className="mr-3 text-red-400" />
+                  Flush Entire Cache
+                </button>
+
+                {/* Flush by Prefix */}
+                <div className="flex items-center space-x-2 py-2">
+                  <input
+                    type="text"
+                    value={flushPrefix}
+                    onChange={(e) => setFlushPrefix(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && handleFlushByPrefix()}
+                    placeholder="Prefix (e.g. fixtures)"
+                    className="flex-1 bg-gray-800 text-white text-sm px-3 py-2 rounded border border-gray-600 focus:border-amber-500 focus:outline-none"
+                  />
+                  <button
+                    onClick={handleFlushByPrefix}
+                    disabled={isLoadingCache || !flushPrefix.trim()}
+                    className="text-sm px-3 py-2 bg-red-800 text-red-200 rounded hover:bg-red-700 transition-colors disabled:opacity-50"
+                  >
+                    Flush
+                  </button>
+                </div>
+
+                {/* Cache Message */}
+                {cacheMessage && (
+                  <div className={`p-2 rounded text-xs ${
+                    cacheMessage.type === 'success'
+                      ? 'bg-green-900 text-green-200'
+                      : 'bg-red-900 text-red-200'
+                  }`}>
+                    {cacheMessage.text}
                   </div>
                 )}
               </>

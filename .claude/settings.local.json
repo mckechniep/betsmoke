@@ -25,7 +25,8 @@
       "Bash(sort -n echo 'Missing from corners endpoint:' comm -23 /tmp/fixtures_ids.txt /tmp/corners_ids.txt)",
       "Bash(node -e:*)",
       "Bash(grep:*)",
-      "Bash(timeout 10 node:*)"
+      "Bash(timeout 10 node:*)",
+      "Bash(npx vite:*)"
     ]
   }
 }
